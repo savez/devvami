@@ -1,0 +1,30 @@
+# Standard Node.js
+node_modules/
+dist/
+tmp/
+coverage/
+
+# CLI artifacts
+oclif.manifest.json
+
+# Lock files (only one PM)
+package-lock.json
+yarn.lock
+
+# OS
+.DS_Store
+.idea/
+
+# Logs
+*-debug.log
+*-error.log
+
+# Env
+.env*
+
+# Internal AI tooling (non public)
+.specify/
+.opencode/
+specs/
+TODO.md
+

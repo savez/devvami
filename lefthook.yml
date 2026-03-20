@@ -1,0 +1,26 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: '*.{js}'
+      run: pnpm lint --max-warnings=0 {staged_files}
+      stage_fixed: true
+      fail_text: 'Linting failed — fix errors before commit'
+
+    test:
+      run: pnpm test --passWithNoTests
+      fail_text: 'Tests failed — fix before commit'
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx commitlint --edit {1}
+      fail_text: |
+        Commit message does not follow conventions.
+        Use "pnpm commit" for guided commit.
+
+        Expected format: <type>(<scope>): <description>
+        Examples:
+          feat(commands): add dvmi tasks filter
+          fix(services): correct github auth flow
+          chore(ci): update workflow node version

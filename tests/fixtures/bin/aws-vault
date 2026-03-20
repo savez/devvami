@@ -1,0 +1,25 @@
+#!/bin/bash
+# Fake aws-vault for integration tests
+
+case "$1" in
+  "exec")
+    # aws-vault exec <profile> -- <cmd> [args...]
+    # Find the -- separator and run the rest
+    shift  # remove 'exec'
+    shift  # remove profile name
+    shift  # remove '--'
+    exec "$@"
+    ;;
+  "login")
+    echo "https://signin.aws.amazon.com/federation?Action=login&..."
+    exit 0
+    ;;
+  "--version")
+    echo "v7.2.0"
+    exit 0
+    ;;
+  *)
+    echo "mock aws-vault: unhandled '$*'" >&2
+    exit 1
+    ;;
+esac

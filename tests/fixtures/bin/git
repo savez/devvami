@@ -1,0 +1,55 @@
+#!/bin/bash
+# Fake git for integration tests
+
+case "$1" in
+  "rev-parse")
+    if [[ "$2" == "--is-inside-work-tree" ]]; then
+      echo "true"
+      exit 0
+    fi
+    if [[ "$2" == "--abbrev-ref" ]]; then
+      echo "feature/test-branch"
+      exit 0
+    fi
+    echo "abc1234"
+    exit 0
+    ;;
+  "symbolic-ref")
+    echo "origin/main"
+    exit 0
+    ;;
+  "show-ref")
+    # Branch does not exist
+    exit 1
+    ;;
+  "fetch")
+    exit 0
+    ;;
+  "checkout")
+    exit 0
+    ;;
+  "push")
+    exit 0
+    ;;
+  "remote")
+    echo "https://github.com/acme/my-api.git"
+    exit 0
+    ;;
+  "log")
+    echo "feat(auth): add login flow|abc1234"
+    echo "fix(api): fix timeout|def5678"
+    echo "chore: update deps|ghi9012"
+    exit 0
+    ;;
+  "describe")
+    echo "v1.0.0"
+    exit 0
+    ;;
+  "config")
+    exit 0
+    ;;
+  *)
+    echo "mock git: unhandled '$*'" >&2
+    exit 1
+    ;;
+esac

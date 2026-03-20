@@ -1,0 +1,50 @@
+#!/bin/bash
+# Fake gh CLI for integration tests
+
+case "$1 $2" in
+  "auth status")
+    echo "Logged in to github.com as testdev (oauth token)" >&2
+    exit 0
+    ;;
+  "auth token")
+    echo "fake-gh-token"
+    exit 0
+    ;;
+  "auth login")
+    echo "Logged in to github.com as testdev" >&2
+    exit 0
+    ;;
+  "pr view")
+    echo '{"url":"https://github.com/acme/my-api/pull/42"}'
+    exit 0
+    ;;
+  "pr list")
+    echo '[]'
+    exit 0
+    ;;
+  "run list")
+    echo '[]'
+    exit 0
+    ;;
+  "run view")
+    echo "fake log output for run $3"
+    exit 0
+    ;;
+  "run rerun")
+    echo "Rerun started"
+    exit 0
+    ;;
+  "repo clone")
+    # Simulate clone by creating a directory
+    mkdir -p "$3" 2>/dev/null || true
+    exit 0
+    ;;
+  "search repos")
+    echo '{"items":[]}'
+    exit 0
+    ;;
+  *)
+    echo "mock gh: unhandled '$*'" >&2
+    exit 1
+    ;;
+esac

@@ -1,0 +1,161 @@
+{
+  "name": "devvami",
+  "description": "DevEx CLI for developers and teams — manage repos, PRs, pipelines, tasks, and costs from the terminal",
+  "version": "1.0.0",
+  "author": "",
+  "type": "module",
+  "bin": {
+    "dvmi": "./bin/run.js"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10"
+  },
+  "license": "MIT",
+  "files": [
+    "./bin",
+    "./src",
+    "./oclif.manifest.json"
+  ],
+  "main": "src/index.js",
+  "oclif": {
+    "bin": "dvmi",
+    "dirname": "dvmi",
+    "commands": "./src/commands",
+    "helpClass": "./src/help.js",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-autocomplete"
+    ],
+    "hooks": {
+      "init": "./src/hooks/init.js",
+      "postrun": "./src/hooks/postrun.js"
+    },
+    "topicSeparator": " ",
+    "theme": {
+      "sectionHeader": "#FF6B2B",
+      "sectionDescription": "#FFFFFF",
+      "bin": "#FF9A5C",
+      "command": "#FF9A5C",
+      "commandSummary": "#CCCCCC",
+      "topic": "#FF9A5C",
+      "version": "#4A9EFF",
+      "dollarSign": "#FF6B2B",
+      "flag": "#4A9EFF",
+      "flagSeparator": "#888888",
+      "flagDefaultValue": "#888888",
+      "flagOptions": "#888888",
+      "flagRequired": "#FF6B2B",
+      "alias": "#888888"
+    },
+    "topics": {
+      "auth": {
+        "description": "🔑 GitHub and AWS authentication"
+      },
+      "create": {
+        "description": "🏗️  Create projects from templates"
+      },
+      "branch": {
+        "description": "🌿 Branch management with naming conventions"
+      },
+      "pr": {
+        "description": "🔀 Pull Request workflow"
+      },
+      "repo": {
+        "description": "📁 GitHub repository management"
+      },
+      "pipeline": {
+        "description": "⚙️  GitHub Actions monitoring"
+      },
+      "tasks": {
+        "description": "✅ Task management"
+      },
+      "costs": {
+        "description": "💰 AWS cost analysis"
+      },
+      "docs": {
+        "description": "📖 Repository documentation"
+      }
+    }
+  },
+  "dependencies": {
+    "@aws-sdk/client-cost-explorer": "^3",
+    "@inquirer/prompts": "^7",
+    "@oclif/core": "^4",
+    "@oclif/plugin-autocomplete": "^3",
+    "@oclif/plugin-help": "^6",
+    "chalk": "^5",
+    "execa": "^9",
+    "figlet": "^1",
+    "js-yaml": "^4.1.1",
+    "keytar": "^7",
+    "marked": "^9.1.6",
+    "octokit": "^4",
+    "open": "^10",
+    "ora": "^8",
+    "pako": "^2.1.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19",
+    "@commitlint/config-conventional": "^19",
+    "@commitlint/types": "^19",
+    "@eslint/compat": "^1",
+    "@semantic-release/changelog": "^6",
+    "@semantic-release/git": "^10",
+    "@semantic-release/github": "^10",
+    "@vitest/coverage-v8": "^3",
+    "commitizen": "^4",
+    "conventional-changelog-conventionalcommits": "^8",
+    "cz-git": "^1",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-jsdoc": "^50",
+    "lefthook": "^1",
+    "memfs": "^4",
+    "msw": "^2",
+    "oclif": "^4",
+    "prettier": "^3",
+    "semantic-release": "^24",
+    "shx": "^0.4.0",
+    "strip-ansi": "^7",
+    "vitest": "^3"
+  },
+  "scripts": {
+    "commit": "git-cz",
+    "release": "semantic-release",
+    "release:dry-run": "semantic-release --dry-run",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write src/ tests/",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:services": "vitest run --project services",
+    "test:integration": "vitest run --project integration",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepack": "oclif manifest",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "prepare": "lefthook install"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-git"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/savez/devvami"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "keytar",
+      "msw"
+    ]
+  }
+}

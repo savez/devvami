@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Quality Gate (must pass before release)
+  # ─────────────────────────────────────────────
+  qa:
+    name: Quality Gate
+    uses: ./.github/workflows/qa.yml
+    with:
+      save-coverage: true
+
+  # ─────────────────────────────────────────────
+  # Semantic Release + Publish to NPM
+  # ─────────────────────────────────────────────
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: qa
+    permissions:
+      contents: write       # push changelog + tag
+      issues: write         # comment on PR/issue
+      pull-requests: write  # label "released" on PR
+
+    steps:
+      - name: Checkout (full history for semantic-release)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.MACHINE_PAT }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.MACHINE_PAT }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release

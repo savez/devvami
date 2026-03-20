@@ -1,0 +1,7 @@
+{
+  "org": "acme",
+  "awsProfile": "dev",
+  "awsRegion": "eu-west-1",
+  "shell": "zsh",
+  "clickup": { "teamId": "12345" }
+}

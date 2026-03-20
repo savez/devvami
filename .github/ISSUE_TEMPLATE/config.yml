@@ -1,0 +1,5 @@
+blank: false
+contact_links:
+  - name: Questions or Help
+    url: https://github.com/savez/devvami/discussions
+    about: Ask questions in Discussions instead of Issues

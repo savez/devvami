@@ -1,0 +1,77 @@
+/** @type {import('@commitlint/types').UserConfig} */
+export default {
+  extends: ['@commitlint/config-conventional'],
+  parserPreset: {
+    parserOpts: {
+      // Supporta emoji opzionali nel subject
+      headerPattern: /^(\w+)(?:\(([^)]*)\))?!?:\s*(?:[\p{Emoji}\s]+)?(.*)$/u,
+      headerCorrespondence: ['type', 'scope', 'subject'],
+    },
+  },
+  rules: {
+    'type-enum': [
+      2,
+      'always',
+      [
+        'feat',
+        'fix',
+        'docs',
+        'style',
+        'refactor',
+        'perf',
+        'test',
+        'chore',
+        'revert',
+        'ci',
+        'build',
+      ],
+    ],
+    'type-case': [2, 'always', 'lower-case'],
+    'type-empty': [2, 'never'],
+    'scope-case': [2, 'always', 'lower-case'],
+    'subject-empty': [2, 'never'],
+    'subject-full-stop': [2, 'never', '.'],
+    'header-max-length': [2, 'always', 100],
+    'body-leading-blank': [1, 'always'],
+    'body-max-line-length': [0, 'always', Infinity], // disabilitato: URL nel changelog superano 100 chars
+    'footer-leading-blank': [1, 'always'],
+    'footer-max-line-length': [0, 'always', Infinity], // disabilitato: semantic-release mette URL nel footer
+  },
+  prompt: {
+    useEmoji: true,
+    emojiAlign: 'center',
+    allowCustomIssuePrefix: false,
+    allowEmptyIssuePrefix: false,
+    scopes: ['cli', 'commands', 'services', 'ci', 'docs'],
+    allowCustomScopes: true,
+    allowEmptyScopes: true,
+    types: [
+      { value: 'feat',     name: 'feat:     ✨ Una nuova feature',                                         emoji: '✨' },
+      { value: 'fix',      name: 'fix:      🐛 Correzione di un bug',                                      emoji: '🐛' },
+      { value: 'docs',     name: 'docs:     📚 Modifiche solo alla documentazione',                        emoji: '📚' },
+      { value: 'style',    name: 'style:    🎨 Cambiamenti che non modificano il significato del codice',  emoji: '🎨' },
+      { value: 'refactor', name: 'refactor: ♻️  Modifica del codice che non corregge bug né aggiunge feat', emoji: '♻️' },
+      { value: 'perf',     name: 'perf:     ⚡ Modifica che migliora le performance',                      emoji: '⚡' },
+      { value: 'test',     name: 'test:     ✅ Aggiunta di test mancanti o correzione di test esistenti',  emoji: '✅' },
+      { value: 'build',    name: 'build:    🛠 Modifiche al sistema di build o dipendenze esterne',        emoji: '🛠' },
+      { value: 'ci',       name: 'ci:       ⚙️  Modifiche ai file di configurazione CI e agli script',     emoji: '⚙️' },
+      { value: 'chore',    name: 'chore:    🔧 Altre modifiche che non toccano src o file di test',        emoji: '🔧' },
+      { value: 'revert',   name: 'revert:   🗑 Revert di un commit precedente',                            emoji: '🗑' },
+    ],
+    messages: {
+      type:                    'Seleziona il tipo di cambiamento che stai committando:',
+      scope:                   'Qual è lo scope di questa modifica (opzionale, premi enter per saltare):',
+      customScope:             'Inserisci uno scope personalizzato:',
+      subject:                 'Scrivi una breve descrizione imperativa della modifica:\n',
+      body:                    'Fornisci una descrizione più lunga della modifica (opzionale):\n',
+      breaking:                'Elenca i BREAKING CHANGES (opzionale):\n',
+      footerPrefixesSelect:    'Seleziona il tipo di riferimento a issue (opzionale):',
+      customFooterPrefix:      'Inserisci un prefisso personalizzato:',
+      footer:                  'Aggiungi reference alle issue (es. "fix #123"):',
+      confirmCommit:           'Confermi questo commit?',
+    },
+    emptyScopesAlias: 'nessuno',
+    customScopesAlias: 'personalizzato',
+    allowBreakingChanges: ['feat', 'fix'],
+  },
+}
