@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/banner.jpg" alt="Devvami" width="100%" />
+</p>
+
 # 🧰 Devvami
 
 <p align="center">
