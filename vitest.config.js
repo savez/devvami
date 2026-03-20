@@ -23,6 +23,7 @@ export default defineConfig({
           name: 'integration',
           include: ['tests/integration/**/*.test.js'],
           environment: 'node',
+          setupFiles: ['tests/integration/setup.js'],
           testTimeout: 30_000,
           pool: 'forks',
           poolOptions: { forks: { singleFork: true } },

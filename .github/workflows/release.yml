@@ -27,6 +27,7 @@ jobs:
       contents: write       # push changelog + tag
       issues: write         # comment on PR/issue
       pull-requests: write  # label "released" on PR
+      id-token: write       # npm provenance attestation
 
     steps:
       - name: Checkout (full history for semantic-release)

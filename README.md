@@ -225,7 +225,7 @@ For security issues, see [SECURITY.md](SECURITY.md).
 
 ## 💡 Have an Idea?
 
-Open a [feature request](https://github.com/savez/devvami/issues/new?template=feature_request.md) or start a [discussion](https://github.com/savez/devvami/discussions).
+Open a [feature request](https://github.com/savez/devvami/issues/new?template=feature_request.md)
 
 ---
 
@@ -249,5 +249,3 @@ Built with:
 ---
 
 **Made with ❤️ by [Devvami Contributors](https://github.com/savez/devvami/graphs/contributors)**
-
-Got questions? [Start a discussion](https://github.com/savez/devvami/discussions)

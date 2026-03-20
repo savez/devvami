@@ -25,7 +25,7 @@ const DEFAULTS = {
  * @param {string} [configPath] - Override config path (used in tests)
  * @returns {Promise<CLIConfig>}
  */
-export async function loadConfig(configPath = CONFIG_PATH) {
+export async function loadConfig(configPath = process.env.DVMI_CONFIG_PATH ?? CONFIG_PATH) {
   if (!existsSync(configPath)) return { ...DEFAULTS }
   try {
     const raw = await readFile(configPath, 'utf8')

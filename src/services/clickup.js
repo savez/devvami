@@ -4,7 +4,7 @@ import { loadConfig } from './config.js'
 
 /** @import { ClickUpTask } from '../types.js' */
 
-const API_BASE = 'https://api.clickup.com/api/v2'
+const API_BASE = process.env.CLICKUP_API_BASE ?? 'https://api.clickup.com/api/v2'
 const TOKEN_KEY = 'clickup_token'
 
 /**

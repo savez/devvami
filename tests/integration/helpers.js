@@ -6,6 +6,7 @@ import stripAnsi from 'strip-ansi'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const CLI_PATH = resolve(__dirname, '../../bin/run.js')
 const FAKE_BIN = resolve(__dirname, '../fixtures/bin')
+const FIXTURE_CONFIG = resolve(__dirname, '../fixtures/config/valid.json')
 
 /**
  * Run the dvmi CLI with fake CLI executables in PATH.
@@ -19,7 +20,8 @@ export async function runCli(args, env = {}) {
       ...process.env,
       PATH: `${FAKE_BIN}:${process.env.PATH}`,
       NO_COLOR: '1',
-      DVMI_CONFIG_PATH: '/tmp/dvmi-test-config.json',
+      DVMI_CONFIG_PATH: FIXTURE_CONFIG,
+      CLICKUP_TOKEN: 'test-token',
       ...env,
     },
     reject: false,
