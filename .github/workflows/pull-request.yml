@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  pull-requests: write
+  issues: write
+
 # Cancel previous runs on same PR when a new push is made
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
