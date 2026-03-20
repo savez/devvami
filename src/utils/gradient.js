@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import readline from 'node:readline'
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Brand gradient: arancione → rosso/cremisi → viola
+// Brand gradient: ciano → blu vivido → indaco
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -12,9 +12,9 @@ import readline from 'node:readline'
 
 /** @type {GradientStop[]} */
 export const BRAND_GRADIENT = [
-  [255, 107, 43],  // #FF6B2B — arancione brand
-  [204, 34,  68],  // #CC2244 — rosso/cremisi
-  [136, 34, 170],  // #8822AA — viola
+  [0,   212, 255],  // #00D4FF — ciano elettrico
+  [0,   100, 255],  // #0064FF — blu vivido
+  [100,   0, 220],  // #6400DC — indaco profondo
 ]
 
 // ──────────────────────────────────────────────────────────────────────────────

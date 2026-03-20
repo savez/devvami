@@ -51,11 +51,11 @@ describe('gradientText', () => {
     }
   })
 
-  it('BRAND_GRADIENT has 3 stops', async () => {
+  it('BRAND_GRADIENT has 3 stops on blue palette', async () => {
     const { BRAND_GRADIENT } = await import('../../src/utils/gradient.js')
     expect(BRAND_GRADIENT).toHaveLength(3)
-    expect(BRAND_GRADIENT[0]).toEqual([255, 107, 43])
-    expect(BRAND_GRADIENT[2]).toEqual([136, 34, 170])
+    expect(BRAND_GRADIENT[0]).toEqual([0, 212, 255])
+    expect(BRAND_GRADIENT[2]).toEqual([100, 0, 220])
   })
 
   it('phase shifts gradient offset', async () => {

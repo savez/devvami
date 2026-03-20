@@ -4,7 +4,7 @@ import { BRAND_GRADIENT, animateGradientBanner, isColorEnabled } from './gradien
 
 // Brand colors
 export const ORANGE = '#FF6B2B'
-export const BLUE = '#003087'
+export const BLUE = '#4A9EFF'
 
 /**
  * Render figlet text as a Promise.
@@ -19,7 +19,7 @@ function figletAsync(text, opts) {
 }
 
 /**
- * Print the devvami welcome banner con gradient animato arancione→rosso→viola.
+ * Print the devvami welcome banner con gradient animato ciano→blu→indaco.
  * In ambienti non-TTY (CI, pipe, --json) stampa un banner statico senza ANSI.
  * @returns {Promise<void>}
  */
@@ -29,11 +29,11 @@ export async function printBanner() {
    const width = Math.max(...artLines.map((l) => l.length)) + 4
 
    const tagline = isColorEnabled
-     ? chalk.hex(ORANGE).bold('  Devvami Developer CLI')
+     ? chalk.hex(BLUE).bold('  Devvami Developer CLI')
      : '  Devvami Developer CLI'
 
   const separator = isColorEnabled
-    ? chalk.hex(ORANGE).dim('─'.repeat(Math.min(width, 60)))
+    ? chalk.hex(BLUE).dim('─'.repeat(Math.min(width, 60)))
     : '─'.repeat(Math.min(width, 60))
 
   process.stdout.write('\n')
