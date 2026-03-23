@@ -20,7 +20,8 @@
           { "type": "refactor", "release": "patch" },
           { "type": "test", "release": false },
           { "type": "build", "release": "patch" },
-          { "type": "ci", "release": false }
+          { "type": "ci", "release": false },
+          { "type": "security", "release": "patch" }
         ]
       }
     ],
@@ -47,7 +48,8 @@
             { "type": "refactor", "section": "♻️ Code Refactoring", "hidden": false },
             { "type": "test", "section": "✅ Tests", "hidden": true },
             { "type": "build", "section": "🛠 Build System", "hidden": false },
-            { "type": "ci", "section": "⚙️ Continuous Integration", "hidden": true }
+            { "type": "ci", "section": "⚙️ Continuous Integration", "hidden": true },
+            { "type": "security", "section": "🔒 Security", "hidden": false }
           ]
         }
       }
