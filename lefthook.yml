@@ -1,3 +1,11 @@
+pre-push:
+  commands:
+    sync-version:
+      run: node scripts/sync-version.js
+      fail_text: |
+        package.json version has been updated and staged.
+        Commit the change and push again.
+
 pre-commit:
   parallel: true
   commands:
