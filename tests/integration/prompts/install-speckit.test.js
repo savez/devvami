@@ -1,76 +1,66 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
+import { describe, it, expect } from 'vitest'
 import { runCli } from '../helpers.js'
 
-/** @type {string} */
-let tmpDir
-
-beforeEach(async () => {
-  tmpDir = await mkdtemp(join(tmpdir(), 'dvmi-speckit-test-'))
-})
-
-afterAll(async () => {
-  if (tmpDir) await rm(tmpDir, { recursive: true, force: true })
-})
-
 /**
- * Run install-speckit with --dir pointing to our temp directory.
+ * Run `dvmi prompts install-speckit` with optional extra args.
+ * The fake `uv` and `specify` stubs in tests/fixtures/bin are injected
+ * via the PATH manipulation done by runCli(), so no real tools are needed.
+ *
  * @param {string[]} extraArgs
- * @returns {Promise<{stdout: string, stderr: string, exitCode: number}>}
+ * @param {Record<string, string>} [env]
+ * @returns {Promise<{ stdout: string, stderr: string, exitCode: number }>}
  */
-function run(extraArgs = []) {
-  return runCli(['prompts', 'install-speckit', '--dir', tmpDir, ...extraArgs])
+function run(extraArgs = [], env = {}) {
+  return runCli(['prompts', 'install-speckit', ...extraArgs], env)
 }
 
 describe('dvmi prompts install-speckit', () => {
   it('--help exits 0 and shows usage', async () => {
-    const { stdout, exitCode } = await runCli(['prompts', 'install-speckit', '--help'])
+    const { stdout, exitCode } = await run(['--help'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('USAGE')
     expect(stdout).toContain('install-speckit')
   })
 
   it('--help shows --force flag', async () => {
-    const { stdout } = await runCli(['prompts', 'install-speckit', '--help'])
+    const { stdout } = await run(['--help'])
     expect(stdout).toContain('--force')
   })
 
-  it('--json installs and returns created array', async () => {
-    const { stdout, exitCode } = await run(['--json'])
-    expect(exitCode).toBe(0)
-    const data = JSON.parse(stdout)
-    expect(data).toHaveProperty('created')
-    expect(data).toHaveProperty('skipped', false)
-    expect(Array.isArray(data.created)).toBe(true)
-    expect(data.created.length).toBeGreaterThan(0)
-    // All paths should be inside the target directory
-    for (const path of data.created) {
-      expect(path).toContain('.specify')
-    }
+  it('--help shows --ai flag', async () => {
+    const { stdout } = await run(['--help'])
+    expect(stdout).toContain('--ai')
   })
 
-  it('--json re-install without --force returns skipped:true', async () => {
-    // First install
-    await run(['--json'])
-
-    // Second install (should detect existing and skip in --json mode)
-    const { stdout, exitCode } = await run(['--json'])
-    expect(exitCode).toBe(0)
-    const data = JSON.parse(stdout)
-    expect(data.skipped).toBe(true)
+  it('--help shows --reinstall flag', async () => {
+    const { stdout } = await run(['--help'])
+    expect(stdout).toContain('--reinstall')
   })
 
-  it('--json --force re-install overwrites and returns created array', async () => {
-    // First install
-    await run(['--json'])
+  it('exits non-zero with actionable message when uv is not installed', async () => {
+    // Provide a PATH that contains no `uv` binary so isUvInstalled() returns false.
+    const { stderr, exitCode } = await run([], { PATH: '/dev/null' })
+    expect(exitCode).not.toBe(0)
+    const combined = stderr
+    expect(combined.toLowerCase()).toContain('uv')
+  })
 
-    // Force reinstall
-    const { stdout, exitCode } = await run(['--force', '--json'])
+  it('succeeds (exit 0) when uv and specify stubs are in PATH', async () => {
+    const { exitCode } = await run()
     expect(exitCode).toBe(0)
-    const data = JSON.parse(stdout)
-    expect(data.skipped).toBe(false)
-    expect(data.created.length).toBeGreaterThan(0)
+  })
+
+  it('passes --force through to specify init', async () => {
+    const { stdout, exitCode } = await run(['--force'])
+    expect(exitCode).toBe(0)
+    // The fake specify stub echoes its args; --force must be forwarded
+    expect(stdout).toContain('--force')
+  })
+
+  it('passes --ai flag through to specify init', async () => {
+    const { stdout, exitCode } = await run(['--ai', 'opencode'])
+    expect(exitCode).toBe(0)
+    expect(stdout).toContain('--ai')
+    expect(stdout).toContain('opencode')
   })
 })

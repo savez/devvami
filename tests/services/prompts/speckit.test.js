@@ -1,104 +1,149 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { vol } from 'memfs'
 
-// Redirect fs/promises to in-memory filesystem
-vi.mock('node:fs/promises', async () => {
-  const { fs } = await import('memfs')
-  return fs.promises
+// ── Mock shell.js ────────────────────────────────────────────────────────────
+vi.mock('../../../src/services/shell.js', () => ({
+  which: vi.fn(),
+  exec: vi.fn(),
+}))
+
+// ── Mock execa ───────────────────────────────────────────────────────────────
+vi.mock('execa', () => ({
+  execa: vi.fn(),
+}))
+
+// ── Mock errors ──────────────────────────────────────────────────────────────
+vi.mock('../../../src/utils/errors.js', async (importOriginal) => {
+  return importOriginal()
 })
 
-const SOURCE_ROOT = '/pkg'
-const TARGET_DIR = '/project'
+describe('isUvInstalled', () => {
+  beforeEach(() => vi.resetAllMocks())
 
-/** Seed the memfs volume with minimal speckit template files */
-function seedSourceFiles() {
-  vol.fromJSON({
-    [`${SOURCE_ROOT}/.specify/templates/constitution-template.md`]: '# Constitution\nProject guidelines.\n',
-    [`${SOURCE_ROOT}/.specify/templates/spec-template.md`]: '# Spec Template\n',
-    [`${SOURCE_ROOT}/.specify/templates/plan-template.md`]: '# Plan Template\n',
-    [`${SOURCE_ROOT}/.specify/scripts/bash/common.sh`]: '#!/bin/bash\n# common\n',
-    [`${SOURCE_ROOT}/.specify/scripts/bash/create-new-feature.sh`]: '#!/bin/bash\n# create\n',
-  })
-}
+  it('returns true when uv is found in PATH', async () => {
+    const { which } = await import('../../../src/services/shell.js')
+    vi.mocked(which).mockResolvedValue('/usr/local/bin/uv')
 
-describe('detectSpeckit', () => {
-  beforeEach(() => vol.reset())
-
-  it('returns false when .specify/ does not exist', async () => {
-    vol.fromJSON({ [`${TARGET_DIR}/README.md`]: '# My Project\n' })
-
-    const { detectSpeckit } = await import('../../../src/services/speckit.js')
-    expect(await detectSpeckit(TARGET_DIR)).toBe(false)
+    const { isUvInstalled } = await import('../../../src/services/speckit.js')
+    expect(await isUvInstalled()).toBe(true)
+    expect(which).toHaveBeenCalledWith('uv')
   })
 
-  it('returns true when .specify/ exists', async () => {
-    vol.fromJSON({ [`${TARGET_DIR}/.specify/memory/constitution.md`]: '# Existing\n' })
+  it('returns false when uv is not found in PATH', async () => {
+    const { which } = await import('../../../src/services/shell.js')
+    vi.mocked(which).mockResolvedValue(null)
 
-    const { detectSpeckit } = await import('../../../src/services/speckit.js')
-    expect(await detectSpeckit(TARGET_DIR)).toBe(true)
+    const { isUvInstalled } = await import('../../../src/services/speckit.js')
+    expect(await isUvInstalled()).toBe(false)
   })
 })
 
-describe('installSpeckit', () => {
-  beforeEach(() => {
-    vol.reset()
-    seedSourceFiles()
+describe('isSpecifyInstalled', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it('returns true when specify is found in PATH', async () => {
+    const { which } = await import('../../../src/services/shell.js')
+    vi.mocked(which).mockResolvedValue('/usr/local/bin/specify')
+
+    const { isSpecifyInstalled } = await import('../../../src/services/speckit.js')
+    expect(await isSpecifyInstalled()).toBe(true)
+    expect(which).toHaveBeenCalledWith('specify')
   })
 
-  it('creates template files at correct paths', async () => {
-    const { installSpeckit } = await import('../../../src/services/speckit.js')
-    const { created } = await installSpeckit(TARGET_DIR, SOURCE_ROOT)
+  it('returns false when specify is not found', async () => {
+    const { which } = await import('../../../src/services/shell.js')
+    vi.mocked(which).mockResolvedValue(null)
 
-    expect(created.length).toBeGreaterThan(0)
-    // Verify at least templates directory was populated
-    const paths = created.map((p) => p.replace(`${TARGET_DIR}/`, ''))
-    expect(paths.some((p) => p.startsWith('.specify/templates/'))).toBe(true)
+    const { isSpecifyInstalled } = await import('../../../src/services/speckit.js')
+    expect(await isSpecifyInstalled()).toBe(false)
+  })
+})
+
+describe('installSpecifyCli', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it('runs uv tool install with the correct arguments', async () => {
+    const { exec } = await import('../../../src/services/shell.js')
+    vi.mocked(exec).mockResolvedValue({ stdout: 'Installed', stderr: '', exitCode: 0 })
+
+    const { installSpecifyCli } = await import('../../../src/services/speckit.js')
+    const result = await installSpecifyCli()
+
+    expect(exec).toHaveBeenCalledWith(
+      'uv',
+      expect.arrayContaining(['tool', 'install', 'specify-cli', '--from']),
+    )
+    expect(result.exitCode).toBe(0)
   })
 
-  it('creates bash scripts at correct paths', async () => {
-    const { installSpeckit } = await import('../../../src/services/speckit.js')
-    const { created } = await installSpeckit(TARGET_DIR, SOURCE_ROOT)
+  it('passes --force when opts.force is true', async () => {
+    const { exec } = await import('../../../src/services/shell.js')
+    vi.mocked(exec).mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 })
 
-    const paths = created.map((p) => p.replace(`${TARGET_DIR}/`, ''))
-    expect(paths.some((p) => p.startsWith('.specify/scripts/bash/'))).toBe(true)
+    const { installSpecifyCli } = await import('../../../src/services/speckit.js')
+    await installSpecifyCli({ force: true })
+
+    const args = vi.mocked(exec).mock.calls[0][1]
+    expect(args).toContain('--force')
   })
 
-  it('creates memory/constitution.md from constitution template', async () => {
-    const { installSpeckit } = await import('../../../src/services/speckit.js')
-    const { created } = await installSpeckit(TARGET_DIR, SOURCE_ROOT)
+  it('throws DvmiError when uv exits non-zero', async () => {
+    const { exec } = await import('../../../src/services/shell.js')
+    vi.mocked(exec).mockResolvedValue({ stdout: '', stderr: 'error: package not found', exitCode: 1 })
 
-    const { fs } = await import('memfs')
-    const constitutionPath = `${TARGET_DIR}/.specify/memory/constitution.md`
-    expect(fs.existsSync(constitutionPath)).toBe(true)
-    const content = fs.readFileSync(constitutionPath, 'utf8')
-    expect(content).toContain('Constitution')
-    expect(created).toContain(constitutionPath)
+    const { installSpecifyCli } = await import('../../../src/services/speckit.js')
+    const { DvmiError } = await import('../../../src/utils/errors.js')
+
+    await expect(installSpecifyCli()).rejects.toBeInstanceOf(DvmiError)
+  })
+})
+
+describe('runSpecifyInit', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it('runs specify init --here in the given directory', async () => {
+    const { execa } = await import('execa')
+    vi.mocked(execa).mockResolvedValue({ exitCode: 0 })
+
+    const { runSpecifyInit } = await import('../../../src/services/speckit.js')
+    await runSpecifyInit('/my/project')
+
+    expect(execa).toHaveBeenCalledWith(
+      'specify',
+      expect.arrayContaining(['init', '--here']),
+      expect.objectContaining({ cwd: '/my/project', stdio: 'inherit' }),
+    )
   })
 
-  it('does not overwrite existing constitution.md without force', async () => {
-    const { fs } = await import('memfs')
-    // Pre-create constitution
-    fs.mkdirSync(`${TARGET_DIR}/.specify/memory`, { recursive: true })
-    fs.writeFileSync(`${TARGET_DIR}/.specify/memory/constitution.md`, 'existing constitution')
+  it('passes --ai flag when provided', async () => {
+    const { execa } = await import('execa')
+    vi.mocked(execa).mockResolvedValue({ exitCode: 0 })
 
-    const { installSpeckit } = await import('../../../src/services/speckit.js')
-    const { created } = await installSpeckit(TARGET_DIR, SOURCE_ROOT)
+    const { runSpecifyInit } = await import('../../../src/services/speckit.js')
+    await runSpecifyInit('/my/project', { ai: 'opencode' })
 
-    const content = fs.readFileSync(`${TARGET_DIR}/.specify/memory/constitution.md`, 'utf8')
-    expect(content).toBe('existing constitution')
-    expect(created).not.toContain(`${TARGET_DIR}/.specify/memory/constitution.md`)
+    const args = vi.mocked(execa).mock.calls[0][1]
+    expect(args).toContain('--ai')
+    expect(args).toContain('opencode')
   })
 
-  it('overwrites existing constitution.md with force: true', async () => {
-    const { fs } = await import('memfs')
-    fs.mkdirSync(`${TARGET_DIR}/.specify/memory`, { recursive: true })
-    fs.writeFileSync(`${TARGET_DIR}/.specify/memory/constitution.md`, 'old constitution')
+  it('passes --force flag when provided', async () => {
+    const { execa } = await import('execa')
+    vi.mocked(execa).mockResolvedValue({ exitCode: 0 })
 
-    const { installSpeckit } = await import('../../../src/services/speckit.js')
-    await installSpeckit(TARGET_DIR, SOURCE_ROOT, { force: true })
+    const { runSpecifyInit } = await import('../../../src/services/speckit.js')
+    await runSpecifyInit('/my/project', { force: true })
 
-    const content = fs.readFileSync(`${TARGET_DIR}/.specify/memory/constitution.md`, 'utf8')
-    expect(content).not.toBe('old constitution')
-    expect(content).toContain('Constitution')
+    const args = vi.mocked(execa).mock.calls[0][1]
+    expect(args).toContain('--force')
+  })
+
+  it('throws DvmiError when specify init exits non-zero', async () => {
+    const { execa } = await import('execa')
+    vi.mocked(execa).mockResolvedValue({ exitCode: 1 })
+
+    const { runSpecifyInit } = await import('../../../src/services/speckit.js')
+    const { DvmiError } = await import('../../../src/utils/errors.js')
+
+    await expect(runSpecifyInit('/my/project')).rejects.toBeInstanceOf(DvmiError)
   })
 })

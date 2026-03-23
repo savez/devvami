@@ -1,128 +1,73 @@
-import { mkdir, readdir, readFile, writeFile, access } from 'node:fs/promises'
-import { join } from 'node:path'
+import { execa } from 'execa'
+import { which, exec } from './shell.js'
+import { DvmiError } from '../utils/errors.js'
+
+/** GitHub spec-kit package source for uv */
+const SPECKIT_FROM = 'git+https://github.com/github/spec-kit.git'
 
 /**
- * Relative paths (from `.specify/`) that are installed by speckit.
- * Keys are the source sub-paths under `<sourceRoot>/.specify/`.
- * @type {string[]}
- */
-const INSTALL_PATHS = [
-  'templates',
-  join('scripts', 'bash'),
-]
-
-/**
- * Check whether speckit is already initialised in the target directory.
+ * Check whether the `uv` Python package manager is available in PATH.
  *
- * @param {string} targetDir - Absolute path to the target project root
- * @returns {Promise<boolean>} `true` if `.specify/` already exists
+ * @returns {Promise<boolean>}
  */
-export async function detectSpeckit(targetDir) {
-  try {
-    await access(join(targetDir, '.specify'))
-    return true
-  } catch {
-    return false
-  }
+export async function isUvInstalled() {
+  return (await which('uv')) !== null
 }
 
 /**
- * Copy a directory tree recursively.
+ * Check whether the `specify` CLI (spec-kit) is available in PATH.
  *
- * @param {string} src - Source directory
- * @param {string} dest - Destination directory
- * @returns {Promise<string[]>} List of created file paths
+ * @returns {Promise<boolean>}
  */
-async function copyDir(src, dest) {
-  /** @type {string[]} */
-  const created = []
-
-  let entries
-  try {
-    entries = await readdir(src, { withFileTypes: true })
-  } catch {
-    // Source directory may not exist — skip silently
-    return created
-  }
-
-  await mkdir(dest, { recursive: true })
-
-  for (const entry of entries) {
-    const srcPath = join(src, entry.name)
-    const destPath = join(dest, entry.name)
-
-    if (entry.isDirectory()) {
-      const sub = await copyDir(srcPath, destPath)
-      created.push(...sub)
-    } else {
-      const content = await readFile(srcPath)
-      await writeFile(destPath, content)
-      created.push(destPath)
-    }
-  }
-
-  return created
+export async function isSpecifyInstalled() {
+  return (await which('specify')) !== null
 }
 
 /**
- * Install speckit into the target directory by copying the bundled `.specify/`
- * structure from the CLI package root.
+ * Install `specify-cli` from the GitHub spec-kit repository via `uv tool install`.
  *
- * Creates:
- * - `<targetDir>/.specify/templates/`  (all template files)
- * - `<targetDir>/.specify/scripts/bash/` (all bash scripts)
- * - `<targetDir>/.specify/memory/constitution.md` (from constitution-template.md)
- *
- * @param {string} targetDir - Absolute path to the target project root
- * @param {string} sourceRoot - CLI package root (`this.config.root` in oclif)
- * @param {{ force?: boolean }} [opts]
- * @returns {Promise<{ created: string[] }>}
- * @throws {DvmiError} on permission or read errors
+ * @param {{ force?: boolean }} [opts] - Pass `force: true` to reinstall even if already present
+ * @returns {Promise<{ stdout: string, stderr: string, exitCode: number }>}
+ * @throws {DvmiError} when the installation command fails
  */
-export async function installSpeckit(targetDir, sourceRoot, opts = {}) {
-  const specifySource = join(sourceRoot, '.specify')
-  const specifyTarget = join(targetDir, '.specify')
+export async function installSpecifyCli(opts = {}) {
+  const args = ['tool', 'install', 'specify-cli', '--from', SPECKIT_FROM]
+  if (opts.force) args.push('--force')
 
-  /** @type {string[]} */
-  const created = []
-
-  // Copy templates and scripts
-  for (const subPath of INSTALL_PATHS) {
-    const src = join(specifySource, subPath)
-    const dest = join(specifyTarget, subPath)
-    const files = await copyDir(src, dest)
-    created.push(...files)
+  const result = await exec('uv', args)
+  if (result.exitCode !== 0) {
+    throw new DvmiError(
+      'Failed to install specify-cli',
+      result.stderr || 'Check your network connection and uv installation, then try again',
+    )
   }
+  return result
+}
 
-  // Create memory/constitution.md from the template
-  const templatePath = join(specifySource, 'templates', 'constitution-template.md')
-  const constitutionDest = join(specifyTarget, 'memory', 'constitution.md')
+/**
+ * Run `specify init --here` in the given directory, inheriting the parent
+ * stdio so the user can interact with the speckit wizard directly.
+ *
+ * @param {string} cwd - Working directory to run `specify init` in
+ * @param {{ ai?: string, force?: boolean }} [opts]
+ * @returns {Promise<void>}
+ * @throws {DvmiError} when `specify init` exits with a non-zero code
+ */
+export async function runSpecifyInit(cwd, opts = {}) {
+  const args = ['init', '--here']
+  if (opts.ai) args.push('--ai', opts.ai)
+  if (opts.force) args.push('--force')
 
-  let templateContent
-  try {
-    templateContent = await readFile(templatePath, 'utf8')
-  } catch {
-    // Fallback: create a minimal constitution if template is missing
-    templateContent = '# Project Constitution\n\nAdd your project guidelines here.\n'
+  const result = await execa('specify', args, {
+    cwd,
+    stdio: 'inherit',
+    reject: false,
+  })
+
+  if (result.exitCode !== 0) {
+    throw new DvmiError(
+      '`specify init` exited with a non-zero code',
+      'Check the output above for details',
+    )
   }
-
-  await mkdir(join(specifyTarget, 'memory'), { recursive: true })
-
-  // Only write if not already present (or if force)
-  let shouldWrite = true
-  if (!opts.force) {
-    try {
-      await access(constitutionDest)
-      shouldWrite = false // already exists
-    } catch {
-      // does not exist — write it
-    }
-  }
-
-  if (shouldWrite) {
-    await writeFile(constitutionDest, templateContent, 'utf8')
-    created.push(constitutionDest)
-  }
-
-  return { created }
 }

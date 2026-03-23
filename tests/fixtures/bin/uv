@@ -1,0 +1,13 @@
+#!/bin/bash
+# Fake uv for integration tests
+
+case "$1 $2 $3" in
+  "tool install specify-cli")
+    echo "Installed specify-cli" >&2
+    exit 0
+    ;;
+  *)
+    echo "mock uv: unhandled '$*'" >&2
+    exit 1
+    ;;
+esac
