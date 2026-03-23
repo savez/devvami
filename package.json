@@ -76,6 +76,9 @@
       },
       "docs": {
         "description": "📖 Repository documentation"
+      },
+      "prompts": {
+        "description": "🔮 AI prompt hub — browse, download, and run prompts"
       }
     }
   },

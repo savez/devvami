@@ -9,6 +9,8 @@ import { exec, which } from '../services/shell.js'
 import { configExists, loadConfig, saveConfig, CONFIG_PATH } from '../services/config.js'
 import { oauthFlow, storeToken, validateToken, getTeams } from '../services/clickup.js'
 
+import { SUPPORTED_TOOLS } from '../services/prompts.js'
+
 export default class Init extends Command {
   static description = 'Setup completo ambiente di sviluppo locale'
 
@@ -207,7 +209,34 @@ export default class Init extends Command {
       }
     }
 
-     // 6. Shell completions
+     // 6. AI tool selection
+     if (isDryRun) {
+       steps.push({ name: 'ai-tool', status: 'would configure' })
+     } else if (isJson) {
+       config = await loadConfig()
+       steps.push({
+         name: 'ai-tool',
+         status: config.aiTool ? 'configured' : 'not_configured',
+         aiTool: config.aiTool,
+       })
+     } else {
+       const aiToolChoices = Object.keys(SUPPORTED_TOOLS).map((t) => ({ name: t, value: t }))
+       aiToolChoices.push({ name: 'none / skip', value: '' })
+       const aiTool = await select({
+         message: 'Select your preferred AI tool for `dvmi prompts run`:',
+         choices: aiToolChoices,
+       })
+       if (aiTool) {
+         config = { ...config, aiTool }
+         await saveConfig(config)
+         this.log(chalk.green(`✓ AI tool set to: ${aiTool}`))
+         steps.push({ name: 'ai-tool', status: 'configured', aiTool })
+       } else {
+         steps.push({ name: 'ai-tool', status: 'skipped' })
+       }
+     }
+
+     // 7. Shell completions
      steps.push({ name: 'shell-completions', status: 'ok', action: 'install via: dvmi autocomplete' })
 
     const result = { steps, configPath: CONFIG_PATH }

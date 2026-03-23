@@ -69,6 +69,16 @@ const CATEGORIES = [
     ],
   },
   {
+    title: 'AI Prompts',
+    cmds: [
+      { id: 'prompts:list',           hint: '[--filter]' },
+      { id: 'prompts:download',       hint: '<PATH> [--overwrite]' },
+      { id: 'prompts:browse',         hint: '[--source] [--query] [--category]' },
+      { id: 'prompts:install-speckit', hint: '[--force]' },
+      { id: 'prompts:run',            hint: '[PATH] [--tool]' },
+    ],
+  },
+  {
     title: 'Setup & Ambiente',
     cmds: [
       { id: 'init',       hint: '[--dry-run]' },
@@ -82,14 +92,19 @@ const CATEGORIES = [
 
 // ─── Example commands shown at bottom of root help ──────────────────────────
 const EXAMPLES = [
-   { cmd: 'dvmi docs read',                    note: 'Leggi il README del repo corrente' },
-   { cmd: 'dvmi docs read openapi.yaml',       note: 'Tabella endpoints OpenAPI nel terminale' },
-   { cmd: 'dvmi docs search "authentication"', note: 'Cerca nei docs del repo corrente' },
-   { cmd: 'dvmi repo list --search "api"',     note: 'Filtra repository per nome' },
-   { cmd: 'dvmi pr status',                    note: 'PR aperte e review in attesa' },
-   { cmd: 'dvmi pipeline status',              note: 'Ultimi workflow CI/CD' },
-   { cmd: 'dvmi tasks list --search "bug"',    note: 'Cerca task ClickUp' },
-   { cmd: 'dvmi costs get --json',             note: 'Costi AWS in formato JSON' },
+   { cmd: 'dvmi prompts list',                                    note: 'Sfoglia prompt AI dal tuo repository' },
+   { cmd: 'dvmi prompts list --filter refactor',                  note: 'Filtra prompt per parola chiave' },
+   { cmd: 'dvmi prompts download coding/refactor-prompt.md',      note: 'Scarica un prompt localmente' },
+   { cmd: 'dvmi prompts browse skills --query refactor',          note: 'Cerca skill su skills.sh' },
+   { cmd: 'dvmi prompts browse awesome --category agents',        note: 'Sfoglia awesome-copilot agents' },
+   { cmd: 'dvmi prompts run coding/refactor-prompt.md --tool opencode', note: 'Esegui un prompt con opencode' },
+   { cmd: 'dvmi docs read',                                       note: 'Leggi il README del repo corrente' },
+   { cmd: 'dvmi docs search "authentication"',                    note: 'Cerca nei docs del repo corrente' },
+   { cmd: 'dvmi repo list --search "api"',                        note: 'Filtra repository per nome' },
+   { cmd: 'dvmi pr status',                                       note: 'PR aperte e review in attesa' },
+   { cmd: 'dvmi pipeline status',                                 note: 'Ultimi workflow CI/CD' },
+   { cmd: 'dvmi tasks list --search "bug"',                       note: 'Cerca task ClickUp' },
+   { cmd: 'dvmi costs get --json',                                note: 'Costi AWS in formato JSON' },
  ]
 
 // ─── Help class ─────────────────────────────────────────────────────────────
