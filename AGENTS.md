@@ -357,4 +357,11 @@ pnpm test  # Verify nothing broke
 
 ---
 
-**Last updated**: 2026-03-20
+**Last updated**: 2026-03-23
+
+## Active Technologies
+- JavaScript (ESM, `.js`) — Node.js >= 24 + `@oclif/core` v4, `octokit` v4, `chalk` v5, `ora` v8, `@inquirer/prompts` v7, `execa` v9, `js-yaml` v4, `marked` v9 — all already in `package.json`; no new runtime dependencies needed (001-prompt-hub)
+- Local filesystem — `.prompts/` directory at project root for downloaded prompts; `~/.config/dvmi/config.json` for AI tool preference (001-prompt-hub)
+
+## Recent Changes
+- 001-prompt-hub: Added JavaScript (ESM, `.js`) — Node.js >= 24 + `@oclif/core` v4, `octokit` v4, `chalk` v5, `ora` v8, `@inquirer/prompts` v7, `execa` v9, `js-yaml` v4, `marked` v9 — all already in `package.json`; no new runtime dependencies needed

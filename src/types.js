@@ -12,6 +12,40 @@
  * @property {{ teamId?: string, teamName?: string, authMethod?: 'oauth' | 'personal_token' }} [clickup] - ClickUp workspace config
  * @property {string} [lastVersionCheck] - ISO8601 timestamp of last version check
  * @property {string} [latestVersion] - Latest known CLI version
+ * @property {'opencode'|'copilot'} [aiTool] - Preferred AI tool for running prompts
+ * @property {string} [promptsDir] - Local directory for downloaded prompts (default: .prompts)
+ */
+
+/**
+ * @typedef {Object} Prompt
+ * @property {string} path - Relative path in the repo (e.g. "coding/refactor-prompt.md")
+ * @property {string} title - Human-readable title (from frontmatter or filename)
+ * @property {string} [category] - Category derived from parent directory (e.g. "coding")
+ * @property {string} [description] - Short description from frontmatter
+ * @property {string[]} [tags] - Tags from frontmatter
+ * @property {string} body - Full prompt content (without frontmatter)
+ * @property {string} [author] - Author from frontmatter
+ * @property {string} [version] - Version string from frontmatter
+ */
+
+/**
+ * @typedef {Object} Skill
+ * @property {string} id - Unique skill identifier on skills.sh
+ * @property {string} name - Display name
+ * @property {number} installs - Install count
+ * @property {string} source - Source URL or identifier
+ */
+
+/**
+ * @typedef {Object} AwesomeEntry
+ * @property {string} name - Entry name
+ * @property {string} description - Short description
+ * @property {string} url - Link to the resource
+ * @property {string} category - Category (agents, instructions, skills, plugins, hooks, workflows)
+ */
+
+/**
+ * @typedef {'opencode'|'copilot'} AITool
  */
 
 /**

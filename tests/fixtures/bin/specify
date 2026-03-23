@@ -1,0 +1,13 @@
+#!/bin/bash
+# Fake specify CLI for integration tests
+
+case "$1" in
+  "init")
+    echo "mock specify: init completed (args: $*)"
+    exit 0
+    ;;
+  *)
+    echo "mock specify: unhandled '$*'" >&2
+    exit 1
+    ;;
+esac
