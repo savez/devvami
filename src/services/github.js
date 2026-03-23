@@ -20,7 +20,8 @@ async function getToken() {
  */
 export async function createOctokit() {
   const token = await getToken()
-  return new Octokit({ auth: token })
+  const baseUrl = process.env.GITHUB_API_URL ?? 'https://api.github.com'
+  return new Octokit({ auth: token, baseUrl })
 }
 
 /**
