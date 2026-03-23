@@ -22,6 +22,11 @@ export default class Upgrade extends Command {
     const { hasUpdate, current, latest } = await checkForUpdate({ force: true })
     spinner?.stop()
 
+    // Guard against malformed version strings from the GitHub Releases API
+    if (latest && !/^v?\d+\.\d+\.\d+(-[\w.]+)?(\+[\w.]+)?$/.test(latest)) {
+      this.error(`Invalid version received from releases API: "${latest}" — update aborted`)
+    }
+
     if (!hasUpdate) {
       const msg = `You're already on the latest version (${current})`
       if (isJson) return { currentVersion: current, latestVersion: latest, updated: false }

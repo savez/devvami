@@ -2,7 +2,10 @@ import { execa } from 'execa'
 import { which, exec } from './shell.js'
 import { DvmiError } from '../utils/errors.js'
 
-/** GitHub spec-kit package source for uv */
+/** GitHub spec-kit package source for uv.
+ * TODO: pin to a specific tagged release (e.g. #v1.x.x) once one is available upstream.
+ * Tracking: https://github.com/github/spec-kit/releases
+ */
 const SPECKIT_FROM = 'git+https://github.com/github/spec-kit.git'
 
 /**

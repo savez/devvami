@@ -1,4 +1,5 @@
 import http from 'node:http'
+import { randomBytes } from 'node:crypto'
 import { openBrowser } from '../utils/open-browser.js'
 import { loadConfig } from './config.js'
 
@@ -45,6 +46,10 @@ export async function storeToken(token) {
      await keytar.setPassword('devvami', TOKEN_KEY, token)
    } catch {
     // Fallback: store in config (less secure)
+    process.stderr.write(
+      'Warning: keytar unavailable. ClickUp token will be stored in plaintext.\n' +
+      'Run `dvmi auth logout` after this session on shared machines.\n',
+    )
     const config = await loadConfig()
     await saveConfig({ ...config, clickup: { ...config.clickup, token } })
   }
@@ -57,11 +62,20 @@ export async function storeToken(token) {
  * @returns {Promise<string>} Access token
  */
 export async function oauthFlow(clientId, clientSecret) {
+  const csrfState = randomBytes(16).toString('hex')
   return new Promise((resolve, reject) => {
     const server = http.createServer(async (req, res) => {
       const url = new URL(req.url ?? '/', 'http://localhost')
       const code = url.searchParams.get('code')
+      const returnedState = url.searchParams.get('state')
       if (!code) return
+      if (!returnedState || returnedState !== csrfState) {
+        res.writeHead(400)
+        res.end('State mismatch — possible CSRF attack.')
+        server.close()
+        reject(new Error('OAuth state mismatch — possible CSRF attack'))
+        return
+      }
       res.end('Authorization successful! You can close this tab.')
       server.close()
       try {
@@ -80,7 +94,7 @@ export async function oauthFlow(clientId, clientSecret) {
     server.listen(0, async () => {
       const addr = /** @type {import('node:net').AddressInfo} */ (server.address())
       const callbackUrl = `http://localhost:${addr.port}/callback`
-      const authUrl = `https://app.clickup.com/api?client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl)}`
+      const authUrl = `https://app.clickup.com/api?client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl)}&state=${csrfState}`
       await openBrowser(authUrl)
     })
     server.on('error', reject)
