@@ -1,5 +1,5 @@
 import { mkdir, writeFile, readFile, access } from 'node:fs/promises'
-import { join, dirname } from 'node:path'
+import { join, dirname, resolve, sep } from 'node:path'
 import { execa } from 'execa'
 import { createOctokit } from './github.js'
 import { which } from './shell.js'
@@ -204,6 +204,15 @@ export async function fetchPromptByPath(relativePath) {
 export async function downloadPrompt(relativePath, localDir, opts = {}) {
   const destPath = join(localDir, relativePath)
 
+  // Prevent path traversal: destPath must remain within localDir
+  const safeBase = resolve(localDir) + sep
+  if (!resolve(destPath).startsWith(safeBase)) {
+    throw new DvmiError(
+      `Invalid prompt path: "${relativePath}"`,
+      'Path must stay within the prompts directory',
+    )
+  }
+
   // Fast-path: skip without a network round-trip if file exists and no overwrite
   if (!opts.overwrite) {
     try {
@@ -245,6 +254,16 @@ export async function downloadPrompt(relativePath, localDir, opts = {}) {
  */
 export async function resolveLocalPrompt(relativePath, localDir) {
   const fullPath = join(localDir, relativePath)
+
+  // Prevent path traversal: fullPath must remain within localDir
+  const safeBase = resolve(localDir) + sep
+  if (!resolve(fullPath).startsWith(safeBase)) {
+    throw new DvmiError(
+      `Invalid prompt path: "${relativePath}"`,
+      'Path must stay within the prompts directory',
+    )
+  }
+
   let raw
   try {
     raw = await readFile(fullPath, 'utf8')

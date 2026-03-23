@@ -68,7 +68,7 @@ export default class Open extends Command {
     if (isJson) return result
 
     await openBrowser(url)
-    this.log(chalk.green('✓') + ` Opened ${url}`)
+    this.log(chalk.green('✓') + ' Opened in browser')
 
     return result
   }

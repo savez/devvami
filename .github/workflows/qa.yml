@@ -8,7 +8,7 @@ on:
         required: false
         type: boolean
         default: false
-        description: 'Save coverage report as artifact'
+        description: "Save coverage report as artifact"
 
 jobs:
   # ─────────────────────────────────────────────
@@ -62,7 +62,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: Coverage comment on PR
-        uses: MishaKav/jest-coverage-comment@main
+        uses: MishaKav/jest-coverage-comment@v1.0.23
         if: github.event_name == 'pull_request'
         with:
           coverage-summary-path: ./coverage/coverage-summary.json
@@ -89,7 +89,7 @@ jobs:
           fetch-depth: 0
 
       - name: Gitleaks — scan for secrets
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
