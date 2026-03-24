@@ -80,6 +80,8 @@ export default class Init extends Command {
     let config = await loadConfig()
 
      if (!configExists() && !isDryRun && !isJson) {
+       // Stop the spinner before interactive prompts to avoid TTY contention on macOS
+       configSpinner?.stop()
        const useOrg = await confirm({ message: 'Do you use a GitHub organization? (y/n)', default: true })
        let org = ''
        if (useOrg) {
