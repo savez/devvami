@@ -23,6 +23,7 @@ const commands = [
   ['search', '--help'],
   ['changelog', '--help'],
   ['costs', 'get', '--help'],
+  ['security', 'setup', '--help'],
   ['docs', 'list', '--help'],
   ['docs', 'read', '--help'],
   ['docs', 'search', '--help'],

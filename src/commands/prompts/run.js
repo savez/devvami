@@ -1,7 +1,7 @@
 import { Command, Args, Flags } from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { select } from '@inquirer/prompts'
+import { select, confirm } from '@inquirer/prompts'
 import { join } from 'node:path'
 import { readdir } from 'node:fs/promises'
 import { resolveLocalPrompt, invokeTool, SUPPORTED_TOOLS } from '../../services/prompts.js'
@@ -175,6 +175,24 @@ export default class PromptsRun extends Command {
 
     this.log(chalk.bold(`\nRunning: ${chalk.hex('#FF9A5C')(prompt.title)}`))
     this.log(chalk.dim(`  Tool: ${toolName}`) + '\n')
+
+    // Security: show a preview of the prompt content and ask for confirmation.
+    // This protects against prompt injection from tampered local files (originally
+    // downloaded from remote repositories). Skipped in CI/non-interactive environments.
+    if (!process.env.CI && process.stdin.isTTY) {
+      const preview = prompt.body.length > 500
+        ? prompt.body.slice(0, 500) + chalk.dim('\n…[truncated]')
+        : prompt.body
+      this.log(chalk.yellow('Prompt preview:'))
+      this.log(chalk.dim('─'.repeat(50)))
+      this.log(chalk.dim(preview))
+      this.log(chalk.dim('─'.repeat(50)) + '\n')
+      const ok = await confirm({ message: `Run this prompt with ${toolName}?`, default: true })
+      if (!ok) {
+        this.log(chalk.dim('Aborted.'))
+        return
+      }
+    }
 
     // Invoke tool
     try {
