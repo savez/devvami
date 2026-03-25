@@ -1,7 +1,7 @@
 import http from 'node:http'
 import { randomBytes } from 'node:crypto'
 import { openBrowser } from '../utils/open-browser.js'
-import { loadConfig } from './config.js'
+import { loadConfig, saveConfig } from './config.js'
 
 /** @import { ClickUpTask } from '../types.js' */
 
@@ -103,19 +103,25 @@ export async function oauthFlow(clientId, clientSecret) {
 
 /**
  * Make an authenticated request to the ClickUp API.
+ * Retries automatically on HTTP 429 (rate limit) up to MAX_RETRIES times.
  * @param {string} path
+ * @param {number} [retries]
  * @returns {Promise<unknown>}
  */
- async function clickupFetch(path) {
+ async function clickupFetch(path, retries = 0) {
+   const MAX_RETRIES = 5
    const token = await getToken()
    if (!token) throw new Error('ClickUp not authenticated. Run `dvmi init` to authorize.')
   const resp = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: token },
   })
   if (resp.status === 429) {
+    if (retries >= MAX_RETRIES) {
+      throw new Error(`ClickUp API rate limit exceeded after ${MAX_RETRIES} retries. Try again later.`)
+    }
     const reset = Number(resp.headers.get('X-RateLimit-Reset') ?? Date.now() + 1000)
     await new Promise((r) => setTimeout(r, Math.max(reset - Date.now(), 1000)))
-    return clickupFetch(path)
+    return clickupFetch(path, retries + 1)
   }
   if (!resp.ok) {
     const body = /** @type {any} */ (await resp.json().catch(() => ({})))
