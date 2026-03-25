@@ -79,6 +79,12 @@ const CATEGORIES = [
     ],
   },
   {
+    title: 'Sicurezza & Credenziali',
+    cmds: [
+      { id: 'security:setup', hint: '[--json]' },
+    ],
+  },
+  {
     title: 'Setup & Ambiente',
     cmds: [
       { id: 'init',       hint: '[--dry-run]' },
@@ -105,6 +111,8 @@ const EXAMPLES = [
    { cmd: 'dvmi pipeline status',                                 note: 'Ultimi workflow CI/CD' },
    { cmd: 'dvmi tasks list --search "bug"',                       note: 'Cerca task ClickUp' },
    { cmd: 'dvmi costs get --json',                                note: 'Costi AWS in formato JSON' },
+   { cmd: 'dvmi security setup --json',                          note: 'Controlla lo stato degli strumenti di sicurezza' },
+   { cmd: 'dvmi security setup',                                 note: 'Wizard interattivo: installa aws-vault e GCM' },
  ]
 
 // ─── Help class ─────────────────────────────────────────────────────────────

@@ -260,3 +260,69 @@
  * @property {string} owner - GitHub owner (org or user)
  * @property {string} repo - Repository name
  */
+
+/**
+ * @typedef {Object} SecurityTool
+ * @property {string} id - Unique identifier (e.g., "aws-vault", "pass", "gpg", "gcm", "osxkeychain")
+ * @property {string} displayName - Human-readable name for UI output
+ * @property {'aws'|'git'|'dependency'} role - What the tool protects; 'dependency' = required by another tool
+ * @property {'not-installed'|'installed'|'misconfigured'|'skipped'|'n/a'} status - Status after check phase
+ * @property {Platform[]} platforms - Platforms where this tool applies
+ * @property {string|null} version - Detected version string, if available
+ * @property {string|null} hint - Actionable message when status is 'misconfigured' or 'not-installed'
+ */
+
+/**
+ * @typedef {Object} SetupStep
+ * @property {string} id - Unique step identifier (e.g., "install-aws-vault", "init-pass")
+ * @property {string} label - Human-readable description shown to the developer
+ * @property {string} toolId - The SecurityTool this step belongs to
+ * @property {'check'|'install'|'configure'|'verify'} type - Step category
+ * @property {() => Promise<StepResult>} run - Async function that executes the step
+ * @property {boolean} requiresConfirmation - True for 'install' and 'configure' steps
+ * @property {boolean} [skippable] - True if the developer can skip this step without breaking subsequent steps
+ * @property {boolean} [gpgInteractive] - True if the step spawns GPG interactively (requires stdio:inherit)
+ */
+
+/**
+ * @typedef {Object} StepResult
+ * @property {'success'|'skipped'|'failed'} status
+ * @property {string} [message] - Human-readable outcome message
+ * @property {string} [hint] - Actionable recovery suggestion shown only when status is 'failed'
+ * @property {string} [hintUrl] - Documentation URL to include with the hint
+ */
+
+/**
+ * @typedef {Object} SetupSession
+ * @property {Platform} platform - Detected platform for this run
+ * @property {'aws'|'git'|'both'} selection - What the developer chose to set up
+ * @property {SetupStep[]} steps - Ordered list of steps for this session
+ * @property {Map<string, StepResult>} results - Map of stepId → StepResult
+ * @property {'in-progress'|'completed'|'failed'|'cancelled'} overallStatus - Aggregate status
+ */
+
+/**
+ * @typedef {Object} GpgKey
+ * @property {string} id - Long key ID (16-character hex)
+ * @property {string} fingerprint - Full 40-character fingerprint
+ * @property {string} name - Associated name from the key's UID
+ * @property {string} email - Associated email from the key's UID
+ * @property {string|null} expiry - Expiry date as ISO8601 string, or null if no expiry
+ */
+
+/**
+ * @typedef {Object} SecurityToolStatus
+ * @property {string} id - Tool id
+ * @property {string} displayName - Human-readable name
+ * @property {'not-installed'|'installed'|'misconfigured'|'n/a'} status - Current status
+ * @property {string|null} version - Detected version, if any
+ * @property {string|null} hint - Recovery hint if misconfigured
+ */
+
+/**
+ * @typedef {Object} SecuritySetupJsonResult
+ * @property {Platform} platform - Detected platform
+ * @property {'aws'|'git'|'both'|null} selection - Selection made (null for --json health check)
+ * @property {SecurityToolStatus[]} tools - Status of each applicable tool
+ * @property {'success'|'partial'|'not-configured'} overallStatus - Aggregate status
+ */
