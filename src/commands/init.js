@@ -2,7 +2,7 @@ import { Command, Flags } from '@oclif/core'
 import chalk from 'chalk'
 import ora from 'ora'
 import { confirm, input, select } from '@inquirer/prompts'
-import { printBanner } from '../utils/banner.js'
+import { printWelcomeScreen } from '../utils/welcome.js'
 import { typewriterLine } from '../utils/typewriter.js'
 import { detectPlatform } from '../services/platform.js'
 import { exec, which } from '../services/shell.js'
@@ -32,7 +32,7 @@ export default class Init extends Command {
     const isDryRun = flags['dry-run']
     const isJson = flags.json
 
-    if (!isJson) await printBanner()
+    if (!isJson) await printWelcomeScreen(this.config.version)
 
     const platform = await detectPlatform()
     const steps = []
