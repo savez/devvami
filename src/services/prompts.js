@@ -237,8 +237,8 @@ export async function downloadPrompt(relativePath, localDir, opts = {}) {
 
   const content = serializeFrontmatter(fm, prompt.body)
 
-  await mkdir(dirname(destPath), { recursive: true })
-  await writeFile(destPath, content, 'utf8')
+  await mkdir(dirname(destPath), { recursive: true, mode: 0o700 })
+  await writeFile(destPath, content, { encoding: 'utf8', mode: 0o600 })
 
   return { path: destPath, skipped: false }
 }

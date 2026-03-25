@@ -205,6 +205,10 @@ export function detectApiSpecType(path, content) {
       if (isOpenApi(/** @type {Record<string, unknown>} */ (doc))) return 'swagger'
       if (isAsyncApi(/** @type {Record<string, unknown>} */ (doc))) return 'asyncapi'
     }
-  } catch { /* ignore */ }
+  } catch (err) {
+    // File content is not valid YAML/JSON — not an API spec, return null.
+    // Log at debug level for troubleshooting without exposing parse errors to users.
+    if (process.env.DVMI_DEBUG) process.stderr.write(`[detectApiSpecType] parse failed: ${/** @type {Error} */ (err).message}\n`)
+  }
   return null
 }
