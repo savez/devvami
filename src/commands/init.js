@@ -72,7 +72,12 @@ export default class Init extends Command {
       steps.push({ name: 'aws-vault', status: 'ok', action: 'found' })
     } else {
       steps.push({ name: 'aws-vault', status: 'warn', action: 'not installed' })
-      if (!isJson) this.log(chalk.yellow('  aws-vault not found. Install: brew install aws-vault'))
+      if (!isJson) {
+        const installHint = platform.platform === 'macos'
+          ? 'brew install aws-vault'
+          : 'run `dvmi security setup` (Debian/Ubuntu/WSL2) or install aws-vault manually'
+        this.log(chalk.yellow(`  aws-vault not found. Install: ${installHint}`))
+      }
     }
 
     // 4. Create/update config

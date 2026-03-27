@@ -83,6 +83,7 @@
     }
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.1018.0",
     "@aws-sdk/client-cost-explorer": "^3",
     "@inquirer/prompts": "^7",
     "@oclif/core": "^4",
