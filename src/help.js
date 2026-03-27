@@ -58,14 +58,17 @@ const CATEGORIES = [
   {
     title: 'Tasks (ClickUp)',
     cmds: [
-      { id: 'tasks:list',  hint: '[--status] [--search]' },
-      { id: 'tasks:today', hint: '' },
+      { id: 'tasks:list',     hint: '[--status] [--search]' },
+      { id: 'tasks:today',    hint: '' },
+      { id: 'tasks:assigned', hint: '[--status] [--search]' },
     ],
   },
   {
     title: 'Cloud & Costi',
     cmds: [
-      { id: 'costs:get', hint: '[--period] [--profile]' },
+      { id: 'costs:get',   hint: '[SERVICE] [--period] [--group-by] [--tag-key]' },
+      { id: 'costs:trend', hint: '[--group-by] [--tag-key] [--line]' },
+      { id: 'logs',        hint: '[--group] [--filter] [--since] [--limit] [--region]' },
     ],
   },
   {
@@ -91,29 +94,11 @@ const CATEGORIES = [
       { id: 'doctor',     hint: '' },
       { id: 'auth:login', hint: '' },
       { id: 'whoami',     hint: '' },
+      { id: 'welcome',    hint: '' },
       { id: 'upgrade',    hint: '' },
     ],
   },
 ]
-
-// ─── Example commands shown at bottom of root help ──────────────────────────
-const EXAMPLES = [
-   { cmd: 'dvmi prompts list',                                    note: 'Sfoglia prompt AI dal tuo repository' },
-   { cmd: 'dvmi prompts list --filter refactor',                  note: 'Filtra prompt per parola chiave' },
-   { cmd: 'dvmi prompts download coding/refactor-prompt.md',      note: 'Scarica un prompt localmente' },
-   { cmd: 'dvmi prompts browse skills --query refactor',          note: 'Cerca skill su skills.sh' },
-   { cmd: 'dvmi prompts browse awesome --category agents',        note: 'Sfoglia awesome-copilot agents' },
-   { cmd: 'dvmi prompts run coding/refactor-prompt.md --tool opencode', note: 'Esegui un prompt con opencode' },
-   { cmd: 'dvmi docs read',                                       note: 'Leggi il README del repo corrente' },
-   { cmd: 'dvmi docs search "authentication"',                    note: 'Cerca nei docs del repo corrente' },
-   { cmd: 'dvmi repo list --search "api"',                        note: 'Filtra repository per nome' },
-   { cmd: 'dvmi pr status',                                       note: 'PR aperte e review in attesa' },
-   { cmd: 'dvmi pipeline status',                                 note: 'Ultimi workflow CI/CD' },
-   { cmd: 'dvmi tasks list --search "bug"',                       note: 'Cerca task ClickUp' },
-   { cmd: 'dvmi costs get --json',                                note: 'Costi AWS in formato JSON' },
-   { cmd: 'dvmi security setup --json',                          note: 'Controlla lo stato degli strumenti di sicurezza' },
-   { cmd: 'dvmi security setup',                                 note: 'Wizard interattivo: installa aws-vault e GCM' },
- ]
 
 // ─── Help class ─────────────────────────────────────────────────────────────
 
@@ -164,13 +149,40 @@ export default class CustomHelp extends Help {
 
   // ─── Private helpers ──────────────────────────────────────────────────────
 
-  /**
-   * Build the full categorized root help layout.
-   * @returns {string}
-   */
+   /**
+    * Build the full categorized root help layout.
+    * @returns {string}
+    */
   #buildRootLayout() {
     /** @type {Map<string, import('@oclif/core').Command.Cached>} */
     const cmdMap = new Map(this.config.commands.map((c) => [c.id, c]))
+
+    /** @type {Array<{cmd: string, note: string}>} */
+    const EXAMPLES = [
+      { cmd: 'dvmi prompts list',                                     note: 'Sfoglia prompt AI dal tuo repository' },
+      { cmd: 'dvmi prompts list --filter refactor',                   note: 'Filtra prompt per parola chiave' },
+      { cmd: 'dvmi prompts download coding/refactor-prompt.md',       note: 'Scarica un prompt localmente' },
+      { cmd: 'dvmi prompts browse skills --query refactor',           note: 'Cerca skill su skills.sh' },
+      { cmd: 'dvmi prompts browse awesome --category agents',         note: 'Sfoglia awesome-copilot agents' },
+      { cmd: 'dvmi prompts run coding/refactor-prompt.md --tool opencode', note: 'Esegui un prompt con opencode' },
+      { cmd: 'dvmi docs read',                                        note: 'Leggi il README del repo corrente' },
+      { cmd: 'dvmi docs search "authentication"',                     note: 'Cerca nei docs del repo corrente' },
+      { cmd: 'dvmi repo list --search "api"',                         note: 'Filtra repository per nome' },
+      { cmd: 'dvmi pr status',                                        note: 'PR aperte e review in attesa' },
+      { cmd: 'dvmi pipeline status',                                  note: 'Ultimi workflow CI/CD' },
+      { cmd: 'dvmi tasks list --search "bug"',                        note: 'Cerca task ClickUp' },
+      { cmd: 'dvmi tasks today',                                      note: 'Task in lavorazione oggi' },
+      { cmd: 'dvmi costs get --period mtd',                           note: 'Costi AWS mese corrente per servizio' },
+      { cmd: 'dvmi costs get --group-by tag --tag-key env',           note: 'Costi raggruppati per tag env' },
+      { cmd: 'dvmi costs trend --line',                               note: 'Trend costi 2 mesi (grafico lineare)' },
+      { cmd: 'dvmi costs get --json',                                 note: 'Costi AWS in formato JSON' },
+      { cmd: 'dvmi logs',                                             note: 'Sfoglia log CloudWatch in modo interattivo' },
+      { cmd: 'dvmi logs --group /aws/lambda/my-fn --since 24h',       note: 'Log Lambda ultimi 24h' },
+      { cmd: 'dvmi logs --group /aws/lambda/my-fn --filter "ERROR"',  note: 'Filtra eventi ERROR su un log group' },
+      { cmd: 'dvmi security setup --json',                            note: 'Controlla lo stato degli strumenti di sicurezza' },
+      { cmd: 'dvmi security setup',                                   note: 'Wizard interattivo: installa aws-vault e GCM' },
+      { cmd: 'dvmi welcome',                                          note: 'Dashboard missione dvmi con intro animata' },
+    ]
 
     const lines = []
 

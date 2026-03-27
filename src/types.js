@@ -189,10 +189,72 @@
 
 /**
  * @typedef {Object} AWSCostEntry
- * @property {string} serviceName
- * @property {number} amount
- * @property {string} unit
- * @property {{ start: string, end: string }} period
+ * @property {string} serviceName        - AWS service name (e.g. "Amazon EC2"), or tag value label for tag grouping
+ * @property {string} [tagValue]         - Tag value when grouping by TAG or BOTH (e.g. "prod"); undefined for service-only grouping
+ * @property {number} amount             - Cost amount (USD)
+ * @property {string} unit               - Currency unit (always "USD")
+ * @property {{ start: string, end: string }} period - ISO date range (YYYY-MM-DD)
+ */
+
+/**
+ * @typedef {'service' | 'tag' | 'both'} CostGroupMode
+ * The dimension used to group cost entries.
+ * - 'service': group by AWS service name (default, backward-compatible)
+ * - 'tag': group by a tag key's values (requires tagKey)
+ * - 'both': group by AWS service + tag value simultaneously
+ */
+
+/**
+ * @typedef {Object} CostTrendPoint
+ * @property {string} date     - ISO date (YYYY-MM-DD) for this data point
+ * @property {number} amount   - Total cost for this day (USD)
+ * @property {string} [label]  - Display label: serviceName for service/both grouping,
+ *                               tag value for tag grouping; omitted when not multi-series
+ */
+
+/**
+ * @typedef {Object} CostTrendSeries
+ * @property {string} name          - Series label (service name or tag value)
+ * @property {CostTrendPoint[]} points - Ordered daily data points (ascending by date)
+ */
+
+/**
+ * @typedef {Object} LogGroup
+ * @property {string} name              - Full log group name (e.g. "/aws/lambda/my-fn")
+ * @property {number} [storedBytes]     - Total stored bytes (may be absent for empty groups)
+ * @property {number} [retentionDays]   - Retention policy in days; undefined = never expire
+ * @property {string} [creationTime]    - ISO8601 creation timestamp
+ */
+
+/**
+ * @typedef {Object} LogEvent
+ * @property {string} eventId         - Unique event ID assigned by CloudWatch
+ * @property {string} logStreamName   - Stream within the log group (e.g. "2026/03/26/[$LATEST]abc")
+ * @property {number} timestamp       - Event time as epoch milliseconds
+ * @property {string} message         - Raw log message text
+ */
+
+/**
+ * @typedef {Object} LogFilterResult
+ * @property {LogEvent[]} events      - Matched log events (up to --limit)
+ * @property {boolean} truncated      - True when the result was capped by --limit or AWS pagination
+ * @property {string} logGroupName    - The log group that was queried
+ * @property {number} startTime       - Query start as epoch milliseconds
+ * @property {number} endTime         - Query end as epoch milliseconds
+ * @property {string} filterPattern   - The pattern used ('' = no filter)
+ */
+
+/**
+ * @typedef {Object} ChartBarData
+ * @property {string} name    - Row label (service name, tag value, or "service / tag")
+ * @property {number} value   - Cost amount (USD)
+ */
+
+/**
+ * @typedef {Object} ChartSeries
+ * @property {string} name      - Series label displayed in legend
+ * @property {number[]} values  - Ordered numeric values (one per day, ~60 for 2 months)
+ * @property {string[]} labels  - Date labels matching values array (YYYY-MM-DD)
  */
 
 /**
