@@ -1,4 +1,4 @@
-/** @import { AWSCostEntry } from '../types.js' */
+/** @import { AWSCostEntry, CostGroupMode } from '../types.js' */
 
 /**
  * Format a USD amount as currency string.
@@ -32,20 +32,33 @@ export function formatTrend(current, previous) {
 }
 
 /**
- * Format cost entries as a printable table string.
- * @param {AWSCostEntry[]} entries
- * @param {string} serviceName
+ * Derive the display row label for a cost entry based on the grouping mode.
+ * @param {AWSCostEntry} entry
+ * @param {CostGroupMode} groupBy
  * @returns {string}
  */
-export function formatCostTable(entries, serviceName) {
+export function rowLabel(entry, groupBy) {
+  if (groupBy === 'tag') return entry.tagValue ?? entry.serviceName
+  if (groupBy === 'both') return `${entry.serviceName} / ${entry.tagValue ?? '(untagged)'}`
+  return entry.serviceName
+}
+
+/**
+ * Format cost entries as a printable table string.
+ * @param {AWSCostEntry[]} entries
+ * @param {string} label - Display label for the header
+ * @param {CostGroupMode} [groupBy] - Grouping mode (default: 'service')
+ * @returns {string}
+ */
+export function formatCostTable(entries, label, groupBy = 'service') {
   const total = calculateTotal(entries)
   const rows = entries
     .sort((a, b) => b.amount - a.amount)
-    .map((e) => `  ${e.serviceName.padEnd(40)} ${formatCurrency(e.amount)}`)
+    .map((e) => `  ${rowLabel(e, groupBy).padEnd(40)} ${formatCurrency(e.amount)}`)
     .join('\n')
   const divider = '─'.repeat(50)
   return [
-    `Costs for: ${serviceName}`,
+    `Costs for: ${label}`,
     divider,
     rows,
     divider,

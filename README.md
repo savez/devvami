@@ -114,7 +114,18 @@ dvmi tasks assigned   # Show tasks assigned to you
 
 ```bash
 dvmi costs get     # Analyze AWS costs
+dvmi costs trend   # Show 2-month daily AWS cost trend
 ```
+
+If `awsProfile` is configured (`dvmi init`), AWS cost commands automatically re-run via
+`aws-vault exec <profile> -- ...` when credentials are missing, so developers can run:
+
+```bash
+dvmi costs get
+dvmi costs trend
+```
+
+without manually prefixing `aws-vault exec`.
 
 ### Documentation
 
@@ -164,9 +175,33 @@ Devvami uses your system's **secure credential storage**:
 
 - **macOS**: Keychain
 - **Linux**: Secret Service / pass
-- **Windows**: Credential Manager
+- **WSL2**: Windows bridge for browser/GCM + Linux tooling for security setup
+- **Windows (native / non-WSL)**: limited support (see Platform Support)
 
 Tokens are **never stored in plain text**. They're stored securely via `@keytar/keytar`.
+
+---
+
+## 🖥️ Platform Support
+
+### Fully supported
+
+- **macOS**
+- **Linux (Debian/Ubuntu family)**
+- **Windows via WSL2**
+
+### Linux/WSL notes
+
+- `dvmi security setup` currently uses `apt-get` for package install (Debian/Ubuntu oriented).
+- `dvmi security setup` requires authenticated `sudo` (`sudo -n true` must pass).
+- On WSL2, browser opening tries `wslview` first, then falls back to `xdg-open`.
+
+### Windows native (non-WSL)
+
+- Not fully supported today.
+- Platform detection does not handle `win32` explicitly yet.
+- Some shell assumptions are Unix-centric (for example `which` usage and security setup steps).
+- Recommended path on Windows is to use **WSL2**.
 
 ---
 
