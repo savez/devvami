@@ -1,9 +1,9 @@
-import { Command, Args, Flags } from '@oclif/core'
+import { Command, Flags } from '@oclif/core'
 import { input } from '@inquirer/prompts'
 import ora from 'ora'
-import { getServiceCosts } from '../../services/aws-costs.js'
+import { getTrendCosts, getTwoMonthPeriod } from '../../services/aws-costs.js'
 import { loadConfig } from '../../services/config.js'
-import { formatCostTable, calculateTotal } from '../../formatters/cost.js'
+import { barChart, lineChart } from '../../formatters/charts.js'
 import { DvmiError } from '../../utils/errors.js'
 import {
   awsVaultPrefix,
@@ -12,31 +12,21 @@ import {
   reexecCurrentCommandWithAwsVaultProfile,
 } from '../../utils/aws-vault.js'
 
-export default class CostsGet extends Command {
-  static description = 'Get AWS costs for a service, grouped by service, tag, or both'
+export default class CostsTrend extends Command {
+  static description = 'Show a rolling 2-month daily cost trend chart'
 
   static examples = [
-    '<%= config.bin %> costs get',
-    '<%= config.bin %> costs get my-service',
-    '<%= config.bin %> costs get --period mtd',
-    '<%= config.bin %> costs get --period last-week',
-    '<%= config.bin %> costs get --group-by tag --tag-key env',
-    '<%= config.bin %> costs get my-service --group-by both --tag-key env',
-    '<%= config.bin %> costs get --group-by tag --tag-key env --json',
+    '<%= config.bin %> costs trend',
+    '<%= config.bin %> costs trend --line',
+    '<%= config.bin %> costs trend --group-by tag --tag-key env',
+    '<%= config.bin %> costs trend --group-by both --tag-key env',
+    '<%= config.bin %> costs trend --group-by tag --tag-key env --line',
+    '<%= config.bin %> costs trend --json',
   ]
 
   static enableJsonFlag = true
 
-  static args = {
-    service: Args.string({ description: 'Service name (used to derive tag filter from config)', required: false }),
-  }
-
   static flags = {
-    period: Flags.string({
-      description: 'Time period: last-month, last-week, mtd',
-      default: 'last-month',
-      options: ['last-month', 'last-week', 'mtd'],
-    }),
     'group-by': Flags.string({
       description: 'Grouping dimension: service, tag, or both',
       default: 'service',
@@ -45,10 +35,14 @@ export default class CostsGet extends Command {
     'tag-key': Flags.string({
       description: 'Tag key for grouping when --group-by tag or both',
     }),
+    line: Flags.boolean({
+      description: 'Render as line chart instead of default bar chart',
+      default: false,
+    }),
   }
 
   async run() {
-    const { args, flags } = await this.parse(CostsGet)
+    const { flags } = await this.parse(CostsTrend)
     const isJson = flags.json
     const isInteractive = !isJson && process.stdout.isTTY && process.env.CI !== 'true'
     const groupBy = /** @type {'service'|'tag'|'both'} */ (flags['group-by'])
@@ -85,11 +79,9 @@ export default class CostsGet extends Command {
       return
     }
 
-    // Resolve tag key: explicit flag → first key in config projectTags
     const configTagKey = config.projectTags ? Object.keys(config.projectTags)[0] : undefined
     const tagKey = flags['tag-key'] ?? configTagKey
 
-    // Validate: tag key required when grouping by tag or both
     if ((groupBy === 'tag' || groupBy === 'both') && !tagKey) {
       throw new DvmiError(
         'No tag key available.',
@@ -97,41 +89,50 @@ export default class CostsGet extends Command {
       )
     }
 
-    const serviceArg = args.service ?? 'all'
-    const tags = config.projectTags ?? (args.service ? { project: args.service } : {})
-
-    const spinner = isJson ? null : ora(`Fetching costs...`).start()
+    const spinner = isJson ? null : ora('Fetching cost trend data...').start()
 
     try {
-      const { entries, period } = await getServiceCosts(
-        serviceArg,
-        tags,
-        /** @type {any} */ (flags.period),
-        groupBy,
-        tagKey,
-      )
+      const trendSeries = await getTrendCosts(groupBy, tagKey)
       spinner?.stop()
 
-      const total = calculateTotal(entries)
-      const result = {
-        service: args.service ?? null,
-        groupBy,
-        tagKey: tagKey ?? null,
-        period,
-        items: entries,
-        total: { amount: total, unit: 'USD' },
+      const { start, end } = getTwoMonthPeriod()
+
+      if (isJson) {
+        return {
+          groupBy,
+          tagKey: tagKey ?? null,
+          period: { start, end },
+          series: trendSeries,
+        }
       }
 
-      if (isJson) return result
-
-      if (entries.length === 0) {
-        this.log(`No costs found.`)
-        return result
+      if (trendSeries.length === 0) {
+        this.log('No cost data found for the last 2 months.')
+        return
       }
 
-      const label = tagKey && groupBy !== 'service' ? `${serviceArg} (by ${tagKey})` : serviceArg
-      this.log(formatCostTable(entries, label, groupBy))
-      return result
+      // Convert CostTrendSeries[] → ChartSeries[]
+      // All series must share the same label (date) axis — use the union of all dates
+      const allDates = Array.from(
+        new Set(trendSeries.flatMap((s) => s.points.map((p) => p.date))),
+      ).sort()
+
+      /** @type {import('../../formatters/charts.js').ChartSeries[]} */
+      const chartSeries = trendSeries.map((s) => {
+        const dateToAmount = new Map(s.points.map((p) => [p.date, p.amount]))
+        return {
+          name: s.name,
+          values: allDates.map((d) => dateToAmount.get(d) ?? 0),
+          labels: allDates,
+        }
+      })
+
+      const title = `AWS Cost Trend — last 2 months  (${start} → ${end})`
+      const rendered = flags.line
+        ? lineChart(chartSeries, { title })
+        : barChart(chartSeries, { title })
+
+      this.log(rendered)
     } catch (err) {
       spinner?.stop()
       if (String(err).includes('AccessDenied') || String(err).includes('UnauthorizedAccess')) {
@@ -156,10 +157,7 @@ export default class CostsGet extends Command {
         }
 
         const prefix = awsVaultPrefix(config)
-        this.error(
-          `No AWS credentials. Use: ${prefix}dvmi costs get` +
-            (args.service ? ` ${args.service}` : ''),
-        )
+        this.error(`No AWS credentials. Use: ${prefix}dvmi costs trend`)
       }
       throw err
     }

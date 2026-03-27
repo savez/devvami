@@ -1,5 +1,5 @@
 import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -57,4 +57,20 @@ export async function saveConfig(config, configPath = CONFIG_PATH) {
  */
 export function configExists(configPath = CONFIG_PATH) {
   return existsSync(configPath)
+}
+
+/**
+ * Load CLI config synchronously. Intended for use in static getters where async is unavailable.
+ * Returns defaults if file doesn't exist or cannot be parsed.
+ * @param {string} [configPath] - Override config path (used in tests)
+ * @returns {CLIConfig}
+ */
+export function loadConfigSync(configPath = process.env.DVMI_CONFIG_PATH ?? CONFIG_PATH) {
+  if (!existsSync(configPath)) return { ...DEFAULTS }
+  try {
+    const raw = readFileSync(configPath, 'utf8')
+    return { ...DEFAULTS, ...JSON.parse(raw) }
+  } catch {
+    return { ...DEFAULTS }
+  }
 }
