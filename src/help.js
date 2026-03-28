@@ -88,6 +88,15 @@ const CATEGORIES = [
     ],
   },
   {
+    title: 'Dotfiles & Cifratura',
+    cmds: [
+      { id: 'dotfiles:setup',  hint: '[--json]' },
+      { id: 'dotfiles:add',    hint: '[FILES...] [--encrypt]' },
+      { id: 'dotfiles:status', hint: '[--json]' },
+      { id: 'dotfiles:sync',   hint: '[--push] [--pull] [--dry-run]' },
+    ],
+  },
+  {
     title: 'Setup & Ambiente',
     cmds: [
       { id: 'init',       hint: '[--dry-run]' },
@@ -119,7 +128,20 @@ export default class CustomHelp extends Help {
    async showRootHelp() {
      // Animated logo — identical to `dvmi init` (no-ops in CI/non-TTY)
      await printBanner()
-     this.log(this.#buildRootLayout())
+
+     // Version check: uses cached result (populated by init hook) — 800 ms timeout
+     let versionInfo = null
+     try {
+       const { checkForUpdate } = await import('./services/version-check.js')
+       versionInfo = await Promise.race([
+         checkForUpdate(),
+         new Promise((resolve) => setTimeout(() => resolve(null), 800)),
+       ])
+     } catch {
+       // never block help output
+     }
+
+     this.log(this.#buildRootLayout(versionInfo))
    }
 
   /**
@@ -151,9 +173,10 @@ export default class CustomHelp extends Help {
 
    /**
     * Build the full categorized root help layout.
+    * @param {{ hasUpdate: boolean, current: string, latest: string|null }|null} [versionInfo]
     * @returns {string}
     */
-  #buildRootLayout() {
+  #buildRootLayout(versionInfo = null) {
     /** @type {Map<string, import('@oclif/core').Command.Cached>} */
     const cmdMap = new Map(this.config.commands.map((c) => [c.id, c]))
 
@@ -181,6 +204,10 @@ export default class CustomHelp extends Help {
       { cmd: 'dvmi logs --group /aws/lambda/my-fn --filter "ERROR"',  note: 'Filtra eventi ERROR su un log group' },
       { cmd: 'dvmi security setup --json',                            note: 'Controlla lo stato degli strumenti di sicurezza' },
       { cmd: 'dvmi security setup',                                   note: 'Wizard interattivo: installa aws-vault e GCM' },
+      { cmd: 'dvmi dotfiles setup',                                   note: 'Configura chezmoi con cifratura age' },
+      { cmd: 'dvmi dotfiles add ~/.zshrc ~/.gitconfig',               note: 'Aggiungi dotfile a chezmoi' },
+      { cmd: 'dvmi dotfiles status --json',                           note: 'Stato dotfile gestiti (JSON)' },
+      { cmd: 'dvmi dotfiles sync --push',                             note: 'Push dotfile al repository remoto' },
       { cmd: 'dvmi welcome',                                          note: 'Dashboard missione dvmi con intro animata' },
     ]
 
@@ -248,6 +275,24 @@ export default class CustomHelp extends Help {
     }
 
      lines.push('')
+
+     // ── Versione + update notice ───────────────────────────────────────────
+     const current = versionInfo?.current ?? this.config.version
+     const versionStr = isColorEnabled
+       ? chalk.dim('version ') + chalk.hex(DIM_BLUE)(current)
+       : `version ${current}`
+
+     if (versionInfo?.hasUpdate && versionInfo.latest) {
+       const updateStr = isColorEnabled
+         ? chalk.yellow('update disponibile: ') +
+           chalk.dim(current) + chalk.yellow(' → ') + chalk.green(versionInfo.latest) +
+           chalk.dim('  (esegui ') + chalk.hex(LIGHT_ORANGE)('dvmi upgrade') + chalk.dim(')')
+         : `update disponibile: ${current} → ${versionInfo.latest}  (esegui dvmi upgrade)`
+       lines.push('  ' + versionStr + chalk.dim('  ·  ') + updateStr)
+     } else {
+       lines.push('  ' + versionStr)
+     }
+
      lines.push(
        '  ' + chalk.dim('Approfondisci:') + ' ' +
        chalk.hex(DIM_BLUE)('dvmi <COMANDO> --help') +
