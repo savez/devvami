@@ -1,0 +1,92 @@
+#!/bin/bash
+# Fake chezmoi for integration tests
+# Returns minimal but valid responses for all commands used by dvmi dotfiles
+
+case "$1" in
+  "--version"|"--version")
+    echo "chezmoi version v2.50.0"
+    exit 0
+    ;;
+  "dump-config")
+    echo '{"sourceDir":"/home/testuser/.local/share/chezmoi","encryption":{"tool":"age"},"age":{"identity":"/home/testuser/.config/chezmoi/key.txt"}}'
+    exit 0
+    ;;
+  "managed")
+    echo '[{"targetPath":"/home/testuser/.zshrc","sourcePath":"/home/testuser/.local/share/chezmoi/dot_zshrc","type":"file"},{"targetPath":"/home/testuser/.gitconfig","sourcePath":"/home/testuser/.local/share/chezmoi/dot_gitconfig","type":"file"}]'
+    exit 0
+    ;;
+  "add")
+    exit 0
+    ;;
+  "init")
+    exit 0
+    ;;
+  "apply")
+    exit 0
+    ;;
+  "status")
+    exit 0
+    ;;
+  "doctor")
+    echo "ok"
+    exit 0
+    ;;
+  "git")
+    shift
+    # Skip the -- separator
+    if [[ "$1" == "--" ]]; then
+      shift
+    fi
+    case "$1" in
+      "remote")
+        if [[ "$2" == "get-url" ]]; then
+          echo "git@github.com:testuser/dotfiles.git"
+          exit 0
+        fi
+        if [[ "$2" == "add" ]]; then
+          exit 0
+        fi
+        exit 0
+        ;;
+      "status")
+        # empty = no changes
+        exit 0
+        ;;
+      "push")
+        exit 0
+        ;;
+      "pull")
+        exit 0
+        ;;
+      "commit")
+        exit 0
+        ;;
+      "add")
+        exit 0
+        ;;
+      *)
+        exit 0
+        ;;
+    esac
+    ;;
+  "age")
+    # chezmoi age keygen -o <path>
+    shift
+    if [[ "$1" == "keygen" ]]; then
+      shift
+      if [[ "$1" == "-o" ]]; then
+        outfile="$2"
+        # Write a fake age key file
+        mkdir -p "$(dirname "$outfile")"
+        echo "# created: 2026-01-01T00:00:00Z" > "$outfile"
+        echo "# public key: age1testpublickey0000000000000000000000000000000000000000000" >> "$outfile"
+        echo "AGE-SECRET-KEY-1TESTPRIVATEKEY0000000000000000000000000000000000000000" >> "$outfile"
+      fi
+    fi
+    exit 0
+    ;;
+  *)
+    echo "mock chezmoi: unhandled '$*'" >&2
+    exit 0
+    ;;
+esac

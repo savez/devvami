@@ -14,6 +14,70 @@
  * @property {string} [latestVersion] - Latest known CLI version
  * @property {'opencode'|'copilot'} [aiTool] - Preferred AI tool for running prompts
  * @property {string} [promptsDir] - Local directory for downloaded prompts (default: .prompts)
+ * @property {DotfilesConfig} [dotfiles] - Chezmoi dotfiles configuration
+ */
+
+/**
+ * @typedef {Object} DotfilesConfig
+ * @property {boolean} enabled - Whether chezmoi dotfiles management is active
+ * @property {string} [repo] - Remote dotfiles repository URL
+ * @property {string[]} [customSensitivePatterns] - User-added sensitive path patterns
+ */
+
+/**
+ * @typedef {Object} DotfileEntry
+ * @property {string} path - Target file path (e.g. "/home/user/.zshrc")
+ * @property {string} sourcePath - Source path in chezmoi state
+ * @property {boolean} encrypted - Whether the file is stored with encryption
+ * @property {'file'|'dir'|'symlink'} type - Entry type
+ */
+
+/**
+ * @typedef {Object} DotfileRecommendation
+ * @property {string} path - File path to recommend (e.g. "~/.zshrc")
+ * @property {'shell'|'git'|'editor'|'package'|'security'} category - Display grouping
+ * @property {Platform[]} platforms - Platforms this file applies to
+ * @property {boolean} autoEncrypt - Whether to encrypt by default
+ * @property {string} description - Human-readable description
+ */
+
+/**
+ * @typedef {Object} DotfilesSetupResult
+ * @property {Platform} platform - Detected platform
+ * @property {boolean} chezmoiInstalled - Whether chezmoi was found
+ * @property {boolean} encryptionConfigured - Whether age encryption is set up
+ * @property {string|null} sourceDir - Chezmoi source directory path
+ * @property {string|null} publicKey - Age public key
+ * @property {'success'|'skipped'|'failed'} status - Overall setup outcome
+ * @property {string} [message] - Human-readable outcome message
+ */
+
+/**
+ * @typedef {Object} DotfilesStatusResult
+ * @property {Platform} platform - Detected platform
+ * @property {boolean} enabled - Whether dotfiles management is active
+ * @property {boolean} chezmoiInstalled - Whether chezmoi binary exists
+ * @property {boolean} encryptionConfigured - Whether age encryption is set up
+ * @property {string|null} repo - Remote dotfiles repo URL
+ * @property {string|null} sourceDir - Chezmoi source directory
+ * @property {DotfileEntry[]} files - All managed files
+ * @property {{ total: number, encrypted: number, plaintext: number }} summary - File counts
+ */
+
+/**
+ * @typedef {Object} DotfilesAddResult
+ * @property {{ path: string, encrypted: boolean }[]} added - Successfully added files
+ * @property {{ path: string, reason: string }[]} skipped - Skipped files
+ * @property {{ path: string, reason: string }[]} rejected - Rejected files
+ */
+
+/**
+ * @typedef {Object} DotfilesSyncResult
+ * @property {'push'|'pull'|'init-remote'|'skipped'} action - Sync action performed
+ * @property {string|null} repo - Remote repository URL
+ * @property {'success'|'skipped'|'failed'} status - Outcome
+ * @property {string} [message] - Human-readable outcome
+ * @property {string[]} [conflicts] - Conflicting file paths
  */
 
 /**

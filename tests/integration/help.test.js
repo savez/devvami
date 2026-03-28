@@ -28,6 +28,10 @@ const commands = [
   ['docs', 'read', '--help'],
   ['docs', 'search', '--help'],
   ['docs', 'projects', '--help'],
+  ['dotfiles', 'setup', '--help'],
+  ['dotfiles', 'add', '--help'],
+  ['dotfiles', 'status', '--help'],
+  ['dotfiles', 'sync', '--help'],
 ]
 
 describe('--help output', () => {
