@@ -8,8 +8,8 @@ import { detectPlatform } from '../services/platform.js'
 import { exec, which } from '../services/shell.js'
 import { configExists, loadConfig, saveConfig, CONFIG_PATH } from '../services/config.js'
 import { oauthFlow, storeToken, validateToken, getTeams } from '../services/clickup.js'
-
 import { SUPPORTED_TOOLS } from '../services/prompts.js'
+import { isChezmoiInstalled, setupChezmoiInline } from '../services/dotfiles.js'
 
 export default class Init extends Command {
   static description = 'Setup completo ambiente di sviluppo locale'
@@ -243,7 +243,40 @@ export default class Init extends Command {
        }
      }
 
-     // 7. Shell completions
+     // 7. Chezmoi dotfiles setup
+     if (isDryRun) {
+       steps.push({ name: 'dotfiles', status: 'would configure' })
+     } else if (isJson) {
+       config = await loadConfig()
+       steps.push({
+         name: 'dotfiles',
+         status: config.dotfiles?.enabled ? 'configured' : 'not_configured',
+         enabled: config.dotfiles?.enabled ?? false,
+       })
+     } else {
+       const chezmoiInstalled = await isChezmoiInstalled()
+       if (!chezmoiInstalled) {
+         steps.push({ name: 'dotfiles', status: 'skipped', reason: 'chezmoi not installed' })
+       } else {
+         const setupDotfiles = await confirm({
+           message: 'Set up chezmoi dotfiles management with age encryption?',
+           default: false,
+         })
+         if (setupDotfiles) {
+           try {
+              const dotfilesResult = await setupChezmoiInline(platform.platform)
+             config = await loadConfig()
+             steps.push({ name: 'dotfiles', status: dotfilesResult.status, sourceDir: dotfilesResult.sourceDir })
+           } catch (err) {
+             steps.push({ name: 'dotfiles', status: 'failed', reason: err instanceof Error ? err.message : String(err) })
+           }
+         } else {
+           steps.push({ name: 'dotfiles', status: 'skipped', hint: 'Run `dvmi dotfiles setup` anytime to enable' })
+         }
+       }
+     }
+
+     // 8. Shell completions
      steps.push({ name: 'shell-completions', status: 'ok', action: 'install via: dvmi autocomplete' })
 
     const result = { steps, configPath: CONFIG_PATH }
