@@ -368,6 +368,13 @@ pnpm test  # Verify nothing broke
 - N/A — all data fetched live from AWS APIs; no local persistence (003-aws-costs-cloudwatch)
 - JavaScript (ESM, `.js`) with JSDoc — Node.js >= 24 + `@oclif/core` v4, `@inquirer/prompts` v7, `chalk` v5, `ora` v8, `execa` v9 (all existing — no new runtime dependencies) (004-chezmoi-dotfiles-setup)
 - `~/.config/dvmi/config.json` (dvmi config, extended with `dotfiles` field) + `~/.config/chezmoi/chezmoi.toml` (chezmoi native config, managed by chezmoi CLI) (004-chezmoi-dotfiles-setup)
+- JavaScript (ESM, `.js`) with JSDoc — Node.js >= 24 + `@oclif/core` v4 (CLI framework), `execa` v9 (subprocess execution for audit commands), `chalk` v5 (colors), `ora` v8 (spinners), `open` v10 (browser launch), native `fetch` (NVD API calls — built into Node.js >= 18) (005-cve-vuln-scanning)
+- N/A — no local persistence; all data fetched live (005-cve-vuln-scanning)
+- JavaScript (ESM, `.js`) — Node.js >= 24 + `@oclif/core` v4 (CLI framework), `execa` v9 (subprocess for audit commands), `chalk` v5 (colors), `ora` v8 (spinners), `open` v10 (browser launch), native `fetch` (NVD API — built into Node.js >= 18). All existing in `package.json`. (005-cve-vuln-scanning)
+- N/A — all data fetched live from APIs; no local persistence (005-cve-vuln-scanning)
+- JavaScript (ESM, `.js`) with JSDoc — Node.js >= 24 + `chalk` v5 (colors), Node.js built-in `readline` + `process.stdin.setRawMode` + ANSI escape sequences for TUI rendering. Zero new runtime dependencies. (006-interactive-cve-table)
+- N/A — no persistence; TUI state exists only during interactive session (006-interactive-cve-table)
 
 ## Recent Changes
+- 006-interactive-cve-table: Replaces `@inquirer/prompts` select loop in `dvmi vuln search` with navigable table (arrow keys, viewport scrolling) + modal overlay (Enter to open, Esc to dismiss). Zero new deps — Node.js built-in `readline` + ANSI escape sequences + existing `chalk` v5. Two new modules: `src/utils/tui/navigable-table.js`, `src/utils/tui/modal.js`. This is a `refactor:` of spec 005 interactive behaviour.
 - 001-prompt-hub: Added JavaScript (ESM, `.js`) — Node.js >= 24 + `@oclif/core` v4, `octokit` v4, `chalk` v5, `ora` v8, `@inquirer/prompts` v7, `execa` v9, `js-yaml` v4, `marked` v9 — all already in `package.json`; no new runtime dependencies needed

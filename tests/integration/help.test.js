@@ -32,6 +32,9 @@ const commands = [
   ['dotfiles', 'add', '--help'],
   ['dotfiles', 'status', '--help'],
   ['dotfiles', 'sync', '--help'],
+  ['vuln', 'search', '--help'],
+  ['vuln', 'detail', '--help'],
+  ['vuln', 'scan', '--help'],
 ]
 
 describe('--help output', () => {

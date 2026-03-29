@@ -1,0 +1,41 @@
+{
+  "actions": [],
+  "advisories": {
+    "1001": {
+      "id": 1001,
+      "title": "Prototype Pollution",
+      "module_name": "lodash",
+      "severity": "critical",
+      "url": "https://github.com/advisories/GHSA-p6mc-m468-83gw",
+      "cves": ["CVE-2021-23337"],
+      "vulnerable_versions": "<4.17.21",
+      "patched_versions": ">=4.17.21",
+      "findings": [
+        { "version": "4.17.20", "paths": ["project > lodash"] }
+      ]
+    },
+    "1002": {
+      "id": 1002,
+      "title": "ReDoS vulnerability",
+      "module_name": "glob-parent",
+      "severity": "moderate",
+      "url": "https://github.com/advisories/GHSA-ww39-953v-wcq6",
+      "cves": ["CVE-2021-35065"],
+      "vulnerable_versions": "<5.1.2",
+      "patched_versions": ">=5.1.2",
+      "findings": [
+        { "version": "5.1.1", "paths": ["project > chokidar > glob-parent"] }
+      ]
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 1,
+      "total": 2
+    }
+  }
+}
