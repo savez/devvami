@@ -28,6 +28,8 @@ export class ValidationError extends DvmiError {
    constructor(message, hint) {
      super(message, hint, 2)
      this.name = 'ValidationError'
+     // oclif reads this.oclif.exit to determine the process exit code
+     this.oclif = { exit: 2 }
    }
  }
 

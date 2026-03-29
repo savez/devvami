@@ -1,0 +1,92 @@
+{
+  "resultsPerPage": 3,
+  "startIndex": 0,
+  "totalResults": 3,
+  "format": "NVD_CVE",
+  "version": "2.0",
+  "timestamp": "2026-03-28T00:00:00.000",
+  "vulnerabilities": [
+    {
+      "cve": {
+        "id": "CVE-2026-1234",
+        "sourceIdentifier": "cve@mitre.org",
+        "published": "2026-03-25T00:00:00.000",
+        "lastModified": "2026-03-26T00:00:00.000",
+        "vulnStatus": "Analyzed",
+        "descriptions": [
+          { "lang": "en", "value": "Buffer overflow in OpenSSL allows remote attackers to cause a denial of service." }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "cvssData": {
+                "baseScore": 9.8,
+                "baseSeverity": "CRITICAL",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+              }
+            }
+          ]
+        },
+        "weaknesses": [],
+        "configurations": [],
+        "references": [
+          { "url": "https://www.openssl.org/news/secadv/20260325.txt", "source": "openssl.org", "tags": ["Vendor Advisory"] }
+        ]
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2026-1235",
+        "sourceIdentifier": "cve@mitre.org",
+        "published": "2026-03-22T00:00:00.000",
+        "lastModified": "2026-03-23T00:00:00.000",
+        "vulnStatus": "Analyzed",
+        "descriptions": [
+          { "lang": "en", "value": "Denial of service via crafted TLS handshake in OpenSSL." }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "cvssData": {
+                "baseScore": 7.5,
+                "baseSeverity": "HIGH",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+              }
+            }
+          ]
+        },
+        "weaknesses": [],
+        "configurations": [],
+        "references": [
+          { "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1235", "source": "nvd.nist.gov", "tags": [] }
+        ]
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2026-1236",
+        "sourceIdentifier": "cve@mitre.org",
+        "published": "2026-03-20T00:00:00.000",
+        "lastModified": "2026-03-21T00:00:00.000",
+        "vulnStatus": "Awaiting Analysis",
+        "descriptions": [
+          { "lang": "en", "value": "Information disclosure in OpenSSL due to improper memory handling." }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "cvssData": {
+                "baseScore": 5.3,
+                "baseSeverity": "MEDIUM",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+              }
+            }
+          ]
+        },
+        "weaknesses": [],
+        "configurations": [],
+        "references": []
+      }
+    }
+  ]
+}
