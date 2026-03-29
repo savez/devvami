@@ -284,6 +284,13 @@ Built with:
 - [ora](https://github.com/sindresorhus/ora) — Spinners
 - [keytar](https://github.com/atom/node-keytar) — Secure credentials
 - [@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js) — Interactive prompts
+- [execa](https://github.com/sindresorhus/execa) — Process execution
+- [js-yaml](https://github.com/nodeca/js-yaml) — YAML parsing
+- [marked](https://github.com/markedjs/marked) — Markdown parsing
+- [figlet](https://github.com/patorjk/figlet.js) — ASCII art banners
+- [open](https://github.com/sindresorhus/open) — Browser/app launcher
+- [@aws-sdk](https://github.com/aws/aws-sdk-js-v3) — AWS services integration
+- [pako](https://github.com/nodeca/pako) — Compression utilities
 
 ---
 
