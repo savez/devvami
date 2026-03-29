@@ -204,4 +204,124 @@ export const handlers = [
   http.get('https://npm.pkg.github.com/devvami', () =>
     HttpResponse.json({ 'dist-tags': { latest: '1.0.0' } }),
   ),
+
+  // NVD API: CVE search by keyword
+  http.get('https://services.nvd.nist.gov/rest/json/cves/2.0', ({ request }) => {
+    const url = new URL(request.url)
+    const cveId = url.searchParams.get('cveId')
+    const keyword = url.searchParams.get('keywordSearch')
+
+    // Single CVE lookup
+    if (cveId === 'CVE-2021-44228') {
+      return HttpResponse.json({
+        resultsPerPage: 1,
+        startIndex: 0,
+        totalResults: 1,
+        format: 'NVD_CVE',
+        version: '2.0',
+        timestamp: '2026-03-28T00:00:00.000',
+        vulnerabilities: [
+          {
+            cve: {
+              id: 'CVE-2021-44228',
+              sourceIdentifier: 'cve@mitre.org',
+              published: '2021-12-10T04:15:07.917',
+              lastModified: '2023-11-07T03:39:36.747',
+              vulnStatus: 'Analyzed',
+              descriptions: [
+                { lang: 'en', value: 'Apache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints.' },
+              ],
+              metrics: {
+                cvssMetricV31: [
+                  {
+                    cvssData: {
+                      baseScore: 10.0,
+                      baseSeverity: 'CRITICAL',
+                      vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H',
+                    },
+                  },
+                ],
+              },
+              weaknesses: [
+                { source: 'nvd@nist.gov', type: 'Primary', description: [{ lang: 'en', value: 'CWE-502' }] },
+              ],
+              configurations: [],
+              references: [
+                { url: 'https://logging.apache.org/log4j/2.x/security.html', source: 'cve@mitre.org', tags: ['Vendor Advisory'] },
+              ],
+            },
+          },
+        ],
+      })
+    }
+
+    // CVE not found
+    if (cveId) {
+      return HttpResponse.json({
+        resultsPerPage: 0, startIndex: 0, totalResults: 0, format: 'NVD_CVE', version: '2.0',
+        timestamp: '2026-03-28T00:00:00.000', vulnerabilities: [],
+      })
+    }
+
+    // Keyword search — return 3 results for any keyword
+    if (keyword) {
+      return HttpResponse.json({
+        resultsPerPage: 3,
+        startIndex: 0,
+        totalResults: 3,
+        format: 'NVD_CVE',
+        version: '2.0',
+        timestamp: '2026-03-28T00:00:00.000',
+        vulnerabilities: [
+          {
+            cve: {
+              id: 'CVE-2026-1234',
+              sourceIdentifier: 'cve@mitre.org',
+              published: '2026-03-25T00:00:00.000',
+              lastModified: '2026-03-26T00:00:00.000',
+              vulnStatus: 'Analyzed',
+              descriptions: [{ lang: 'en', value: `Buffer overflow in ${keyword} allows remote attackers to cause a denial of service.` }],
+              metrics: {
+                cvssMetricV31: [{ cvssData: { baseScore: 9.8, baseSeverity: 'CRITICAL', vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' } }],
+              },
+              weaknesses: [], configurations: [], references: [],
+            },
+          },
+          {
+            cve: {
+              id: 'CVE-2026-1235',
+              sourceIdentifier: 'cve@mitre.org',
+              published: '2026-03-22T00:00:00.000',
+              lastModified: '2026-03-23T00:00:00.000',
+              vulnStatus: 'Analyzed',
+              descriptions: [{ lang: 'en', value: 'Denial of service via crafted TLS handshake.' }],
+              metrics: {
+                cvssMetricV31: [{ cvssData: { baseScore: 7.5, baseSeverity: 'HIGH', vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H' } }],
+              },
+              weaknesses: [], configurations: [], references: [],
+            },
+          },
+          {
+            cve: {
+              id: 'CVE-2026-1236',
+              sourceIdentifier: 'cve@mitre.org',
+              published: '2026-03-20T00:00:00.000',
+              lastModified: '2026-03-21T00:00:00.000',
+              vulnStatus: 'Awaiting Analysis',
+              descriptions: [{ lang: 'en', value: 'Information disclosure due to improper memory handling.' }],
+              metrics: {
+                cvssMetricV31: [{ cvssData: { baseScore: 5.3, baseSeverity: 'MEDIUM', vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N' } }],
+              },
+              weaknesses: [], configurations: [], references: [],
+            },
+          },
+        ],
+      })
+    }
+
+    return HttpResponse.json({
+      resultsPerPage: 0, startIndex: 0, totalResults: 0, format: 'NVD_CVE', version: '2.0',
+      timestamp: '2026-03-28T00:00:00.000', vulnerabilities: [],
+    })
+  }),
 ]

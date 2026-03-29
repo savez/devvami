@@ -1,0 +1,40 @@
+{
+  "database": {
+    "advisory-count": 500,
+    "last-commit": "2026-03-27T00:00:00Z",
+    "last-updated": "2026-03-27T00:00:00Z"
+  },
+  "lockfile": {
+    "dependency-count": 30
+  },
+  "settings": {},
+  "vulnerabilities": {
+    "found": true,
+    "count": 1,
+    "list": [
+      {
+        "advisory": {
+          "id": "RUSTSEC-2021-0145",
+          "package": "atty",
+          "title": "Potential unaligned read",
+          "description": "On windows, `atty` dereferences a potentially unaligned pointer.",
+          "date": "2021-07-04",
+          "aliases": ["CVE-2021-25927"],
+          "cvss": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+          "url": "https://rustsec.org/advisories/RUSTSEC-2021-0145.html",
+          "references": []
+        },
+        "versions": {
+          "patched": [">=0.1.0"],
+          "unaffected": []
+        },
+        "package": {
+          "name": "atty",
+          "version": "0.2.14",
+          "source": "registry+https://github.com/rust-lang/crates.io-index"
+        }
+      }
+    ]
+  },
+  "warnings": {}
+}

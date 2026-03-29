@@ -358,11 +358,15 @@
  */
 
 /**
- * @typedef {Object} SearchMatch
- * @property {string} file - File path (e.g. "docs/deploy.md")
- * @property {number} line - Line number (1-based)
- * @property {string} context - Line text containing the match
- * @property {number} occurrences - Total number of occurrences in the file
+ * @typedef {Object} CveSearchResult
+ * Represents a single CVE returned from a search query. Used by `dvmi vuln search`.
+ * @property {string} id
+ * @property {string} description
+ * @property {'Critical'|'High'|'Medium'|'Low'|'Unknown'} severity
+ * @property {number|null} score
+ * @property {string} publishedDate
+ * @property {string} lastModified
+ * @property {string|null} firstReference - First reference URL from the CVE record, or null
  */
 
 /**

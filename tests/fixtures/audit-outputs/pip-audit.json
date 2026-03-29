@@ -1,0 +1,22 @@
+{
+  "dependencies": [
+    {
+      "name": "pillow",
+      "version": "9.0.0",
+      "vulns": [
+        {
+          "id": "CVE-2023-44271",
+          "aliases": ["GHSA-j7hp-h8jx-5ppr"],
+          "description": "Uncontrolled resource consumption in Pillow.",
+          "fix_versions": ["10.0.1"],
+          "affected_versions": "<10.0.1"
+        }
+      ]
+    },
+    {
+      "name": "requests",
+      "version": "2.28.0",
+      "vulns": []
+    }
+  ]
+}

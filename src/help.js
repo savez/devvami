@@ -88,6 +88,14 @@ const CATEGORIES = [
     ],
   },
   {
+    title: 'CVE & Vulnerabilità',
+    cmds: [
+      { id: 'vuln:search', hint: '[KEYWORD] [--days] [--severity] [--limit]' },
+      { id: 'vuln:detail', hint: '<CVE-ID> [--open]' },
+      { id: 'vuln:scan',   hint: '[--severity] [--no-fail] [--report]' },
+    ],
+  },
+  {
     title: 'Dotfiles & Cifratura',
     cmds: [
       { id: 'dotfiles:setup',  hint: '[--json]' },
@@ -209,6 +217,13 @@ export default class CustomHelp extends Help {
       { cmd: 'dvmi dotfiles status --json',                           note: 'Stato dotfile gestiti (JSON)' },
       { cmd: 'dvmi dotfiles sync --push',                             note: 'Push dotfile al repository remoto' },
       { cmd: 'dvmi welcome',                                          note: 'Dashboard missione dvmi con intro animata' },
+      { cmd: 'dvmi vuln search openssl',                              note: 'Cerca CVE recenti per keyword' },
+      { cmd: 'dvmi vuln search log4j --days 30 --severity critical',  note: 'CVE critiche Log4j negli ultimi 30 giorni' },
+      { cmd: 'dvmi vuln detail CVE-2021-44228',                       note: 'Dettaglio completo di una CVE' },
+      { cmd: 'dvmi vuln detail CVE-2021-44228 --open',                note: 'Apri la prima referenza nel browser' },
+      { cmd: 'dvmi vuln scan',                                        note: 'Scansiona dipendenze del progetto corrente' },
+      { cmd: 'dvmi vuln scan --severity high --no-fail',              note: 'Scansione senza bloccare CI (solo high+)' },
+      { cmd: 'dvmi vuln scan --report ./vuln-report.md',              note: 'Esporta report Markdown delle vulnerabilità' },
     ]
 
     const lines = []
