@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { runCli, runCliJson } from './helpers.js'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 // Tests that call the real ClickUp API require a token in the keychain.
 // In CI there are no real credentials, so we skip those tests.
@@ -51,6 +54,48 @@ describe('--json flag', () => {
       const listKeys = Object.keys(listData.tasks[0]).sort()
       const assignedKeys = Object.keys(assignedData.tasks[0]).sort()
       expect(assignedKeys).toEqual(listKeys)
+    }
+  })
+
+  it('vuln search --json returns valid JSON shape or non-zero exit in offline env', async () => {
+    const { stdout, stderr, exitCode } = await runCli(['vuln', 'search', 'openssl', '--json'])
+    if (exitCode === 0) {
+      const data = JSON.parse(stdout)
+      expect(data).toHaveProperty('keyword', 'openssl')
+      expect(data).toHaveProperty('results')
+      expect(Array.isArray(data.results)).toBe(true)
+    } else {
+      expect(stderr).toBeTruthy()
+    }
+  })
+
+  it('vuln detail --json returns valid JSON shape or non-zero exit in offline env', async () => {
+    const { stdout, stderr, exitCode } = await runCli(['vuln', 'detail', 'CVE-2021-44228', '--json'])
+    if (exitCode === 0) {
+      const data = JSON.parse(stdout)
+      expect(data).toHaveProperty('id', 'CVE-2021-44228')
+      expect(data).toHaveProperty('severity')
+      expect(data).toHaveProperty('references')
+    } else {
+      expect(stderr).toBeTruthy()
+    }
+  })
+
+  it('vuln scan --json returns valid JSON shape in empty dir', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'dvmi-json-scan-'))
+    try {
+      const { stdout, exitCode } = await runCli(['vuln', 'scan', '--json'], {
+        DVMI_SCAN_DIR: tmpDir,
+      })
+      if (exitCode === 0) {
+        const data = JSON.parse(stdout)
+        expect(data).toHaveProperty('ecosystems')
+        expect(data).toHaveProperty('findings')
+        expect(data).toHaveProperty('summary')
+        expect(data).toHaveProperty('errors')
+      }
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true })
     }
   })
 })
