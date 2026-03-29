@@ -4,7 +4,20 @@ import ora from 'ora'
 import chalk from 'chalk'
 import { detectEcosystems, supportedEcosystemsMessage } from '../../services/audit-detector.js'
 import { runAudit, summarizeFindings, filterBySeverity } from '../../services/audit-runner.js'
-import { formatFindingsTable, formatScanSummary, formatMarkdownReport } from '../../formatters/vuln.js'
+import { formatFindingsTable, formatScanSummary, formatMarkdownReport, truncate, colorSeverity } from '../../formatters/vuln.js'
+import { getCveDetail } from '../../services/nvd.js'
+import { startInteractiveTable } from '../../utils/tui/navigable-table.js'
+
+// Minimum terminal rows required to show the interactive TUI (same threshold as vuln search)
+const MIN_TTY_ROWS = 6
+
+// Column widths for the navigable table (match the static findings table)
+const COL_WIDTHS = {
+  pkg: 20,
+  version: 12,
+  severity: 10,
+  cve: 20,
+}
 
 export default class VulnScan extends Command {
   static description = 'Scan the current directory for known vulnerabilities in dependencies'
@@ -112,7 +125,7 @@ export default class VulnScan extends Command {
       errors,
     }
 
-    // Write report if requested
+    // Write report if requested (always, regardless of TTY mode)
     if (report) {
       const markdown = formatMarkdownReport(result)
       await writeFile(report, markdown, 'utf8')
@@ -128,17 +141,58 @@ export default class VulnScan extends Command {
       return result
     }
 
-    if (filteredFindings.length > 0) {
-      this.log(chalk.bold(`  Findings (${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'})`))
-      this.log('')
-      this.log(formatFindingsTable(filteredFindings))
-      this.log('')
-      this.log(chalk.bold('  Summary'))
-      this.log(formatScanSummary(summary))
-      this.log('')
-      this.log(chalk.yellow(`  ⚠ ${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'} found. Run \`dvmi vuln detail <CVE-ID>\` for details.`))
+    // ── TTY interactive table ──────────────────────────────────────────────────
+    // In a real TTY with enough rows and at least one finding, replace the static
+    // table with the navigable TUI (same experience as `dvmi vuln search`).
+    const ttyRows = process.stdout.rows ?? 0
+    const useTUI = process.stdout.isTTY && filteredFindings.length > 0 && ttyRows >= MIN_TTY_ROWS
+
+    if (useTUI) {
+      const count = filteredFindings.length
+      const label = count === 1 ? 'finding' : 'findings'
+      const heading = `Vulnerability Scan: ${count} ${label}`
+
+      const termCols = process.stdout.columns || 80
+      // Title width: whatever is left after Package + Version + Severity + CVE + separators
+      const fixedCols = COL_WIDTHS.pkg + COL_WIDTHS.version + COL_WIDTHS.severity + COL_WIDTHS.cve
+      const separators = 5 * 2 // 5 gaps between 5 columns
+      const titleWidth = Math.max(15, Math.min(50, termCols - fixedCols - separators))
+
+      const rows = filteredFindings.map((f) => ({
+        id: f.cveId ?? null,
+        pkg: f.package,
+        version: f.installedVersion ?? '—',
+        severity: f.severity,
+        cve: f.cveId ?? '—',
+        title: truncate(f.title ?? '—', titleWidth),
+        advisoryUrl: f.advisoryUrl ?? null,
+      }))
+
+      /** @type {import('../../utils/tui/navigable-table.js').TableColumnDef[]} */
+      const columns = [
+        { header: 'Package',  key: 'pkg',      width: COL_WIDTHS.pkg },
+        { header: 'Version',  key: 'version',  width: COL_WIDTHS.version },
+        { header: 'Severity', key: 'severity', width: COL_WIDTHS.severity, colorize: (v) => colorSeverity(v) },
+        { header: 'CVE',      key: 'cve',      width: COL_WIDTHS.cve,      colorize: (v) => (v !== '—' ? chalk.cyan(v) : chalk.gray(v)) },
+        { header: 'Title',    key: 'title',    width: titleWidth },
+      ]
+
+      await startInteractiveTable(rows, columns, heading, filteredFindings.length, getCveDetail)
+    } else {
+      // Non-TTY fallback: static table + summary (unchanged from pre-TUI behaviour)
+      if (filteredFindings.length > 0) {
+        this.log(chalk.bold(`  Findings (${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'})`))
+        this.log('')
+        this.log(formatFindingsTable(filteredFindings))
+        this.log('')
+        this.log(chalk.bold('  Summary'))
+        this.log(formatScanSummary(summary))
+        this.log('')
+        this.log(chalk.yellow(`  ⚠ ${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'} found. Run \`dvmi vuln detail <CVE-ID>\` for details.`))
+      }
     }
 
+    // Always print audit errors (e.g. tool not installed) after findings/TUI
     if (errors.length > 0) {
       this.log('')
       for (const err of errors) {
@@ -146,6 +200,7 @@ export default class VulnScan extends Command {
       }
     }
 
+    // Preserve exit code semantics: exit 1 when vulns found (unless --no-fail)
     if (filteredFindings.length > 0 && !noFail) {
       this.exit(1)
     }

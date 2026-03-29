@@ -360,8 +360,16 @@ export async function startInteractiveTable(rows, columns, heading, totalResults
    * @returns {Promise<void>}
    */
   async function openDetail() {
-    const cveId = state.rows[state.selectedIndex]?.id
+    const row = state.rows[state.selectedIndex]
+    const cveId = row?.id
+
     if (!cveId) {
+      // No CVE ID — check for an advisory URL (e.g. npm/pnpm advisory findings).
+      // Open it in the browser and stay in table view rather than showing a modal.
+      const advisoryUrl = row?.advisoryUrl
+      if (advisoryUrl) {
+        await openBrowser(String(advisoryUrl))
+      }
       state = { ...state, currentView: 'table' }
       process.stdout.write(buildTableScreen(state))
       return
