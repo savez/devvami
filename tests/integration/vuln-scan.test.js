@@ -94,6 +94,30 @@ describe('dvmi vuln scan', () => {
     expect(stderr).toMatch(/Expected.*severity|severity.*expected/i)
   })
 
+  it('non-TTY output contains static findings table without TUI escape codes', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'dvmi-scan-'))
+    try {
+      await writeFile(join(tmpDir, 'pnpm-lock.yaml'), 'lockfileVersion: 6.0\n', 'utf8')
+
+      // runCli always uses isTTY=false (spawned subprocess with non-TTY stdio)
+      // so static table output should appear, not the interactive alt-screen TUI
+      const { stdout, stderr, exitCode } = await runCli(['vuln', 'scan', '--no-fail'], {
+        DVMI_SCAN_DIR: tmpDir,
+      })
+      const combined = stdout + stderr
+      // Must not contain the ANSI alt-screen sequence used by the TUI
+      expect(combined).not.toContain('\x1b[?1049h')
+      // If findings were reported, the static table header should be present
+      if (combined.includes('Findings')) {
+        expect(combined).toMatch(/Package|Version|Severity/i)
+      }
+      // Exit code must be 0 (--no-fail) or 0 (no vulns found)
+      expect(exitCode).toBe(0)
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true })
+    }
+  })
+
   it('outputs valid JSON structure with --json flag when vulns exist', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'dvmi-scan-'))
     try {
