@@ -332,6 +332,91 @@
  * @typedef {'macos'|'wsl2'|'linux'} Platform
  */
 
+// ──────────────────────────────────────────────────────────────────────────────
+// AI Config Sync TUI types
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * @typedef {'mcp'|'command'|'skill'|'agent'} CategoryType
+ */
+
+/**
+ * @typedef {'vscode-copilot'|'claude-code'|'opencode'|'gemini-cli'|'copilot-cli'} EnvironmentId
+ */
+
+/**
+ * @typedef {Object} MCPParams
+ * @property {'stdio'|'sse'|'streamable-http'} transport - MCP transport type
+ * @property {string} [command] - Command to execute (required for stdio transport)
+ * @property {string[]} [args] - Command arguments
+ * @property {Record<string, string>} [env] - Environment variables
+ * @property {string} [url] - Server URL (required for sse/streamable-http transport)
+ */
+
+/**
+ * @typedef {Object} CommandParams
+ * @property {string} content - Prompt/command text content (multi-line)
+ * @property {string} [description] - Short description of the command
+ */
+
+/**
+ * @typedef {Object} SkillParams
+ * @property {string} content - Skill definition content (multi-line)
+ * @property {string} [description] - Short description of the skill
+ */
+
+/**
+ * @typedef {Object} AgentParams
+ * @property {string} instructions - Agent instructions (multi-line)
+ * @property {string} [description] - Short description of the agent
+ */
+
+/**
+ * @typedef {Object} CategoryEntry
+ * @property {string} id - UUID v4, auto-generated
+ * @property {string} name - Unique within its type; used as filename/key when deploying
+ * @property {CategoryType} type - Category type
+ * @property {boolean} active - true = deployed to environments, false = removed but kept in store
+ * @property {EnvironmentId[]} environments - Target environments for deployment
+ * @property {MCPParams|CommandParams|SkillParams|AgentParams} params - Type-specific parameters
+ * @property {string} createdAt - ISO 8601 timestamp
+ * @property {string} updatedAt - ISO 8601 timestamp
+ */
+
+/**
+ * @typedef {Object} AIConfigStore
+ * @property {number} version - Schema version
+ * @property {CategoryEntry[]} entries - All managed configuration entries
+ */
+
+/**
+ * @typedef {Object} PathStatus
+ * @property {string} path - Absolute path
+ * @property {boolean} exists - Whether the path exists on disk
+ * @property {boolean} readable - Whether the file could be parsed (for JSON/TOML files)
+ */
+
+/**
+ * @typedef {Object} CategoryCounts
+ * @property {number} mcp
+ * @property {number} command
+ * @property {number} skill
+ * @property {number} agent
+ */
+
+/**
+ * @typedef {Object} DetectedEnvironment
+ * @property {EnvironmentId} id - Environment identifier
+ * @property {string} name - Display name (e.g. "Claude Code")
+ * @property {boolean} detected - Whether any config files were found
+ * @property {PathStatus[]} projectPaths - Project-level paths and their existence status
+ * @property {PathStatus[]} globalPaths - Global-level paths and their existence status
+ * @property {string[]} unreadable - Paths that exist but failed to parse
+ * @property {CategoryType[]} supportedCategories - Category types this environment supports
+ * @property {CategoryCounts} counts - Per-category item counts from dvmi-managed entries
+ * @property {'project'|'global'|'both'} scope - Where detection occurred
+ */
+
 /**
  * @typedef {Object} PlatformInfo
  * @property {Platform} platform

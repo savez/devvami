@@ -139,6 +139,7 @@
     "test:integration": "vitest run --project integration",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "pretest": "oclif manifest",
     "prepack": "oclif manifest",
     "postpack": "shx rm -f oclif.manifest.json",
     "prepare": "lefthook install"
