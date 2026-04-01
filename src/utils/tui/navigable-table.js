@@ -1,9 +1,9 @@
 import readline from 'node:readline'
 import chalk from 'chalk'
-import { NVD_ATTRIBUTION } from '../../services/nvd.js'
-import { buildModalScreen, buildLoadingScreen, buildErrorScreen, handleModalKeypress } from './modal.js'
-import { formatCveDetailPlain } from '../../formatters/vuln.js'
-import { openBrowser } from '../open-browser.js'
+import {NVD_ATTRIBUTION} from '../../services/nvd.js'
+import {buildModalScreen, buildLoadingScreen, buildErrorScreen, handleModalKeypress} from './modal.js'
+import {formatCveDetailPlain} from '../../formatters/vuln.js'
+import {openBrowser} from '../open-browser.js'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ANSI escape sequences
@@ -104,7 +104,7 @@ export function computeViewport(selectedIndex, totalRows, viewportHeight) {
   startIndex = Math.max(0, startIndex)
   startIndex = Math.min(Math.max(0, totalRows - viewportHeight), startIndex)
   const endIndex = Math.min(startIndex + viewportHeight, totalRows)
-  return { startIndex, endIndex }
+  return {startIndex, endIndex}
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ export function formatRow(row, columns, termCols, isSelected) {
  * @returns {string}
  */
 export function buildTableScreen(state) {
-  const { rows, columns, heading, totalResults, selectedIndex, viewportHeight, termCols } = state
+  const {rows, columns, heading, totalResults, selectedIndex, viewportHeight, termCols} = state
   const lines = []
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ export function buildTableScreen(state) {
   lines.push(chalk.dim('─'.repeat(Math.min(termCols, dividerWidth))))
 
   // ── Data rows ─────────────────────────────────────────────────────────────
-  const { startIndex, endIndex } = computeViewport(selectedIndex, rows.length, viewportHeight)
+  const {startIndex, endIndex} = computeViewport(selectedIndex, rows.length, viewportHeight)
   for (let i = startIndex; i < endIndex; i++) {
     lines.push(formatRow(rows[i], columns, termCols, i === selectedIndex))
   }
@@ -229,26 +229,26 @@ export function createInteractiveTableState(rows, columns, heading, totalResults
  * @returns {InteractiveTableState | { exit: true }}
  */
 export function handleTableKeypress(state, key) {
-  const { selectedIndex, rows, viewportHeight } = state
+  const {selectedIndex, rows, viewportHeight} = state
 
-  if (key.name === 'escape' || key.name === 'q') return { exit: true }
-  if (key.ctrl && key.name === 'c') return { exit: true }
+  if (key.name === 'escape' || key.name === 'q') return {exit: true}
+  if (key.ctrl && key.name === 'c') return {exit: true}
 
   if (key.name === 'return') {
-    return { ...state, currentView: 'modal' }
+    return {...state, currentView: 'modal'}
   }
 
   if (key.name === 'up') {
-    return { ...state, selectedIndex: Math.max(0, selectedIndex - 1) }
+    return {...state, selectedIndex: Math.max(0, selectedIndex - 1)}
   }
   if (key.name === 'down') {
-    return { ...state, selectedIndex: Math.min(rows.length - 1, selectedIndex + 1) }
+    return {...state, selectedIndex: Math.min(rows.length - 1, selectedIndex + 1)}
   }
   if (key.name === 'pageup') {
-    return { ...state, selectedIndex: Math.max(0, selectedIndex - viewportHeight) }
+    return {...state, selectedIndex: Math.max(0, selectedIndex - viewportHeight)}
   }
   if (key.name === 'pagedown') {
-    return { ...state, selectedIndex: Math.min(rows.length - 1, selectedIndex + viewportHeight) }
+    return {...state, selectedIndex: Math.min(rows.length - 1, selectedIndex + viewportHeight)}
   }
 
   return state // unrecognized key — no state change
@@ -370,7 +370,7 @@ export async function startInteractiveTable(rows, columns, heading, totalResults
       if (advisoryUrl) {
         await openBrowser(String(advisoryUrl))
       }
-      state = { ...state, currentView: 'table' }
+      state = {...state, currentView: 'table'}
       process.stdout.write(buildTableScreen(state))
       return
     }

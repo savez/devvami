@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest'
-import { buildModalScreen, buildLoadingScreen, buildErrorScreen, handleModalKeypress } from '../../../src/utils/tui/modal.js'
+import {describe, it, expect} from 'vitest'
+import {
+  buildModalScreen,
+  buildLoadingScreen,
+  buildErrorScreen,
+  handleModalKeypress,
+} from '../../../src/utils/tui/modal.js'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -11,7 +16,10 @@ import { buildModalScreen, buildLoadingScreen, buildErrorScreen, handleModalKeyp
  * @returns {string}
  */
 function stripAnsi(str) {
-  return str.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\[2J/g, '').replace(/\x1b\[H/g, '')
+  return str
+    .replace(/\x1b\[[0-9;]*m/g, '')
+    .replace(/\x1b\[2J/g, '')
+    .replace(/\x1b\[H/g, '')
 }
 
 /**
@@ -21,7 +29,7 @@ function stripAnsi(str) {
  */
 function makeState(overrides = {}) {
   return {
-    rows: [{ id: 'CVE-2024-0001' }],
+    rows: [{id: 'CVE-2024-0001'}],
     columns: [],
     heading: 'Test',
     totalResults: 1,
@@ -55,7 +63,7 @@ describe('buildModalScreen', () => {
   })
 
   it('contains modal content lines', () => {
-    const state = makeState({ modalContent: ['Hello World', 'Second line'] })
+    const state = makeState({modalContent: ['Hello World', 'Second line']})
     const output = stripAnsi(buildModalScreen(state))
     expect(output).toContain('Hello World')
     expect(output).toContain('Second line')
@@ -72,21 +80,21 @@ describe('buildModalScreen', () => {
   })
 
   it('contains "o open ref" hint when firstRefUrl is set', () => {
-    const state = makeState({ firstRefUrl: 'https://example.com/cve' })
+    const state = makeState({firstRefUrl: 'https://example.com/cve'})
     const output = stripAnsi(buildModalScreen(state))
     expect(output).toContain('o open ref')
   })
 
   it('does NOT contain "o open ref" hint when firstRefUrl is null', () => {
-    const state = makeState({ firstRefUrl: null })
+    const state = makeState({firstRefUrl: null})
     const output = stripAnsi(buildModalScreen(state))
     expect(output).not.toContain('o open ref')
   })
 
   it('respects modalScrollOffset to show different content lines', () => {
-    const content = Array.from({ length: 30 }, (_, i) => `Line ${i + 1}`)
-    const stateTop = makeState({ modalContent: content, modalScrollOffset: 0 })
-    const stateScrolled = makeState({ modalContent: content, modalScrollOffset: 10 })
+    const content = Array.from({length: 30}, (_, i) => `Line ${i + 1}`)
+    const stateTop = makeState({modalContent: content, modalScrollOffset: 0})
+    const stateScrolled = makeState({modalContent: content, modalScrollOffset: 10})
     const outTop = stripAnsi(buildModalScreen(stateTop))
     const outScrolled = stripAnsi(buildModalScreen(stateScrolled))
     expect(outTop).toContain('Line 1')
@@ -95,7 +103,7 @@ describe('buildModalScreen', () => {
   })
 
   it('handles empty modalContent gracefully', () => {
-    const state = makeState({ modalContent: [] })
+    const state = makeState({modalContent: []})
     expect(() => buildModalScreen(state)).not.toThrow()
   })
 })
@@ -151,77 +159,77 @@ describe('buildErrorScreen', () => {
 
 describe('handleModalKeypress', () => {
   it('returns { backToTable: true } on Esc', () => {
-    const result = handleModalKeypress(makeState(), { name: 'escape' })
-    expect(result).toEqual({ backToTable: true })
+    const result = handleModalKeypress(makeState(), {name: 'escape'})
+    expect(result).toEqual({backToTable: true})
   })
 
   it('returns { exit: true } on q', () => {
-    const result = handleModalKeypress(makeState(), { name: 'q' })
-    expect(result).toEqual({ exit: true })
+    const result = handleModalKeypress(makeState(), {name: 'q'})
+    expect(result).toEqual({exit: true})
   })
 
   it('returns { exit: true } on Ctrl+C', () => {
-    const result = handleModalKeypress(makeState(), { name: 'c', ctrl: true })
-    expect(result).toEqual({ exit: true })
+    const result = handleModalKeypress(makeState(), {name: 'c', ctrl: true})
+    expect(result).toEqual({exit: true})
   })
 
   it('returns { openUrl } when o is pressed and firstRefUrl is set', () => {
-    const state = makeState({ firstRefUrl: 'https://nvd.nist.gov/cve/123' })
-    const result = handleModalKeypress(state, { name: 'o' })
-    expect(result).toEqual({ openUrl: 'https://nvd.nist.gov/cve/123' })
+    const state = makeState({firstRefUrl: 'https://nvd.nist.gov/cve/123'})
+    const result = handleModalKeypress(state, {name: 'o'})
+    expect(result).toEqual({openUrl: 'https://nvd.nist.gov/cve/123'})
   })
 
   it('does NOT open URL when o is pressed but firstRefUrl is null', () => {
-    const state = makeState({ firstRefUrl: null })
-    const result = handleModalKeypress(state, { name: 'o' })
+    const state = makeState({firstRefUrl: null})
+    const result = handleModalKeypress(state, {name: 'o'})
     // Should return unchanged state (no openUrl control object)
     expect(result).not.toHaveProperty('openUrl')
   })
 
   it('decrements modalScrollOffset on up arrow (not below 0)', () => {
-    const state = makeState({ modalScrollOffset: 5, modalContent: Array(30).fill('x') })
-    const result = handleModalKeypress(state, { name: 'up' })
-    expect(result).toMatchObject({ modalScrollOffset: 4 })
+    const state = makeState({modalScrollOffset: 5, modalContent: Array(30).fill('x')})
+    const result = handleModalKeypress(state, {name: 'up'})
+    expect(result).toMatchObject({modalScrollOffset: 4})
   })
 
   it('does not go below 0 on up at the top', () => {
-    const state = makeState({ modalScrollOffset: 0, modalContent: Array(30).fill('x') })
-    const result = handleModalKeypress(state, { name: 'up' })
-    expect(result).toMatchObject({ modalScrollOffset: 0 })
+    const state = makeState({modalScrollOffset: 0, modalContent: Array(30).fill('x')})
+    const result = handleModalKeypress(state, {name: 'up'})
+    expect(result).toMatchObject({modalScrollOffset: 0})
   })
 
   it('increments modalScrollOffset on down arrow', () => {
-    const state = makeState({ modalScrollOffset: 0, modalContent: Array(30).fill('x') })
-    const result = handleModalKeypress(state, { name: 'down' })
-    expect(result).toMatchObject({ modalScrollOffset: 1 })
+    const state = makeState({modalScrollOffset: 0, modalContent: Array(30).fill('x')})
+    const result = handleModalKeypress(state, {name: 'down'})
+    expect(result).toMatchObject({modalScrollOffset: 1})
   })
 
   it('clamps modalScrollOffset at max on down arrow', () => {
     // 30 content lines, viewportHeight = 24 - 3 - 4 = 17 → maxOffset = 30 - 17 = 13
     const content = Array(30).fill('x')
-    const state = makeState({ modalScrollOffset: 13, modalContent: content, termRows: 24 })
-    const result = handleModalKeypress(state, { name: 'down' })
-    expect(result).toMatchObject({ modalScrollOffset: 13 }) // already at max
+    const state = makeState({modalScrollOffset: 13, modalContent: content, termRows: 24})
+    const result = handleModalKeypress(state, {name: 'down'})
+    expect(result).toMatchObject({modalScrollOffset: 13}) // already at max
   })
 
   it('moves by contentViewport on pagedown', () => {
     const content = Array(50).fill('x')
-    const state = makeState({ modalScrollOffset: 0, modalContent: content, termRows: 24 })
-    const result = handleModalKeypress(state, { name: 'pagedown' })
+    const state = makeState({modalScrollOffset: 0, modalContent: content, termRows: 24})
+    const result = handleModalKeypress(state, {name: 'pagedown'})
     // contentViewport = 24 - 3 - 4 = 17
-    expect(result).toMatchObject({ modalScrollOffset: 17 })
+    expect(result).toMatchObject({modalScrollOffset: 17})
   })
 
   it('moves by contentViewport on pageup', () => {
     const content = Array(50).fill('x')
-    const state = makeState({ modalScrollOffset: 20, modalContent: content, termRows: 24 })
-    const result = handleModalKeypress(state, { name: 'pageup' })
-    expect(result).toMatchObject({ modalScrollOffset: 3 }) // 20 - 17
+    const state = makeState({modalScrollOffset: 20, modalContent: content, termRows: 24})
+    const result = handleModalKeypress(state, {name: 'pageup'})
+    expect(result).toMatchObject({modalScrollOffset: 3}) // 20 - 17
   })
 
   it('returns unchanged state for unrecognized key', () => {
     const state = makeState()
-    const result = handleModalKeypress(state, { name: 'f2' })
+    const result = handleModalKeypress(state, {name: 'f2'})
     expect(result).toBe(state)
   })
 })

@@ -1,8 +1,8 @@
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { loadConfig, saveConfig } from './config.js'
-import { exec } from './shell.js'
+import {readFile} from 'node:fs/promises'
+import {join} from 'node:path'
+import {fileURLToPath} from 'node:url'
+import {loadConfig, saveConfig} from './config.js'
+import {exec} from './shell.js'
 
 const PKG_PATH = join(fileURLToPath(import.meta.url), '..', '..', '..', 'package.json')
 const REPO = 'devvami/devvami'
@@ -22,7 +22,7 @@ export async function getCurrentVersion() {
  * @param {{ force?: boolean }} [opts]
  * @returns {Promise<string|null>}
  */
-export async function getLatestVersion({ force = false } = {}) {
+export async function getLatestVersion({force = false} = {}) {
   const config = await loadConfig()
   const now = Date.now()
   const lastCheck = config.lastVersionCheck ? new Date(config.lastVersionCheck).getTime() : 0
@@ -38,7 +38,7 @@ export async function getLatestVersion({ force = false } = {}) {
     // Il tag è nel formato "v1.0.0" — rimuove il prefisso "v"
     const latest = result.stdout.trim().replace(/^v/, '') || null
     if (latest) {
-      await saveConfig({ ...config, latestVersion: latest, lastVersionCheck: new Date().toISOString() })
+      await saveConfig({...config, latestVersion: latest, lastVersionCheck: new Date().toISOString()})
     }
     return latest
   } catch {
@@ -51,8 +51,8 @@ export async function getLatestVersion({ force = false } = {}) {
  * @param {{ force?: boolean }} [opts]
  * @returns {Promise<{ hasUpdate: boolean, current: string, latest: string|null }>}
  */
-export async function checkForUpdate({ force = false } = {}) {
-  const [current, latest] = await Promise.all([getCurrentVersion(), getLatestVersion({ force })])
+export async function checkForUpdate({force = false} = {}) {
+  const [current, latest] = await Promise.all([getCurrentVersion(), getLatestVersion({force})])
   const hasUpdate = Boolean(latest && latest !== current)
-  return { hasUpdate, current, latest }
+  return {hasUpdate, current, latest}
 }

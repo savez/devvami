@@ -1,7 +1,7 @@
-import { execaNode } from 'execa'
-import { createServer } from 'node:http'
-import { resolve, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {execaNode} from 'execa'
+import {createServer} from 'node:http'
+import {resolve, dirname} from 'node:path'
+import {fileURLToPath} from 'node:url'
 import stripAnsi from 'strip-ansi'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -60,14 +60,11 @@ export async function runCliJson(args) {
 export async function createMockServer(handler) {
   const server = createServer(handler)
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
-  const { port } = /** @type {import('node:net').AddressInfo} */ (server.address())
+  const {port} = /** @type {import('node:net').AddressInfo} */ (server.address())
   return {
     port,
     url: `http://127.0.0.1:${port}`,
-    stop: () =>
-      new Promise((resolve, reject) =>
-        server.close((err) => (err ? reject(err) : resolve())),
-      ),
+    stop: () => new Promise((resolve, reject) => server.close((err) => (err ? reject(err) : resolve()))),
   }
 }
 
@@ -96,5 +93,21 @@ export function jsonResponse(res, data, status = 200) {
  * @returns {Promise<{ stdout: string, stderr: string, exitCode: number }>}
  */
 export function runCliWithMockGitHub(args, port, extraEnv = {}) {
-  return runCli(args, { GITHUB_API_URL: `http://127.0.0.1:${port}`, ...extraEnv })
+  return runCli(args, {GITHUB_API_URL: `http://127.0.0.1:${port}`, ...extraEnv})
+}
+
+/**
+ * Run `dvmi sync-config-ai --json` and return the parsed result.
+ * Uses a temporary AI config path so tests are isolated from the real store.
+ *
+ * @param {string} [aiConfigPath] - Override AI config path (defaults to DVMI_AI_CONFIG_PATH env or a temp path)
+ * @returns {Promise<{ environments: unknown[], categories: { mcp: unknown[], command: unknown[], skill: unknown[], agent: unknown[] } }>}
+ */
+export async function runSyncConfigAi(aiConfigPath) {
+  const env = aiConfigPath ? {DVMI_AI_CONFIG_PATH: aiConfigPath} : {}
+  const result = await runCli(['sync-config-ai', '--json'], env)
+  if (result.exitCode !== 0) {
+    throw new Error(`sync-config-ai exited with ${result.exitCode}: ${result.stderr}`)
+  }
+  return JSON.parse(result.stdout)
 }

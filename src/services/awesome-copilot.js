@@ -1,5 +1,5 @@
-import { createOctokit } from './github.js'
-import { DvmiError } from '../utils/errors.js'
+import {createOctokit} from './github.js'
+import {DvmiError} from '../utils/errors.js'
 
 /** @import { AwesomeEntry } from '../types.js' */
 
@@ -10,7 +10,7 @@ import { DvmiError } from '../utils/errors.js'
  */
 export const AWESOME_CATEGORIES = ['agents', 'instructions', 'skills', 'plugins', 'hooks', 'workflows']
 
-const AWESOME_REPO = { owner: 'github', repo: 'awesome-copilot' }
+const AWESOME_REPO = {owner: 'github', repo: 'awesome-copilot'}
 
 /**
  * Parse a GitHub-flavoured markdown table into AwesomeEntry objects.
@@ -47,7 +47,10 @@ export function parseMarkdownTable(md, category) {
     if (/^[\*_]?name[\*_]?$/i.test(rawName)) continue
 
     // Strip badge images: [![alt](img)](url) → keep nothing; [![alt](img)] → keep nothing
-    const noBadge = rawName.replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, '').replace(/!\[.*?\]\(.*?\)/g, '').trim()
+    const noBadge = rawName
+      .replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, '')
+      .replace(/!\[.*?\]\(.*?\)/g, '')
+      .trim()
 
     // Extract [text](url) link
     const linkMatch = noBadge.match(/\[([^\]]+)\]\(([^)]+)\)/)

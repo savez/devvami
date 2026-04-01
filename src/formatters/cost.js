@@ -57,11 +57,5 @@ export function formatCostTable(entries, label, groupBy = 'service') {
     .map((e) => `  ${rowLabel(e, groupBy).padEnd(40)} ${formatCurrency(e.amount)}`)
     .join('\n')
   const divider = '─'.repeat(50)
-  return [
-    `Costs for: ${label}`,
-    divider,
-    rows,
-    divider,
-    `  ${'Total'.padEnd(40)} ${formatCurrency(total)}`,
-  ].join('\n')
+  return [`Costs for: ${label}`, divider, rows, divider, `  ${'Total'.padEnd(40)} ${formatCurrency(total)}`].join('\n')
 }

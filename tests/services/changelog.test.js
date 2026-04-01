@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import {describe, it, expect, vi} from 'vitest'
 
 vi.mock('../../src/services/shell.js', () => ({
   exec: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock('../../src/services/shell.js', () => ({
 function parseConventionalCommit(message) {
   const match = message.match(/^(\w+)(?:\(([^)]+)\))?!?: (.+)/)
   if (!match) return null
-  return { type: match[1], scope: match[2] ?? '', description: match[3] }
+  return {type: match[1], scope: match[2] ?? '', description: match[3]}
 }
 
 describe('parseConventionalCommit', () => {
@@ -51,13 +51,8 @@ describe('parseConventionalCommit', () => {
 
 describe('changelog grouping', () => {
   it('groups commits by type', () => {
-    const commits = [
-      'feat(auth): add login flow',
-      'fix: fix timeout',
-      'chore: update deps',
-      'random message',
-    ]
-    const sections = { feat: [], fix: [], chore: [], docs: [], refactor: [], test: [], other: [] }
+    const commits = ['feat(auth): add login flow', 'fix: fix timeout', 'chore: update deps', 'random message']
+    const sections = {feat: [], fix: [], chore: [], docs: [], refactor: [], test: [], other: []}
     for (const msg of commits) {
       const parsed = parseConventionalCommit(msg)
       const type = parsed?.type ?? 'other'

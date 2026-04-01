@@ -1,12 +1,18 @@
-import { Command, Flags } from '@oclif/core'
-import { writeFile } from 'node:fs/promises'
+import {Command, Flags} from '@oclif/core'
+import {writeFile} from 'node:fs/promises'
 import ora from 'ora'
 import chalk from 'chalk'
-import { detectEcosystems, supportedEcosystemsMessage } from '../../services/audit-detector.js'
-import { runAudit, summarizeFindings, filterBySeverity } from '../../services/audit-runner.js'
-import { formatFindingsTable, formatScanSummary, formatMarkdownReport, truncate, colorSeverity } from '../../formatters/vuln.js'
-import { getCveDetail } from '../../services/nvd.js'
-import { startInteractiveTable } from '../../utils/tui/navigable-table.js'
+import {detectEcosystems, supportedEcosystemsMessage} from '../../services/audit-detector.js'
+import {runAudit, summarizeFindings, filterBySeverity} from '../../services/audit-runner.js'
+import {
+  formatFindingsTable,
+  formatScanSummary,
+  formatMarkdownReport,
+  truncate,
+  colorSeverity,
+} from '../../formatters/vuln.js'
+import {getCveDetail} from '../../services/nvd.js'
+import {startInteractiveTable} from '../../utils/tui/navigable-table.js'
 
 // Minimum terminal rows required to show the interactive TUI (same threshold as vuln search)
 const MIN_TTY_ROWS = 6
@@ -49,9 +55,9 @@ export default class VulnScan extends Command {
   }
 
   async run() {
-    const { flags } = await this.parse(VulnScan)
+    const {flags} = await this.parse(VulnScan)
     const isJson = flags.json
-    const { severity, 'no-fail': noFail, report } = flags
+    const {severity, 'no-fail': noFail, report} = flags
 
     const projectPath = process.env.DVMI_SCAN_DIR ?? process.cwd()
     const scanDate = new Date().toISOString()
@@ -66,8 +72,8 @@ export default class VulnScan extends Command {
           scanDate,
           ecosystems: [],
           findings: [],
-          summary: { critical: 0, high: 0, medium: 0, low: 0, unknown: 0, total: 0 },
-          errors: [{ ecosystem: 'none', message: 'No supported package manager detected.' }],
+          summary: {critical: 0, high: 0, medium: 0, low: 0, unknown: 0, total: 0},
+          errors: [{ecosystem: 'none', message: 'No supported package manager detected.'}],
         }
       }
 
@@ -99,11 +105,11 @@ export default class VulnScan extends Command {
     for (const eco of ecosystems) {
       const spinner = isJson ? null : ora(`  Scanning ${eco.name} dependencies...`).start()
 
-      const { findings, error } = await runAudit(eco)
+      const {findings, error} = await runAudit(eco)
 
       if (error) {
         spinner?.fail(`  Scanning ${eco.name} dependencies... failed`)
-        errors.push({ ecosystem: eco.name, message: error })
+        errors.push({ecosystem: eco.name, message: error})
       } else {
         spinner?.succeed(`  Scanning ${eco.name} dependencies... done`)
         allFindings.push(...findings)
@@ -170,25 +176,38 @@ export default class VulnScan extends Command {
 
       /** @type {import('../../utils/tui/navigable-table.js').TableColumnDef[]} */
       const columns = [
-        { header: 'Package',  key: 'pkg',      width: COL_WIDTHS.pkg },
-        { header: 'Version',  key: 'version',  width: COL_WIDTHS.version },
-        { header: 'Severity', key: 'severity', width: COL_WIDTHS.severity, colorize: (v) => colorSeverity(v) },
-        { header: 'CVE',      key: 'cve',      width: COL_WIDTHS.cve,      colorize: (v) => (v !== '—' ? chalk.cyan(v) : chalk.gray(v)) },
-        { header: 'Title',    key: 'title',    width: titleWidth },
+        {header: 'Package', key: 'pkg', width: COL_WIDTHS.pkg},
+        {header: 'Version', key: 'version', width: COL_WIDTHS.version},
+        {header: 'Severity', key: 'severity', width: COL_WIDTHS.severity, colorize: (v) => colorSeverity(v)},
+        {
+          header: 'CVE',
+          key: 'cve',
+          width: COL_WIDTHS.cve,
+          colorize: (v) => (v !== '—' ? chalk.cyan(v) : chalk.gray(v)),
+        },
+        {header: 'Title', key: 'title', width: titleWidth},
       ]
 
       await startInteractiveTable(rows, columns, heading, filteredFindings.length, getCveDetail)
     } else {
       // Non-TTY fallback: static table + summary (unchanged from pre-TUI behaviour)
       if (filteredFindings.length > 0) {
-        this.log(chalk.bold(`  Findings (${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'})`))
+        this.log(
+          chalk.bold(
+            `  Findings (${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'})`,
+          ),
+        )
         this.log('')
         this.log(formatFindingsTable(filteredFindings))
         this.log('')
         this.log(chalk.bold('  Summary'))
         this.log(formatScanSummary(summary))
         this.log('')
-        this.log(chalk.yellow(`  ⚠ ${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'} found. Run \`dvmi vuln detail <CVE-ID>\` for details.`))
+        this.log(
+          chalk.yellow(
+            `  ⚠ ${filteredFindings.length} ${filteredFindings.length === 1 ? 'vulnerability' : 'vulnerabilities'} found. Run \`dvmi vuln detail <CVE-ID>\` for details.`,
+          ),
+        )
       }
     }
 

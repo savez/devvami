@@ -1,6 +1,6 @@
 import chalk from 'chalk'
-import { marked } from 'marked'
-import { renderTable } from './table.js'
+import {marked} from 'marked'
+import {renderTable} from './table.js'
 
 /** @import { Prompt, Skill, AwesomeEntry } from '../types.js' */
 
@@ -16,31 +16,28 @@ export function formatPromptTable(prompts) {
     return chalk.dim('No prompts found.')
   }
 
-  return renderTable(
-    /** @type {Record<string, unknown>[]} */ (prompts),
-    [
-      {
-        header: 'Title',
-        key: 'title',
-        width: 36,
-        colorize: (v) => chalk.hex('#FF9A5C')(v),
-      },
-      {
-        header: 'Category',
-        key: 'category',
-        width: 16,
-        format: (v) => v ?? '—',
-        colorize: (v) => chalk.hex('#4A9EFF')(v),
-      },
-      {
-        header: 'Description',
-        key: 'description',
-        width: 60,
-        format: (v) => v ?? '—',
-        colorize: (v) => chalk.white(v),
-      },
-    ],
-  )
+  return renderTable(/** @type {Record<string, unknown>[]} */ (prompts), [
+    {
+      header: 'Title',
+      key: 'title',
+      width: 36,
+      colorize: (v) => chalk.hex('#FF9A5C')(v),
+    },
+    {
+      header: 'Category',
+      key: 'category',
+      width: 16,
+      format: (v) => v ?? '—',
+      colorize: (v) => chalk.hex('#4A9EFF')(v),
+    },
+    {
+      header: 'Description',
+      key: 'description',
+      width: 60,
+      format: (v) => v ?? '—',
+      colorize: (v) => chalk.white(v),
+    },
+  ])
 }
 
 /**
@@ -63,7 +60,7 @@ export function formatPromptBody(prompt) {
     .join('\n')
 
   // Render markdown to plain terminal text by stripping HTML tags from marked output
-  const rendered = marked(prompt.body, { async: false })
+  const rendered = marked(prompt.body, {async: false})
   const plain = String(rendered)
     .replace(/<[^>]+>/g, '')
     .replace(/&amp;/g, '&')
@@ -91,31 +88,28 @@ export function formatSkillTable(skills) {
     return chalk.dim('No skills found.')
   }
 
-  return renderTable(
-    /** @type {Record<string, unknown>[]} */ (skills),
-    [
-      {
-        header: 'Name',
-        key: 'name',
-        width: 36,
-        colorize: (v) => chalk.hex('#FF9A5C')(v),
-      },
-      {
-        header: 'Installs',
-        key: 'installs',
-        width: 10,
-        format: (v) => (v != null ? String(v) : '—'),
-        colorize: (v) => chalk.hex('#4A9EFF')(v),
-      },
-      {
-        header: 'Description',
-        key: 'description',
-        width: 60,
-        format: (v) => v ?? '—',
-        colorize: (v) => chalk.white(v),
-      },
-    ],
-  )
+  return renderTable(/** @type {Record<string, unknown>[]} */ (skills), [
+    {
+      header: 'Name',
+      key: 'name',
+      width: 36,
+      colorize: (v) => chalk.hex('#FF9A5C')(v),
+    },
+    {
+      header: 'Installs',
+      key: 'installs',
+      width: 10,
+      format: (v) => (v != null ? String(v) : '—'),
+      colorize: (v) => chalk.hex('#4A9EFF')(v),
+    },
+    {
+      header: 'Description',
+      key: 'description',
+      width: 60,
+      format: (v) => v ?? '—',
+      colorize: (v) => chalk.white(v),
+    },
+  ])
 }
 
 /**
@@ -131,29 +125,26 @@ export function formatAwesomeTable(entries, category) {
     return chalk.dim(category ? `No entries found for category "${category}".` : 'No entries found.')
   }
 
-  return renderTable(
-    /** @type {Record<string, unknown>[]} */ (entries),
-    [
-      {
-        header: 'Name',
-        key: 'name',
-        width: 36,
-        colorize: (v) => chalk.hex('#FF9A5C')(v),
-      },
-      {
-        header: 'Category',
-        key: 'category',
-        width: 14,
-        format: (v) => v ?? '—',
-        colorize: (v) => chalk.hex('#4A9EFF')(v),
-      },
-      {
-        header: 'Description',
-        key: 'description',
-        width: 58,
-        format: (v) => v ?? '—',
-        colorize: (v) => chalk.white(v),
-      },
-    ],
-  )
+  return renderTable(/** @type {Record<string, unknown>[]} */ (entries), [
+    {
+      header: 'Name',
+      key: 'name',
+      width: 36,
+      colorize: (v) => chalk.hex('#FF9A5C')(v),
+    },
+    {
+      header: 'Category',
+      key: 'category',
+      width: 14,
+      format: (v) => v ?? '—',
+      colorize: (v) => chalk.hex('#4A9EFF')(v),
+    },
+    {
+      header: 'Description',
+      key: 'description',
+      width: 58,
+      format: (v) => v ?? '—',
+      colorize: (v) => chalk.white(v),
+    },
+  ])
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import {describe, it, expect, vi, beforeEach} from 'vitest'
 
 vi.mock('../../src/services/shell.js', () => ({
   exec: vi.fn(),
@@ -8,10 +8,10 @@ describe('getPRDetail', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('restituisce PRDetail con qaComments e qaSteps dal mock MSW', async () => {
-    const { exec } = await import('../../src/services/shell.js')
-    vi.mocked(exec).mockResolvedValue({ stdout: 'fake-gh-token', stderr: '', exitCode: 0 })
+    const {exec} = await import('../../src/services/shell.js')
+    vi.mocked(exec).mockResolvedValue({stdout: 'fake-gh-token', stderr: '', exitCode: 0})
 
-    const { getPRDetail } = await import('../../src/services/github.js')
+    const {getPRDetail} = await import('../../src/services/github.js')
     const detail = await getPRDetail('acme', 'my-api', 42)
 
     expect(detail.number).toBe(42)
@@ -27,10 +27,10 @@ describe('getPRDetail', () => {
   })
 
   it('identifica correttamente i commenti QA tramite autore', async () => {
-    const { exec } = await import('../../src/services/shell.js')
-    vi.mocked(exec).mockResolvedValue({ stdout: 'fake-gh-token', stderr: '', exitCode: 0 })
+    const {exec} = await import('../../src/services/shell.js')
+    vi.mocked(exec).mockResolvedValue({stdout: 'fake-gh-token', stderr: '', exitCode: 0})
 
-    const { getPRDetail } = await import('../../src/services/github.js')
+    const {getPRDetail} = await import('../../src/services/github.js')
     const detail = await getPRDetail('acme', 'my-api', 42)
 
     // Il commento di "qa-engineer" deve essere classificato come QA
@@ -39,10 +39,10 @@ describe('getPRDetail', () => {
   })
 
   it('estrae qaSteps dalle checklist nei commenti QA', async () => {
-    const { exec } = await import('../../src/services/shell.js')
-    vi.mocked(exec).mockResolvedValue({ stdout: 'fake-gh-token', stderr: '', exitCode: 0 })
+    const {exec} = await import('../../src/services/shell.js')
+    vi.mocked(exec).mockResolvedValue({stdout: 'fake-gh-token', stderr: '', exitCode: 0})
 
-    const { getPRDetail } = await import('../../src/services/github.js')
+    const {getPRDetail} = await import('../../src/services/github.js')
     const detail = await getPRDetail('acme', 'my-api', 42)
 
     // Il mock ha "- [x] Testare flusso login" e "- [ ] Verificare logout"

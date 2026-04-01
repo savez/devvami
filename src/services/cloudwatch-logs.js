@@ -1,8 +1,4 @@
-import {
-  CloudWatchLogsClient,
-  paginateDescribeLogGroups,
-  FilterLogEventsCommand,
-} from '@aws-sdk/client-cloudwatch-logs'
+import {CloudWatchLogsClient, paginateDescribeLogGroups, FilterLogEventsCommand} from '@aws-sdk/client-cloudwatch-logs'
 
 /** @import { LogGroup, LogEvent, LogFilterResult } from '../types.js' */
 
@@ -20,7 +16,7 @@ export function sinceToEpochMs(since) {
   }
   const offset = MS[since]
   if (!offset) throw new Error(`Invalid since value: ${since}. Must be one of: 1h, 24h, 7d`)
-  return { startTime: now - offset, endTime: now }
+  return {startTime: now - offset, endTime: now}
 }
 
 /**
@@ -29,11 +25,11 @@ export function sinceToEpochMs(since) {
  * @returns {Promise<LogGroup[]>}
  */
 export async function listLogGroups(region = 'eu-west-1') {
-  const client = new CloudWatchLogsClient({ region })
+  const client = new CloudWatchLogsClient({region})
   /** @type {LogGroup[]} */
   const groups = []
 
-  const paginator = paginateDescribeLogGroups({ client }, {})
+  const paginator = paginateDescribeLogGroups({client}, {})
   for await (const page of paginator) {
     for (const lg of page.logGroups ?? []) {
       groups.push({
@@ -59,7 +55,7 @@ export async function listLogGroups(region = 'eu-west-1') {
  * @returns {Promise<LogFilterResult>}
  */
 export async function filterLogEvents(logGroupName, filterPattern, startTime, endTime, limit, region = 'eu-west-1') {
-  const client = new CloudWatchLogsClient({ region })
+  const client = new CloudWatchLogsClient({region})
 
   const command = new FilterLogEventsCommand({
     logGroupName,

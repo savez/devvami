@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { validateRepoName } from '../../../src/validators/repo-name.js'
+import {describe, it, expect} from 'vitest'
+import {validateRepoName} from '../../../src/validators/repo-name.js'
 
 describe('validateRepoName', () => {
   it('accepts valid kebab-case name', () => {
-    expect(validateRepoName('my-service')).toEqual({ valid: true })
+    expect(validateRepoName('my-service')).toEqual({valid: true})
   })
 
   it('accepts single word', () => {
-    expect(validateRepoName('myservice')).toEqual({ valid: true })
+    expect(validateRepoName('myservice')).toEqual({valid: true})
   })
 
   it('rejects empty string', () => {

@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { colorStatus } from './table.js'
+import {colorStatus} from './table.js'
 
 /** @import { DoctorCheck } from '../types.js' */
 

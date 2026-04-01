@@ -1,26 +1,23 @@
-import { Command, Args, Flags } from '@oclif/core'
-import { exec } from '../../services/shell.js'
+import {Command, Args, Flags} from '@oclif/core'
+import {exec} from '../../services/shell.js'
 
 export default class PipelineLogs extends Command {
   static description = 'Log di un workflow run specifico'
 
-  static examples = [
-    '<%= config.bin %> pipeline logs 12345',
-    '<%= config.bin %> pipeline logs 12345 --job test',
-  ]
+  static examples = ['<%= config.bin %> pipeline logs 12345', '<%= config.bin %> pipeline logs 12345 --job test']
 
   static enableJsonFlag = true
 
   static args = {
-    'run-id': Args.integer({ description: 'ID del workflow run', required: true }),
+    'run-id': Args.integer({description: 'ID del workflow run', required: true}),
   }
 
   static flags = {
-    job: Flags.string({ description: 'Filtra per job name' }),
+    job: Flags.string({description: 'Filtra per job name'}),
   }
 
   async run() {
-    const { args, flags } = await this.parse(PipelineLogs)
+    const {args, flags} = await this.parse(PipelineLogs)
     const isJson = flags.json
 
     const ghArgs = ['run', 'view', String(args['run-id']), '--log']
@@ -32,10 +29,10 @@ export default class PipelineLogs extends Command {
     }
 
     if (isJson) {
-      return { runId: args['run-id'], log: result.stdout }
+      return {runId: args['run-id'], log: result.stdout}
     }
 
     this.log(result.stdout)
-    return { runId: args['run-id'], log: result.stdout }
+    return {runId: args['run-id'], log: result.stdout}
   }
 }

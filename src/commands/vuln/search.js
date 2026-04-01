@@ -1,10 +1,10 @@
-import { Command, Args, Flags } from '@oclif/core'
+import {Command, Args, Flags} from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { searchCves, getCveDetail } from '../../services/nvd.js'
-import { formatCveSearchTable, colorSeverity, formatScore, formatDate, truncate } from '../../formatters/vuln.js'
-import { startInteractiveTable } from '../../utils/tui/navigable-table.js'
-import { ValidationError } from '../../utils/errors.js'
+import {searchCves, getCveDetail} from '../../services/nvd.js'
+import {formatCveSearchTable, colorSeverity, formatScore, formatDate, truncate} from '../../formatters/vuln.js'
+import {startInteractiveTable} from '../../utils/tui/navigable-table.js'
+import {ValidationError} from '../../utils/errors.js'
 
 // Minimum terminal rows required to show the interactive TUI
 const MIN_TTY_ROWS = 6
@@ -33,7 +33,10 @@ export default class VulnSearch extends Command {
   static enableJsonFlag = true
 
   static args = {
-    keyword: Args.string({ description: 'Product, library, or keyword to search for (optional — omit to see all recent CVEs)', required: false }),
+    keyword: Args.string({
+      description: 'Product, library, or keyword to search for (optional — omit to see all recent CVEs)',
+      required: false,
+    }),
   }
 
   static flags = {
@@ -55,11 +58,11 @@ export default class VulnSearch extends Command {
   }
 
   async run() {
-    const { args, flags } = await this.parse(VulnSearch)
+    const {args, flags} = await this.parse(VulnSearch)
     const isJson = flags.json
 
-    const { keyword } = args
-    const { days, severity, limit } = flags
+    const {keyword} = args
+    const {days, severity, limit} = flags
 
     if (days < 1 || days > 120) {
       throw new ValidationError(
@@ -75,13 +78,15 @@ export default class VulnSearch extends Command {
       )
     }
 
-    const spinner = isJson ? null : ora(keyword ? `Searching NVD for "${keyword}"...` : `Fetching recent CVEs (last ${days} days)...`).start()
+    const spinner = isJson
+      ? null
+      : ora(keyword ? `Searching NVD for "${keyword}"...` : `Fetching recent CVEs (last ${days} days)...`).start()
 
     try {
-      const { results, totalResults } = await searchCves({ keyword, days, severity, limit })
+      const {results, totalResults} = await searchCves({keyword, days, severity, limit})
       spinner?.stop()
 
-      const result = { keyword: keyword ?? null, days, severity: severity ?? null, totalResults, results }
+      const result = {keyword: keyword ?? null, days, severity: severity ?? null, totalResults, results}
 
       if (isJson) return result
 
@@ -108,12 +113,12 @@ export default class VulnSearch extends Command {
 
         /** @type {import('../../utils/tui/navigable-table.js').TableColumnDef[]} */
         const columns = [
-          { header: 'CVE ID',      key: 'id',          width: COL_WIDTHS.id,        colorize: (v) => chalk.cyan(v) },
-          { header: 'Severity',    key: 'severity',     width: COL_WIDTHS.severity,  colorize: (v) => colorSeverity(v) },
-          { header: 'Score',       key: 'score',        width: COL_WIDTHS.score },
-          { header: 'Published',   key: 'published',    width: COL_WIDTHS.published },
-          { header: 'Description', key: 'description',  width: descWidth },
-          { header: 'Reference',   key: 'reference',    width: COL_WIDTHS.reference },
+          {header: 'CVE ID', key: 'id', width: COL_WIDTHS.id, colorize: (v) => chalk.cyan(v)},
+          {header: 'Severity', key: 'severity', width: COL_WIDTHS.severity, colorize: (v) => colorSeverity(v)},
+          {header: 'Score', key: 'score', width: COL_WIDTHS.score},
+          {header: 'Published', key: 'published', width: COL_WIDTHS.published},
+          {header: 'Description', key: 'description', width: descWidth},
+          {header: 'Reference', key: 'reference', width: COL_WIDTHS.reference},
         ]
 
         await startInteractiveTable(rows, columns, heading, totalResults, getCveDetail)

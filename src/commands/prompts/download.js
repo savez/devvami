@@ -1,11 +1,11 @@
-import { Command, Args, Flags } from '@oclif/core'
+import {Command, Args, Flags} from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { select, confirm } from '@inquirer/prompts'
-import { join } from 'node:path'
-import { listPrompts, downloadPrompt } from '../../services/prompts.js'
-import { loadConfig } from '../../services/config.js'
-import { DvmiError } from '../../utils/errors.js'
+import {select, confirm} from '@inquirer/prompts'
+import {join} from 'node:path'
+import {listPrompts, downloadPrompt} from '../../services/prompts.js'
+import {loadConfig} from '../../services/config.js'
+import {DvmiError} from '../../utils/errors.js'
 
 /** @import { Prompt } from '../../types.js' */
 
@@ -38,7 +38,7 @@ export default class PromptsDownload extends Command {
   }
 
   async run() {
-    const { args, flags } = await this.parse(PromptsDownload)
+    const {args, flags} = await this.parse(PromptsDownload)
     const isJson = flags.json
 
     // Determine local prompts directory from config or default to cwd/.prompts
@@ -48,8 +48,7 @@ export default class PromptsDownload extends Command {
     } catch {
       /* use defaults */
     }
-    const localDir =
-      process.env.DVMI_PROMPTS_DIR ?? config.promptsDir ?? join(process.cwd(), DEFAULT_PROMPTS_DIR)
+    const localDir = process.env.DVMI_PROMPTS_DIR ?? config.promptsDir ?? join(process.cwd(), DEFAULT_PROMPTS_DIR)
 
     // Resolve path interactively if not provided (only in interactive mode)
     let relativePath = args.path
@@ -74,7 +73,7 @@ export default class PromptsDownload extends Command {
       } catch (err) {
         spinner.fail()
         if (err instanceof DvmiError) {
-          this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+          this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
         }
         throw err
       }
@@ -82,14 +81,14 @@ export default class PromptsDownload extends Command {
 
       if (prompts.length === 0) {
         this.log(chalk.yellow('No prompts found in the repository.'))
-        return { downloaded: [], skipped: [] }
+        return {downloaded: [], skipped: []}
       }
 
       const choices = prompts.map((p) => ({
         name: `${p.path}  ${chalk.dim(p.title)}`,
         value: p.path,
       }))
-      relativePath = await select({ message: 'Select a prompt to download:', choices })
+      relativePath = await select({message: 'Select a prompt to download:', choices})
     }
 
     // Attempt download (skips automatically if file exists and --overwrite not set)
@@ -103,11 +102,11 @@ export default class PromptsDownload extends Command {
 
     let result
     try {
-      result = await downloadPrompt(relativePath, localDir, { overwrite: flags.overwrite })
+      result = await downloadPrompt(relativePath, localDir, {overwrite: flags.overwrite})
     } catch (err) {
       spinner?.fail()
       if (err instanceof DvmiError) {
-        this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+        this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
       }
       throw err
     }
@@ -122,10 +121,10 @@ export default class PromptsDownload extends Command {
       })
       if (shouldOverwrite) {
         try {
-          result = await downloadPrompt(relativePath, localDir, { overwrite: true })
+          result = await downloadPrompt(relativePath, localDir, {overwrite: true})
         } catch (err) {
           if (err instanceof DvmiError) {
-            this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+            this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
           }
           throw err
         }

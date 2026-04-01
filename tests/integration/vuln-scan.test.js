@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { runCli } from './helpers.js'
+import {describe, it, expect} from 'vitest'
+import {mkdtemp, writeFile, rm} from 'node:fs/promises'
+import {tmpdir} from 'node:os'
+import {join} from 'node:path'
+import {runCli} from './helpers.js'
 
 describe('dvmi vuln scan', () => {
   it('shows help', async () => {
-    const { stdout, exitCode } = await runCli(['vuln', 'scan', '--help'])
+    const {stdout, exitCode} = await runCli(['vuln', 'scan', '--help'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('USAGE')
     expect(stdout).toContain('--severity')
@@ -17,7 +17,7 @@ describe('dvmi vuln scan', () => {
   it('exits 2 when no supported lock file is present in an empty directory', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'dvmi-scan-'))
     try {
-      const { exitCode, stdout, stderr } = await runCli(['vuln', 'scan'], {
+      const {exitCode, stdout, stderr} = await runCli(['vuln', 'scan'], {
         DVMI_SCAN_DIR: tmpDir,
       })
       // exit 2 = no package manager detected
@@ -25,14 +25,14 @@ describe('dvmi vuln scan', () => {
       const output = stdout + stderr
       expect(output).toMatch(/No supported package manager/i)
     } finally {
-      await rm(tmpDir, { recursive: true, force: true })
+      await rm(tmpDir, {recursive: true, force: true})
     }
   })
 
   it('returns JSON with empty findings when no lock file found and --json is passed', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'dvmi-scan-'))
     try {
-      const { stdout, exitCode } = await runCli(['vuln', 'scan', '--json'], {
+      const {stdout, exitCode} = await runCli(['vuln', 'scan', '--json'], {
         DVMI_SCAN_DIR: tmpDir,
       })
       // With --json it should exit 0 and return structured JSON even with no lock file
@@ -47,7 +47,7 @@ describe('dvmi vuln scan', () => {
         expect(exitCode).toBe(2)
       }
     } finally {
-      await rm(tmpDir, { recursive: true, force: true })
+      await rm(tmpDir, {recursive: true, force: true})
     }
   })
 
@@ -59,7 +59,7 @@ describe('dvmi vuln scan', () => {
 
       // The fake bin directory provides a `pnpm` stub that outputs npm-audit-like JSON.
       // We run the scan and just assert the command runs and exits with 0 or 1 (not 2).
-      const { exitCode, stdout, stderr } = await runCli(['vuln', 'scan'], {
+      const {exitCode, stdout, stderr} = await runCli(['vuln', 'scan'], {
         DVMI_SCAN_DIR: tmpDir,
       })
       // 0 = no vulns, 1 = vulns found, 2 = no lockfile detected
@@ -69,7 +69,7 @@ describe('dvmi vuln scan', () => {
       const combined = stdout + stderr
       expect(combined.length).toBeGreaterThan(0)
     } finally {
-      await rm(tmpDir, { recursive: true, force: true })
+      await rm(tmpDir, {recursive: true, force: true})
     }
   })
 
@@ -78,18 +78,18 @@ describe('dvmi vuln scan', () => {
     try {
       await writeFile(join(tmpDir, 'pnpm-lock.yaml'), 'lockfileVersion: 6.0\n', 'utf8')
 
-      const { exitCode } = await runCli(['vuln', 'scan', '--no-fail'], {
+      const {exitCode} = await runCli(['vuln', 'scan', '--no-fail'], {
         DVMI_SCAN_DIR: tmpDir,
       })
       // With --no-fail the exit code must always be 0 (or 2 for no lockfile, but we have one)
       expect(exitCode).not.toBe(1)
     } finally {
-      await rm(tmpDir, { recursive: true, force: true })
+      await rm(tmpDir, {recursive: true, force: true})
     }
   })
 
   it('--severity flag is validated', async () => {
-    const { stderr, exitCode } = await runCli(['vuln', 'scan', '--severity', 'extreme'])
+    const {stderr, exitCode} = await runCli(['vuln', 'scan', '--severity', 'extreme'])
     expect(exitCode).toBe(2)
     expect(stderr).toMatch(/Expected.*severity|severity.*expected/i)
   })
@@ -101,7 +101,7 @@ describe('dvmi vuln scan', () => {
 
       // runCli always uses isTTY=false (spawned subprocess with non-TTY stdio)
       // so static table output should appear, not the interactive alt-screen TUI
-      const { stdout, stderr, exitCode } = await runCli(['vuln', 'scan', '--no-fail'], {
+      const {stdout, stderr, exitCode} = await runCli(['vuln', 'scan', '--no-fail'], {
         DVMI_SCAN_DIR: tmpDir,
       })
       const combined = stdout + stderr
@@ -114,7 +114,7 @@ describe('dvmi vuln scan', () => {
       // Exit code must be 0 (--no-fail) or 0 (no vulns found)
       expect(exitCode).toBe(0)
     } finally {
-      await rm(tmpDir, { recursive: true, force: true })
+      await rm(tmpDir, {recursive: true, force: true})
     }
   })
 
@@ -123,7 +123,7 @@ describe('dvmi vuln scan', () => {
     try {
       await writeFile(join(tmpDir, 'pnpm-lock.yaml'), 'lockfileVersion: 6.0\n', 'utf8')
 
-      const { stdout, exitCode } = await runCli(['vuln', 'scan', '--json', '--no-fail'], {
+      const {stdout, exitCode} = await runCli(['vuln', 'scan', '--json', '--no-fail'], {
         DVMI_SCAN_DIR: tmpDir,
       })
 
@@ -142,7 +142,7 @@ describe('dvmi vuln scan', () => {
         expect(data.summary).toHaveProperty('total')
       }
     } finally {
-      await rm(tmpDir, { recursive: true, force: true })
+      await rm(tmpDir, {recursive: true, force: true})
     }
   })
 })

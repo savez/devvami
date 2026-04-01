@@ -1,8 +1,8 @@
-import { Command, Args } from '@oclif/core'
+import {Command, Args} from '@oclif/core'
 import chalk from 'chalk'
-import { exec } from '../services/shell.js'
-import { openBrowser } from '../utils/open-browser.js'
-import { loadConfig } from '../services/config.js'
+import {exec} from '../services/shell.js'
+import {openBrowser} from '../utils/open-browser.js'
+import {loadConfig} from '../services/config.js'
 
 const VALID_TARGETS = ['repo', 'pr', 'actions', 'aws']
 
@@ -20,11 +20,11 @@ export default class Open extends Command {
   static enableJsonFlag = true
 
   static args = {
-    target: Args.string({ description: 'Target: repo, pr, actions, aws', required: true }),
+    target: Args.string({description: 'Target: repo, pr, actions, aws', required: true}),
   }
 
   async run() {
-    const { args, flags } = await this.parse(Open)
+    const {args, flags} = await this.parse(Open)
     const isJson = flags.json
 
     if (!VALID_TARGETS.includes(args.target)) {
@@ -55,15 +55,15 @@ export default class Open extends Command {
         const branch = branchResult.stdout
         // Try to find open PR for current branch
         const prResult = await exec('gh', ['pr', 'view', '--json', 'url', '-H', branch])
-         if (prResult.exitCode === 0) {
-           url = JSON.parse(prResult.stdout).url
-         } else {
-           this.error(`No PR found for branch "${branch}". Create one with \`dvmi pr create\``)
-         }
+        if (prResult.exitCode === 0) {
+          url = JSON.parse(prResult.stdout).url
+        } else {
+          this.error(`No PR found for branch "${branch}". Create one with \`dvmi pr create\``)
+        }
       }
     }
 
-    const result = { target: args.target, url, opened: !isJson }
+    const result = {target: args.target, url, opened: !isJson}
 
     if (isJson) return result
 

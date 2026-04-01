@@ -15,7 +15,7 @@ const MAX_LENGTH = 100
  */
 export function validateRepoName(name) {
   if (!name || name.length === 0) {
-    return { valid: false, error: 'Repository name cannot be empty' }
+    return {valid: false, error: 'Repository name cannot be empty'}
   }
 
   if (name.length > MAX_LENGTH) {
@@ -38,5 +38,5 @@ export function validateRepoName(name) {
     }
   }
 
-  return { valid: true }
+  return {valid: true}
 }

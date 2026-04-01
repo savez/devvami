@@ -1,10 +1,10 @@
-import { Command, Args, Flags } from '@oclif/core'
-import { input } from '@inquirer/prompts'
+import {Command, Args, Flags} from '@oclif/core'
+import {input} from '@inquirer/prompts'
 import ora from 'ora'
-import { getServiceCosts } from '../../services/aws-costs.js'
-import { loadConfig } from '../../services/config.js'
-import { formatCostTable, calculateTotal } from '../../formatters/cost.js'
-import { DvmiError } from '../../utils/errors.js'
+import {getServiceCosts} from '../../services/aws-costs.js'
+import {loadConfig} from '../../services/config.js'
+import {formatCostTable, calculateTotal} from '../../formatters/cost.js'
+import {DvmiError} from '../../utils/errors.js'
 import {
   awsVaultPrefix,
   isAwsVaultSession,
@@ -28,7 +28,7 @@ export default class CostsGet extends Command {
   static enableJsonFlag = true
 
   static args = {
-    service: Args.string({ description: 'Service name (used to derive tag filter from config)', required: false }),
+    service: Args.string({description: 'Service name (used to derive tag filter from config)', required: false}),
   }
 
   static flags = {
@@ -48,18 +48,14 @@ export default class CostsGet extends Command {
   }
 
   async run() {
-    const { args, flags } = await this.parse(CostsGet)
+    const {args, flags} = await this.parse(CostsGet)
     const isJson = flags.json
     const isInteractive = !isJson && process.stdout.isTTY && process.env.CI !== 'true'
     const groupBy = /** @type {'service'|'tag'|'both'} */ (flags['group-by'])
 
     const config = await loadConfig()
 
-    if (
-      isInteractive &&
-      !isAwsVaultSession() &&
-      process.env.DVMI_AWS_VAULT_REEXEC !== '1'
-    ) {
+    if (isInteractive && !isAwsVaultSession() && process.env.DVMI_AWS_VAULT_REEXEC !== '1') {
       const profile = await input({
         message: 'AWS profile (aws-vault):',
         default: config.awsProfile || process.env.AWS_VAULT || 'default',
@@ -91,19 +87,16 @@ export default class CostsGet extends Command {
 
     // Validate: tag key required when grouping by tag or both
     if ((groupBy === 'tag' || groupBy === 'both') && !tagKey) {
-      throw new DvmiError(
-        'No tag key available.',
-        'Pass --tag-key or configure projectTags in dvmi config.',
-      )
+      throw new DvmiError('No tag key available.', 'Pass --tag-key or configure projectTags in dvmi config.')
     }
 
     const serviceArg = args.service ?? 'all'
-    const tags = config.projectTags ?? (args.service ? { project: args.service } : {})
+    const tags = config.projectTags ?? (args.service ? {project: args.service} : {})
 
     const spinner = isJson ? null : ora(`Fetching costs...`).start()
 
     try {
-      const { entries, period } = await getServiceCosts(
+      const {entries, period} = await getServiceCosts(
         serviceArg,
         tags,
         /** @type {any} */ (flags.period),
@@ -119,7 +112,7 @@ export default class CostsGet extends Command {
         tagKey: tagKey ?? null,
         period,
         items: entries,
-        total: { amount: total, unit: 'USD' },
+        total: {amount: total, unit: 'USD'},
       }
 
       if (isJson) return result
@@ -156,10 +149,7 @@ export default class CostsGet extends Command {
         }
 
         const prefix = awsVaultPrefix(config)
-        this.error(
-          `No AWS credentials. Use: ${prefix}dvmi costs get` +
-            (args.service ? ` ${args.service}` : ''),
-        )
+        this.error(`No AWS credentials. Use: ${prefix}dvmi costs get` + (args.service ? ` ${args.service}` : ''))
       }
       throw err
     }

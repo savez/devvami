@@ -21,7 +21,9 @@ export function formatDotfilesSetup(result) {
     BORDER,
     '',
     chalk.bold(`  Platform:    ${chalk.cyan(result.platform)}`),
-    chalk.bold(`  Status:      ${result.status === 'success' ? chalk.green('success') : result.status === 'skipped' ? chalk.dim('skipped') : chalk.red('failed')}`),
+    chalk.bold(
+      `  Status:      ${result.status === 'success' ? chalk.green('success') : result.status === 'skipped' ? chalk.dim('skipped') : chalk.red('failed')}`,
+    ),
   ]
 
   if (result.sourceDir) {
@@ -79,11 +81,41 @@ export function formatDotfilesSummary(summary) {
  */
 function inferCategory(filePath) {
   const lower = filePath.toLowerCase()
-  if (lower.includes('.ssh') || lower.includes('.gnupg') || lower.includes('gpg') || lower.includes('secret') || lower.includes('credential') || lower.includes('token') || lower.includes('password')) return 'Security'
+  if (
+    lower.includes('.ssh') ||
+    lower.includes('.gnupg') ||
+    lower.includes('gpg') ||
+    lower.includes('secret') ||
+    lower.includes('credential') ||
+    lower.includes('token') ||
+    lower.includes('password')
+  )
+    return 'Security'
   if (lower.includes('.gitconfig') || lower.includes('.gitignore') || lower.includes('.git')) return 'Git'
-  if (lower.includes('zshrc') || lower.includes('bashrc') || lower.includes('bash_profile') || lower.includes('zprofile') || lower.includes('fish')) return 'Shell'
-  if (lower.includes('vim') || lower.includes('nvim') || lower.includes('emacs') || lower.includes('vscode') || lower.includes('cursor')) return 'Editor'
-  if (lower.includes('brew') || lower.includes('npm') || lower.includes('yarn') || lower.includes('pip') || lower.includes('gem')) return 'Package'
+  if (
+    lower.includes('zshrc') ||
+    lower.includes('bashrc') ||
+    lower.includes('bash_profile') ||
+    lower.includes('zprofile') ||
+    lower.includes('fish')
+  )
+    return 'Shell'
+  if (
+    lower.includes('vim') ||
+    lower.includes('nvim') ||
+    lower.includes('emacs') ||
+    lower.includes('vscode') ||
+    lower.includes('cursor')
+  )
+    return 'Editor'
+  if (
+    lower.includes('brew') ||
+    lower.includes('npm') ||
+    lower.includes('yarn') ||
+    lower.includes('pip') ||
+    lower.includes('gem')
+  )
+    return 'Package'
   return 'Other'
 }
 
@@ -167,13 +199,7 @@ export function formatDotfilesStatus(result) {
  * @returns {string}
  */
 export function formatDotfilesAdd(result) {
-  const lines = [
-    '',
-    BORDER,
-    chalk.bold('  Dotfiles Add — Summary'),
-    BORDER,
-    '',
-  ]
+  const lines = ['', BORDER, chalk.bold('  Dotfiles Add — Summary'), BORDER, '']
 
   if (result.added.length > 0) {
     lines.push(chalk.bold(`  Added (${result.added.length}):`))
@@ -219,12 +245,13 @@ export function formatDotfilesAdd(result) {
  * @returns {string}
  */
 export function formatDotfilesSync(result) {
-  const actionLabel = {
-    push: 'Push',
-    pull: 'Pull',
-    'init-remote': 'Remote Setup',
-    skipped: 'Skipped',
-  }[result.action] ?? result.action
+  const actionLabel =
+    {
+      push: 'Push',
+      pull: 'Pull',
+      'init-remote': 'Remote Setup',
+      skipped: 'Skipped',
+    }[result.action] ?? result.action
 
   const lines = [
     '',
@@ -233,7 +260,9 @@ export function formatDotfilesSync(result) {
     BORDER,
     '',
     chalk.white(`  Action:  ${chalk.cyan(actionLabel)}`),
-    chalk.white(`  Status:  ${result.status === 'success' ? chalk.green('success') : result.status === 'skipped' ? chalk.dim('skipped') : chalk.red('failed')}`),
+    chalk.white(
+      `  Status:  ${result.status === 'success' ? chalk.green('success') : result.status === 'skipped' ? chalk.dim('skipped') : chalk.red('failed')}`,
+    ),
   ]
 
   if (result.repo) {

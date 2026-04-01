@@ -1,13 +1,13 @@
-import { Help } from '@oclif/core'
+import {Help} from '@oclif/core'
 import chalk from 'chalk'
-import { isColorEnabled } from './utils/gradient.js'
-import { printBanner } from './utils/banner.js'
+import {isColorEnabled} from './utils/gradient.js'
+import {printBanner} from './utils/banner.js'
 
 // ─── Brand palette (flat — no gradient on help rows) ────────────────────────
-const ORANGE       = '#FF6B2B'
+const ORANGE = '#FF6B2B'
 const LIGHT_ORANGE = '#FF9A5C'
-const DIM_BLUE     = '#4A9EFF'
-const DIM_GRAY     = '#888888'
+const DIM_BLUE = '#4A9EFF'
+const DIM_GRAY = '#888888'
 
 // Strip ANSI escape codes
 const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g
@@ -27,92 +27,91 @@ const CATEGORIES = [
   {
     title: 'GitHub & Documentazione',
     cmds: [
-      { id: 'repo:list',       hint: '[--language] [--search]' },
-      { id: 'docs:read',       hint: '[FILE] [--repo] [--raw] [--render]' },
-      { id: 'docs:list',       hint: '[--repo] [--search]' },
-      { id: 'docs:search',     hint: '<TERM> [--repo]' },
-      { id: 'docs:projects',   hint: '[--search]' },
-      { id: 'create:repo',     hint: '[TEMPLATE] [--list] [--name]' },
-      { id: 'search',          hint: '<QUERY>' },
-      { id: 'open',            hint: '<TARGET>' },
+      {id: 'repo:list', hint: '[--language] [--search]'},
+      {id: 'docs:read', hint: '[FILE] [--repo] [--raw] [--render]'},
+      {id: 'docs:list', hint: '[--repo] [--search]'},
+      {id: 'docs:search', hint: '<TERM> [--repo]'},
+      {id: 'docs:projects', hint: '[--search]'},
+      {id: 'create:repo', hint: '[TEMPLATE] [--list] [--name]'},
+      {id: 'search', hint: '<QUERY>'},
+      {id: 'open', hint: '<TARGET>'},
     ],
   },
   {
     title: 'Pull Request',
     cmds: [
-      { id: 'pr:create',  hint: '' },
-      { id: 'pr:status',  hint: '' },
-      { id: 'pr:detail',  hint: '<PR_NUMBER> --repo <owner/repo>' },
-      { id: 'pr:review',  hint: '' },
+      {id: 'pr:create', hint: ''},
+      {id: 'pr:status', hint: ''},
+      {id: 'pr:detail', hint: '<PR_NUMBER> --repo <owner/repo>'},
+      {id: 'pr:review', hint: ''},
     ],
   },
   {
     title: 'Pipeline & DevOps',
     cmds: [
-      { id: 'pipeline:status', hint: '[--repo] [--branch]' },
-      { id: 'pipeline:rerun',  hint: '<RUN_ID> --repo <repo>' },
-      { id: 'pipeline:logs',   hint: '<RUN_ID> --repo <repo>' },
-      { id: 'changelog',       hint: '' },
+      {id: 'pipeline:status', hint: '[--repo] [--branch]'},
+      {id: 'pipeline:rerun', hint: '<RUN_ID> --repo <repo>'},
+      {id: 'pipeline:logs', hint: '<RUN_ID> --repo <repo>'},
+      {id: 'changelog', hint: ''},
     ],
   },
   {
     title: 'Tasks (ClickUp)',
     cmds: [
-      { id: 'tasks:list',     hint: '[--status] [--search]' },
-      { id: 'tasks:today',    hint: '' },
-      { id: 'tasks:assigned', hint: '[--status] [--search]' },
+      {id: 'tasks:list', hint: '[--status] [--search]'},
+      {id: 'tasks:today', hint: ''},
+      {id: 'tasks:assigned', hint: '[--status] [--search]'},
     ],
   },
   {
     title: 'Cloud & Costi',
     cmds: [
-      { id: 'costs:get',   hint: '[SERVICE] [--period] [--group-by] [--tag-key]' },
-      { id: 'costs:trend', hint: '[--group-by] [--tag-key] [--line]' },
-      { id: 'logs',        hint: '[--group] [--filter] [--since] [--limit] [--region]' },
+      {id: 'costs:get', hint: '[SERVICE] [--period] [--group-by] [--tag-key]'},
+      {id: 'costs:trend', hint: '[--group-by] [--tag-key] [--line]'},
+      {id: 'logs', hint: '[--group] [--filter] [--since] [--limit] [--region]'},
     ],
   },
   {
     title: 'AI Prompts',
     cmds: [
-      { id: 'prompts:list',           hint: '[--filter]' },
-      { id: 'prompts:download',       hint: '<PATH> [--overwrite]' },
-      { id: 'prompts:browse',         hint: '[--source] [--query] [--category]' },
-      { id: 'prompts:install-speckit', hint: '[--force]' },
-      { id: 'prompts:run',            hint: '[PATH] [--tool]' },
+      {id: 'prompts:list', hint: '[--filter]'},
+      {id: 'prompts:download', hint: '<PATH> [--overwrite]'},
+      {id: 'prompts:browse', hint: '[--source] [--query] [--category]'},
+      {id: 'prompts:install-speckit', hint: '[--force]'},
+      {id: 'prompts:run', hint: '[PATH] [--tool]'},
+      {id: 'sync-config-ai', hint: '[--json]'},
     ],
   },
   {
     title: 'Sicurezza & Credenziali',
-    cmds: [
-      { id: 'security:setup', hint: '[--json]' },
-    ],
+    cmds: [{id: 'security:setup', hint: '[--json]'}],
   },
   {
     title: 'CVE & Vulnerabilità',
     cmds: [
-      { id: 'vuln:search', hint: '[KEYWORD] [--days] [--severity] [--limit]' },
-      { id: 'vuln:detail', hint: '<CVE-ID> [--open]' },
-      { id: 'vuln:scan',   hint: '[--severity] [--no-fail] [--report]' },
+      {id: 'vuln:search', hint: '[KEYWORD] [--days] [--severity] [--limit]'},
+      {id: 'vuln:detail', hint: '<CVE-ID> [--open]'},
+      {id: 'vuln:scan', hint: '[--severity] [--no-fail] [--report]'},
     ],
   },
   {
     title: 'Dotfiles & Cifratura',
     cmds: [
-      { id: 'dotfiles:setup',  hint: '[--json]' },
-      { id: 'dotfiles:add',    hint: '[FILES...] [--encrypt]' },
-      { id: 'dotfiles:status', hint: '[--json]' },
-      { id: 'dotfiles:sync',   hint: '[--push] [--pull] [--dry-run]' },
+      {id: 'dotfiles:setup', hint: '[--json]'},
+      {id: 'dotfiles:add', hint: '[FILES...] [--encrypt]'},
+      {id: 'dotfiles:status', hint: '[--json]'},
+      {id: 'dotfiles:sync', hint: '[--push] [--pull] [--dry-run]'},
     ],
   },
   {
     title: 'Setup & Ambiente',
     cmds: [
-      { id: 'init',       hint: '[--dry-run]' },
-      { id: 'doctor',     hint: '' },
-      { id: 'auth:login', hint: '' },
-      { id: 'whoami',     hint: '' },
-      { id: 'welcome',    hint: '' },
-      { id: 'upgrade',    hint: '' },
+      {id: 'init', hint: '[--dry-run]'},
+      {id: 'doctor', hint: ''},
+      {id: 'auth:login', hint: ''},
+      {id: 'whoami', hint: ''},
+      {id: 'welcome', hint: ''},
+      {id: 'upgrade', hint: ''},
     ],
   },
 ]
@@ -126,31 +125,30 @@ const CATEGORIES = [
  * - Gradient solo sul logo; tutto il resto usa colori flat chalk
  */
 export default class CustomHelp extends Help {
+  /**
+   * Root help override: banner animato → layout categorizzato.
+   * Override di showRootHelp() (async) per evitare che formatRoot() (sync)
+   * debba attendere la Promise del banner.
+   * @returns {Promise<void>}
+   */
+  async showRootHelp() {
+    // Animated logo — identical to `dvmi init` (no-ops in CI/non-TTY)
+    await printBanner()
 
-   /**
-    * Root help override: banner animato → layout categorizzato.
-    * Override di showRootHelp() (async) per evitare che formatRoot() (sync)
-    * debba attendere la Promise del banner.
-    * @returns {Promise<void>}
-    */
-   async showRootHelp() {
-     // Animated logo — identical to `dvmi init` (no-ops in CI/non-TTY)
-     await printBanner()
+    // Version check: uses cached result (populated by init hook) — 800 ms timeout
+    let versionInfo = null
+    try {
+      const {checkForUpdate} = await import('./services/version-check.js')
+      versionInfo = await Promise.race([
+        checkForUpdate(),
+        new Promise((resolve) => setTimeout(() => resolve(null), 800)),
+      ])
+    } catch {
+      // never block help output
+    }
 
-     // Version check: uses cached result (populated by init hook) — 800 ms timeout
-     let versionInfo = null
-     try {
-       const { checkForUpdate } = await import('./services/version-check.js')
-       versionInfo = await Promise.race([
-         checkForUpdate(),
-         new Promise((resolve) => setTimeout(() => resolve(null), 800)),
-       ])
-     } catch {
-       // never block help output
-     }
-
-     this.log(this.#buildRootLayout(versionInfo))
-   }
+    this.log(this.#buildRootLayout(versionInfo))
+  }
 
   /**
    * @param {import('@oclif/core').Interfaces.Topic[]} topics
@@ -179,69 +177,64 @@ export default class CustomHelp extends Help {
 
   // ─── Private helpers ──────────────────────────────────────────────────────
 
-   /**
-    * Build the full categorized root help layout.
-    * @param {{ hasUpdate: boolean, current: string, latest: string|null }|null} [versionInfo]
-    * @returns {string}
-    */
+  /**
+   * Build the full categorized root help layout.
+   * @param {{ hasUpdate: boolean, current: string, latest: string|null }|null} [versionInfo]
+   * @returns {string}
+   */
   #buildRootLayout(versionInfo = null) {
     /** @type {Map<string, import('@oclif/core').Command.Cached>} */
     const cmdMap = new Map(this.config.commands.map((c) => [c.id, c]))
 
     /** @type {Array<{cmd: string, note: string}>} */
     const EXAMPLES = [
-      { cmd: 'dvmi prompts list',                                     note: 'Sfoglia prompt AI dal tuo repository' },
-      { cmd: 'dvmi prompts list --filter refactor',                   note: 'Filtra prompt per parola chiave' },
-      { cmd: 'dvmi prompts download coding/refactor-prompt.md',       note: 'Scarica un prompt localmente' },
-      { cmd: 'dvmi prompts browse skills --query refactor',           note: 'Cerca skill su skills.sh' },
-      { cmd: 'dvmi prompts browse awesome --category agents',         note: 'Sfoglia awesome-copilot agents' },
-      { cmd: 'dvmi prompts run coding/refactor-prompt.md --tool opencode', note: 'Esegui un prompt con opencode' },
-      { cmd: 'dvmi docs read',                                        note: 'Leggi il README del repo corrente' },
-      { cmd: 'dvmi docs search "authentication"',                     note: 'Cerca nei docs del repo corrente' },
-      { cmd: 'dvmi repo list --search "api"',                         note: 'Filtra repository per nome' },
-      { cmd: 'dvmi pr status',                                        note: 'PR aperte e review in attesa' },
-      { cmd: 'dvmi pipeline status',                                  note: 'Ultimi workflow CI/CD' },
-      { cmd: 'dvmi tasks list --search "bug"',                        note: 'Cerca task ClickUp' },
-      { cmd: 'dvmi tasks today',                                      note: 'Task in lavorazione oggi' },
-      { cmd: 'dvmi costs get --period mtd',                           note: 'Costi AWS mese corrente per servizio' },
-      { cmd: 'dvmi costs get --group-by tag --tag-key env',           note: 'Costi raggruppati per tag env' },
-      { cmd: 'dvmi costs trend --line',                               note: 'Trend costi 2 mesi (grafico lineare)' },
-      { cmd: 'dvmi costs get --json',                                 note: 'Costi AWS in formato JSON' },
-      { cmd: 'dvmi logs',                                             note: 'Sfoglia log CloudWatch in modo interattivo' },
-      { cmd: 'dvmi logs --group /aws/lambda/my-fn --since 24h',       note: 'Log Lambda ultimi 24h' },
-      { cmd: 'dvmi logs --group /aws/lambda/my-fn --filter "ERROR"',  note: 'Filtra eventi ERROR su un log group' },
-      { cmd: 'dvmi security setup --json',                            note: 'Controlla lo stato degli strumenti di sicurezza' },
-      { cmd: 'dvmi security setup',                                   note: 'Wizard interattivo: installa aws-vault e GCM' },
-      { cmd: 'dvmi dotfiles setup',                                   note: 'Configura chezmoi con cifratura age' },
-      { cmd: 'dvmi dotfiles add ~/.zshrc ~/.gitconfig',               note: 'Aggiungi dotfile a chezmoi' },
-      { cmd: 'dvmi dotfiles status --json',                           note: 'Stato dotfile gestiti (JSON)' },
-      { cmd: 'dvmi dotfiles sync --push',                             note: 'Push dotfile al repository remoto' },
-      { cmd: 'dvmi welcome',                                          note: 'Dashboard missione dvmi con intro animata' },
-      { cmd: 'dvmi vuln search openssl',                              note: 'Cerca CVE recenti per keyword' },
-      { cmd: 'dvmi vuln search log4j --days 30 --severity critical',  note: 'CVE critiche Log4j negli ultimi 30 giorni' },
-      { cmd: 'dvmi vuln detail CVE-2021-44228',                       note: 'Dettaglio completo di una CVE' },
-      { cmd: 'dvmi vuln detail CVE-2021-44228 --open',                note: 'Apri la prima referenza nel browser' },
-      { cmd: 'dvmi vuln scan',                                        note: 'Scansiona dipendenze del progetto corrente' },
-      { cmd: 'dvmi vuln scan --severity high --no-fail',              note: 'Scansione senza bloccare CI (solo high+)' },
-      { cmd: 'dvmi vuln scan --report ./vuln-report.md',              note: 'Esporta report Markdown delle vulnerabilità' },
+      {cmd: 'dvmi prompts list', note: 'Sfoglia prompt AI dal tuo repository'},
+      {cmd: 'dvmi prompts list --filter refactor', note: 'Filtra prompt per parola chiave'},
+      {cmd: 'dvmi prompts download coding/refactor-prompt.md', note: 'Scarica un prompt localmente'},
+      {cmd: 'dvmi prompts browse skills --query refactor', note: 'Cerca skill su skills.sh'},
+      {cmd: 'dvmi prompts browse awesome --category agents', note: 'Sfoglia awesome-copilot agents'},
+      {cmd: 'dvmi prompts run coding/refactor-prompt.md --tool opencode', note: 'Esegui un prompt con opencode'},
+      {cmd: 'dvmi docs read', note: 'Leggi il README del repo corrente'},
+      {cmd: 'dvmi docs search "authentication"', note: 'Cerca nei docs del repo corrente'},
+      {cmd: 'dvmi repo list --search "api"', note: 'Filtra repository per nome'},
+      {cmd: 'dvmi pr status', note: 'PR aperte e review in attesa'},
+      {cmd: 'dvmi pipeline status', note: 'Ultimi workflow CI/CD'},
+      {cmd: 'dvmi tasks list --search "bug"', note: 'Cerca task ClickUp'},
+      {cmd: 'dvmi tasks today', note: 'Task in lavorazione oggi'},
+      {cmd: 'dvmi costs get --period mtd', note: 'Costi AWS mese corrente per servizio'},
+      {cmd: 'dvmi costs get --group-by tag --tag-key env', note: 'Costi raggruppati per tag env'},
+      {cmd: 'dvmi costs trend --line', note: 'Trend costi 2 mesi (grafico lineare)'},
+      {cmd: 'dvmi costs get --json', note: 'Costi AWS in formato JSON'},
+      {cmd: 'dvmi logs', note: 'Sfoglia log CloudWatch in modo interattivo'},
+      {cmd: 'dvmi logs --group /aws/lambda/my-fn --since 24h', note: 'Log Lambda ultimi 24h'},
+      {cmd: 'dvmi logs --group /aws/lambda/my-fn --filter "ERROR"', note: 'Filtra eventi ERROR su un log group'},
+      {cmd: 'dvmi security setup --json', note: 'Controlla lo stato degli strumenti di sicurezza'},
+      {cmd: 'dvmi security setup', note: 'Wizard interattivo: installa aws-vault e GCM'},
+      {cmd: 'dvmi dotfiles setup', note: 'Configura chezmoi con cifratura age'},
+      {cmd: 'dvmi dotfiles add ~/.zshrc ~/.gitconfig', note: 'Aggiungi dotfile a chezmoi'},
+      {cmd: 'dvmi dotfiles status --json', note: 'Stato dotfile gestiti (JSON)'},
+      {cmd: 'dvmi dotfiles sync --push', note: 'Push dotfile al repository remoto'},
+      {cmd: 'dvmi welcome', note: 'Dashboard missione dvmi con intro animata'},
+      {cmd: 'dvmi vuln search openssl', note: 'Cerca CVE recenti per keyword'},
+      {cmd: 'dvmi vuln search log4j --days 30 --severity critical', note: 'CVE critiche Log4j negli ultimi 30 giorni'},
+      {cmd: 'dvmi vuln detail CVE-2021-44228', note: 'Dettaglio completo di una CVE'},
+      {cmd: 'dvmi vuln detail CVE-2021-44228 --open', note: 'Apri la prima referenza nel browser'},
+      {cmd: 'dvmi vuln scan', note: 'Scansiona dipendenze del progetto corrente'},
+      {cmd: 'dvmi vuln scan --severity high --no-fail', note: 'Scansione senza bloccare CI (solo high+)'},
+      {cmd: 'dvmi vuln scan --report ./vuln-report.md', note: 'Esporta report Markdown delle vulnerabilità'},
     ]
 
     const lines = []
 
-     // ── Usage ──────────────────────────────────────────────────────────────
-     lines.push(this.#sectionHeader('USAGE'))
-     lines.push(
-       '  ' + (isColorEnabled ? chalk.hex(ORANGE).bold('dvmi') : 'dvmi') +
-       chalk.dim(' <COMANDO> [FLAGS]\n'),
-     )
+    // ── Usage ──────────────────────────────────────────────────────────────
+    lines.push(this.#sectionHeader('USAGE'))
+    lines.push('  ' + (isColorEnabled ? chalk.hex(ORANGE).bold('dvmi') : 'dvmi') + chalk.dim(' <COMANDO> [FLAGS]\n'))
 
     // ── Comandi per categoria ──────────────────────────────────────────────
     lines.push(this.#sectionHeader('COMMANDS'))
 
     for (const cat of CATEGORIES) {
-      lines.push(
-        '  ' + (isColorEnabled ? chalk.hex(ORANGE).bold(cat.title) : cat.title),
-      )
+      lines.push('  ' + (isColorEnabled ? chalk.hex(ORANGE).bold(cat.title) : cat.title))
 
       for (const entry of cat.cmds) {
         const cmd = cmdMap.get(entry.id)
@@ -249,17 +242,14 @@ export default class CustomHelp extends Help {
 
         const displayId = entry.id.replaceAll(':', ' ')
         const hint = entry.hint || ''
-        const desc = cmd.summary ?? (typeof cmd.description === 'string'
-          ? cmd.description.split('\n')[0]
-          : '')
+        const desc = cmd.summary ?? (typeof cmd.description === 'string' ? cmd.description.split('\n')[0] : '')
 
         // Left column (name + flags hint), right-padded to align descriptions
         const rawLeft = '    ' + displayId + (hint ? ' ' + hint : '')
         const pad = ' '.repeat(Math.max(2, 50 - rawLeft.length))
 
         const leftPart = isColorEnabled
-          ? '    ' + chalk.hex(LIGHT_ORANGE).bold(displayId) +
-            (hint ? ' ' + chalk.dim(hint) : '')
+          ? '    ' + chalk.hex(LIGHT_ORANGE).bold(displayId) + (hint ? ' ' + chalk.dim(hint) : '')
           : rawLeft
 
         lines.push(leftPart + pad + chalk.dim(desc))
@@ -270,8 +260,8 @@ export default class CustomHelp extends Help {
 
     // ── Flag globali ───────────────────────────────────────────────────────
     lines.push(this.#sectionHeader('GLOBAL FLAGS'))
-    lines.push(this.#flagLine('-h, --help',    'Mostra aiuto per un comando'))
-    lines.push(this.#flagLine('    --json',    'Output in formato JSON strutturato'))
+    lines.push(this.#flagLine('-h, --help', 'Mostra aiuto per un comando'))
+    lines.push(this.#flagLine('    --json', 'Output in formato JSON strutturato'))
     lines.push(this.#flagLine('-v, --version', 'Versione installata'))
     lines.push('')
 
@@ -281,39 +271,49 @@ export default class CustomHelp extends Help {
     const maxCmdLen = Math.max(...EXAMPLES.map((e) => e.cmd.length))
     for (const ex of EXAMPLES) {
       const pad = ' '.repeat(maxCmdLen - ex.cmd.length + 4)
-       const sub = ex.cmd.replace(/^dvmi /, '')
-       const formatted = isColorEnabled
-         ? chalk.dim('$') + ' ' + chalk.hex(ORANGE).bold('dvmi') + ' ' +
-           chalk.white(sub) + pad + chalk.hex(DIM_GRAY)(ex.note)
-         : '$ ' + ex.cmd + pad + ex.note
+      const sub = ex.cmd.replace(/^dvmi /, '')
+      const formatted = isColorEnabled
+        ? chalk.dim('$') +
+          ' ' +
+          chalk.hex(ORANGE).bold('dvmi') +
+          ' ' +
+          chalk.white(sub) +
+          pad +
+          chalk.hex(DIM_GRAY)(ex.note)
+        : '$ ' + ex.cmd + pad + ex.note
       lines.push('  ' + formatted)
     }
 
-     lines.push('')
+    lines.push('')
 
-     // ── Versione + update notice ───────────────────────────────────────────
-     const current = versionInfo?.current ?? this.config.version
-     const versionStr = isColorEnabled
-       ? chalk.dim('version ') + chalk.hex(DIM_BLUE)(current)
-       : `version ${current}`
+    // ── Versione + update notice ───────────────────────────────────────────
+    const current = versionInfo?.current ?? this.config.version
+    const versionStr = isColorEnabled ? chalk.dim('version ') + chalk.hex(DIM_BLUE)(current) : `version ${current}`
 
-     if (versionInfo?.hasUpdate && versionInfo.latest) {
-       const updateStr = isColorEnabled
-         ? chalk.yellow('update disponibile: ') +
-           chalk.dim(current) + chalk.yellow(' → ') + chalk.green(versionInfo.latest) +
-           chalk.dim('  (esegui ') + chalk.hex(LIGHT_ORANGE)('dvmi upgrade') + chalk.dim(')')
-         : `update disponibile: ${current} → ${versionInfo.latest}  (esegui dvmi upgrade)`
-       lines.push('  ' + versionStr + chalk.dim('  ·  ') + updateStr)
-     } else {
-       lines.push('  ' + versionStr)
-     }
+    if (versionInfo?.hasUpdate && versionInfo.latest) {
+      const updateStr = isColorEnabled
+        ? chalk.yellow('update disponibile: ') +
+          chalk.dim(current) +
+          chalk.yellow(' → ') +
+          chalk.green(versionInfo.latest) +
+          chalk.dim('  (esegui ') +
+          chalk.hex(LIGHT_ORANGE)('dvmi upgrade') +
+          chalk.dim(')')
+        : `update disponibile: ${current} → ${versionInfo.latest}  (esegui dvmi upgrade)`
+      lines.push('  ' + versionStr + chalk.dim('  ·  ') + updateStr)
+    } else {
+      lines.push('  ' + versionStr)
+    }
 
-     lines.push(
-       '  ' + chalk.dim('Approfondisci:') + ' ' +
-       chalk.hex(DIM_BLUE)('dvmi <COMANDO> --help') +
-       chalk.dim('  ·  ') +
-       chalk.hex(DIM_BLUE)('dvmi <TOPIC> --help') + '\n',
-     )
+    lines.push(
+      '  ' +
+        chalk.dim('Approfondisci:') +
+        ' ' +
+        chalk.hex(DIM_BLUE)('dvmi <COMANDO> --help') +
+        chalk.dim('  ·  ') +
+        chalk.hex(DIM_BLUE)('dvmi <TOPIC> --help') +
+        '\n',
+    )
 
     return lines.join('\n')
   }
@@ -379,12 +379,10 @@ export default class CustomHelp extends Help {
         const plain = strip(line)
         if (!plain.trim()) return line
 
-         // Example lines: "$ dvmi …"
-         if (plain.includes('$ dvmi') || plain.trim().startsWith('$ dvmi')) {
-           return plain.replace(/\$ (dvmi\S*)/g, (_, cmd) =>
-             '$ ' + chalk.hex(ORANGE).bold(cmd),
-           )
-         }
+        // Example lines: "$ dvmi …"
+        if (plain.includes('$ dvmi') || plain.trim().startsWith('$ dvmi')) {
+          return plain.replace(/\$ (dvmi\S*)/g, (_, cmd) => '$ ' + chalk.hex(ORANGE).bold(cmd))
+        }
 
         // Flag rows: "--flag  desc" or "-f, --flag  desc"
         const flagMatch = plain.match(/^(\s{2,})((?:-\w,\s*)?--[\w-]+)(\s+)(.*)$/)
