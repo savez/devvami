@@ -53,5 +53,6 @@ Desktop.ini
 # ─── Internal / non-public ────────────────────────────────────────────────────
 .specify/
 .opencode/
+.claude/
 specs/
 TODO.md

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
-import { http, HttpResponse } from 'msw'
-import { server } from '../setup.js'
+import {describe, it, expect, vi, beforeEach, beforeAll, afterAll} from 'vitest'
+import {http, HttpResponse} from 'msw'
+import {server} from '../setup.js'
 
 // Use CLICKUP_TOKEN env var to bypass keytar entirely (platform-safe: works on Linux CI
 // where libsecret/D-Bus may not be available). getToken() checks this env var first.
@@ -20,7 +20,7 @@ vi.mock('keytar', () => ({
 }))
 
 vi.mock('../../src/services/config.js', () => ({
-  loadConfig: vi.fn().mockResolvedValue({ org: 'acme', awsProfile: 'dev', clickup: {} }),
+  loadConfig: vi.fn().mockResolvedValue({org: 'acme', awsProfile: 'dev', clickup: {}}),
   saveConfig: vi.fn(),
   configExists: vi.fn().mockReturnValue(true),
   CONFIG_PATH: '/tmp/dvmi-test/config.json',
@@ -50,14 +50,14 @@ function makeApiTask(overrides = {}) {
   return {
     id: 't1',
     name: 'Test task',
-    status: { status: 'in progress', type: 'open' },
-    priority: { id: '3' },
+    status: {status: 'in progress', type: 'open'},
+    priority: {id: '3'},
     start_date: null,
     due_date: null,
     url: 'https://app.clickup.com/t/t1',
     assignees: [],
-    list: { id: 'L1', name: 'Sprint 42' },
-    folder: { id: 'F1', name: 'Backend', hidden: false },
+    list: {id: 'L1', name: 'Sprint 42'},
+    folder: {id: 'F1', name: 'Backend', hidden: false},
     ...overrides,
   }
 }
@@ -70,10 +70,10 @@ describe('validateToken()', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('returns { valid: true, user } when token is valid', async () => {
-    const { validateToken } = await import('../../src/services/clickup.js')
+    const {validateToken} = await import('../../src/services/clickup.js')
     const result = await validateToken()
     expect(result.valid).toBe(true)
-    expect(result.user).toEqual({ id: 42, username: 'testdev' })
+    expect(result.user).toEqual({id: 42, username: 'testdev'})
   })
 
   it('returns { valid: false } when token retrieval fails (no token stored)', async () => {
@@ -85,7 +85,7 @@ describe('validateToken()', () => {
     try {
       const keytar = await import('keytar')
       vi.mocked(keytar.default.getPassword).mockResolvedValueOnce(null)
-      const { validateToken: validateToken2 } = await import('../../src/services/clickup.js')
+      const {validateToken: validateToken2} = await import('../../src/services/clickup.js')
       const result = await validateToken2()
       expect(result.valid).toBe(false)
     } finally {
@@ -109,11 +109,11 @@ describe('getTasksToday()', () => {
     server.use(
       http.get('https://api.clickup.com/api/v2/team/:teamId/task', () =>
         HttpResponse.json({
-          tasks: [makeApiTask({ id: 't1', status: { status: 'in_progress', type: 'in_progress' } })],
+          tasks: [makeApiTask({id: 't1', status: {status: 'in_progress', type: 'in_progress'}})],
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(1)
     expect(tasks[0].id).toBe('t1')
@@ -128,15 +128,15 @@ describe('getTasksToday()', () => {
           tasks: [
             makeApiTask({
               id: 't2',
-              status: { status: 'in review', type: 'custom' },
+              status: {status: 'in review', type: 'custom'},
               start_date: localMidnightTimestamp(-1), // yesterday
-              due_date: localMidnightTimestamp(1),    // tomorrow
+              due_date: localMidnightTimestamp(1), // tomorrow
             }),
           ],
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(1)
     expect(tasks[0].id).toBe('t2')
@@ -149,7 +149,7 @@ describe('getTasksToday()', () => {
           tasks: [
             makeApiTask({
               id: 't3',
-              status: { status: 'open', type: 'open' },
+              status: {status: 'open', type: 'open'},
               start_date: localMidnightTimestamp(0), // today
               due_date: localMidnightTimestamp(3),
             }),
@@ -157,7 +157,7 @@ describe('getTasksToday()', () => {
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(1)
     expect(tasks[0].id).toBe('t3')
@@ -170,7 +170,7 @@ describe('getTasksToday()', () => {
           tasks: [
             makeApiTask({
               id: 't4',
-              status: { status: 'todo', type: 'open' },
+              status: {status: 'todo', type: 'open'},
               start_date: null,
               due_date: localMidnightTimestamp(0), // today
             }),
@@ -178,7 +178,7 @@ describe('getTasksToday()', () => {
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(1)
     expect(tasks[0].id).toBe('t4')
@@ -193,14 +193,14 @@ describe('getTasksToday()', () => {
           tasks: [
             makeApiTask({
               id: 't5',
-              status: { status: 'in progress', type: 'in_progress' },
+              status: {status: 'in progress', type: 'in_progress'},
               due_date: localMidnightTimestamp(-3), // 3 days ago
             }),
           ],
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(1)
     expect(tasks[0].id).toBe('t5')
@@ -214,14 +214,18 @@ describe('getTasksToday()', () => {
         HttpResponse.json({
           tasks: [
             // Italian "FATTO" with ClickUp type "closed"
-            makeApiTask({ id: 't6', status: { status: 'FATTO', type: 'closed' }, due_date: localMidnightTimestamp(0) }),
+            makeApiTask({id: 't6', status: {status: 'FATTO', type: 'closed'}, due_date: localMidnightTimestamp(0)}),
             // English "completed" with ClickUp type "closed"
-            makeApiTask({ id: 't7', status: { status: 'completed', type: 'closed' }, due_date: localMidnightTimestamp(-1) }),
+            makeApiTask({
+              id: 't7',
+              status: {status: 'completed', type: 'closed'},
+              due_date: localMidnightTimestamp(-1),
+            }),
           ],
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(0)
   })
@@ -231,12 +235,16 @@ describe('getTasksToday()', () => {
       http.get('https://api.clickup.com/api/v2/team/:teamId/task', () =>
         HttpResponse.json({
           tasks: [
-            makeApiTask({ id: 't8', status: { status: 'COMPLETATO', type: 'closed' }, due_date: localMidnightTimestamp(-5) }),
+            makeApiTask({
+              id: 't8',
+              status: {status: 'COMPLETATO', type: 'closed'},
+              due_date: localMidnightTimestamp(-5),
+            }),
           ],
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(0)
   })
@@ -250,7 +258,7 @@ describe('getTasksToday()', () => {
           tasks: [
             makeApiTask({
               id: 't9',
-              status: { status: 'todo', type: 'open' },
+              status: {status: 'todo', type: 'open'},
               start_date: localMidnightTimestamp(1),
               due_date: localMidnightTimestamp(5),
             }),
@@ -258,7 +266,7 @@ describe('getTasksToday()', () => {
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(0)
   })
@@ -268,12 +276,12 @@ describe('getTasksToday()', () => {
       http.get('https://api.clickup.com/api/v2/team/:teamId/task', () =>
         HttpResponse.json({
           tasks: [
-            makeApiTask({ id: 't10', status: { status: 'todo', type: 'open' }, due_date: localMidnightTimestamp(2) }),
+            makeApiTask({id: 't10', status: {status: 'todo', type: 'open'}, due_date: localMidnightTimestamp(2)}),
           ],
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(0)
   })
@@ -288,12 +296,12 @@ describe('getTasksToday()', () => {
       http.get('https://api.clickup.com/api/v2/team/:teamId/task', () =>
         HttpResponse.json({
           tasks: [
-            makeApiTask({ id: 't11', status: { status: 'todo', type: 'open' }, due_date: String(localMidnight.getTime()) }),
+            makeApiTask({id: 't11', status: {status: 'todo', type: 'open'}, due_date: String(localMidnight.getTime())}),
           ],
         }),
       ),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     expect(tasks.length).toBe(1)
     expect(tasks[0].id).toBe('t11')
@@ -308,7 +316,7 @@ describe('getTeams()', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('returns array of { id, name } when teams exist', async () => {
-    const { getTeams } = await import('../../src/services/clickup.js')
+    const {getTeams} = await import('../../src/services/clickup.js')
     const teams = await getTeams()
     expect(Array.isArray(teams)).toBe(true)
     expect(teams.length).toBeGreaterThan(0)
@@ -322,7 +330,7 @@ describe('getTeams()', () => {
     // MSW returns one team by default; this tests the mapping logic with a custom response.
     // Since MSW can't be easily overridden per-test here, we verify the non-empty case above
     // and trust the mapping logic: `(data.teams ?? []).map(...)` handles empty arrays.
-    const { getTeams } = await import('../../src/services/clickup.js')
+    const {getTeams} = await import('../../src/services/clickup.js')
     const teams = await getTeams()
     // At minimum, mapping must return an array
     expect(Array.isArray(teams)).toBe(true)
@@ -342,12 +350,14 @@ describe('getTasks() — list/folder mapping', () => {
     server.use(
       http.get('https://api.clickup.com/api/v2/team/:teamId/task', () =>
         HttpResponse.json({
-          tasks: [makeApiTask({ list: { id: 'L42', name: 'Sprint 42' }, folder: { id: 'F1', name: 'Backend', hidden: false } })],
+          tasks: [
+            makeApiTask({list: {id: 'L42', name: 'Sprint 42'}, folder: {id: 'F1', name: 'Backend', hidden: false}}),
+          ],
           has_more: false,
         }),
       ),
     )
-    const { getTasks } = await import('../../src/services/clickup.js')
+    const {getTasks} = await import('../../src/services/clickup.js')
     const tasks = await getTasks('12345')
     expect(tasks[0].listId).toBe('L42')
     expect(tasks[0].listName).toBe('Sprint 42')
@@ -357,12 +367,12 @@ describe('getTasks() — list/folder mapping', () => {
     server.use(
       http.get('https://api.clickup.com/api/v2/team/:teamId/task', () =>
         HttpResponse.json({
-          tasks: [makeApiTask({ folder: { id: 'F99', name: 'Frontend', hidden: false } })],
+          tasks: [makeApiTask({folder: {id: 'F99', name: 'Frontend', hidden: false}})],
           has_more: false,
         }),
       ),
     )
-    const { getTasks } = await import('../../src/services/clickup.js')
+    const {getTasks} = await import('../../src/services/clickup.js')
     const tasks = await getTasks('12345')
     expect(tasks[0].folderId).toBe('F99')
     expect(tasks[0].folderName).toBe('Frontend')
@@ -372,12 +382,12 @@ describe('getTasks() — list/folder mapping', () => {
     server.use(
       http.get('https://api.clickup.com/api/v2/team/:teamId/task', () =>
         HttpResponse.json({
-          tasks: [makeApiTask({ folder: { hidden: true } })],
+          tasks: [makeApiTask({folder: {hidden: true}})],
           has_more: false,
         }),
       ),
     )
-    const { getTasks } = await import('../../src/services/clickup.js')
+    const {getTasks} = await import('../../src/services/clickup.js')
     const tasks = await getTasks('12345')
     expect(tasks[0].folderId).toBeNull()
     expect(tasks[0].folderName).toBeNull()
@@ -392,23 +402,23 @@ describe('getTasks() — pagination', () => {
   it('fetches all pages when has_more=true on first page', async () => {
     let callCount = 0
     server.use(
-      http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({ request }) => {
+      http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({request}) => {
         const url = new URL(request.url)
         const page = Number(url.searchParams.get('page') ?? '0')
         callCount++
         if (page === 0) {
           return HttpResponse.json({
-            tasks: [makeApiTask({ id: 'page0-t1' }), makeApiTask({ id: 'page0-t2' }), makeApiTask({ id: 'page0-t3' })],
+            tasks: [makeApiTask({id: 'page0-t1'}), makeApiTask({id: 'page0-t2'}), makeApiTask({id: 'page0-t3'})],
             has_more: true,
           })
         }
         return HttpResponse.json({
-          tasks: [makeApiTask({ id: 'page1-t1' }), makeApiTask({ id: 'page1-t2' })],
+          tasks: [makeApiTask({id: 'page1-t1'}), makeApiTask({id: 'page1-t2'})],
           has_more: false,
         })
       }),
     )
-    const { getTasks } = await import('../../src/services/clickup.js')
+    const {getTasks} = await import('../../src/services/clickup.js')
     const tasks = await getTasks('12345')
     expect(tasks.length).toBe(5)
     expect(callCount).toBe(2)
@@ -417,16 +427,16 @@ describe('getTasks() — pagination', () => {
 
   it('calls onProgress callback with cumulative count after each page', async () => {
     server.use(
-      http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({ request }) => {
+      http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({request}) => {
         const url = new URL(request.url)
         const page = Number(url.searchParams.get('page') ?? '0')
         if (page === 0) {
-          return HttpResponse.json({ tasks: [makeApiTask({ id: 'p0' }), makeApiTask({ id: 'p0b' })], has_more: true })
+          return HttpResponse.json({tasks: [makeApiTask({id: 'p0'}), makeApiTask({id: 'p0b'})], has_more: true})
         }
-        return HttpResponse.json({ tasks: [makeApiTask({ id: 'p1' })], has_more: false })
+        return HttpResponse.json({tasks: [makeApiTask({id: 'p1'})], has_more: false})
       }),
     )
-    const { getTasks } = await import('../../src/services/clickup.js')
+    const {getTasks} = await import('../../src/services/clickup.js')
     const progressCounts = []
     await getTasks('12345', {}, (count) => progressCounts.push(count))
     expect(progressCounts).toEqual([2, 3])
@@ -445,7 +455,7 @@ describe('getTasksToday() — parallel calls and deduplication', () => {
   it('deduplicates tasks that appear in both due-date and in-progress calls', async () => {
     // Both calls return the same task ID 'shared-1'
     server.use(
-      http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({ request }) => {
+      http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({request}) => {
         const url = new URL(request.url)
         const hasDueDateLt = url.searchParams.has('due_date_lt')
         const hasStatus = url.searchParams.has('statuses[]')
@@ -454,8 +464,8 @@ describe('getTasksToday() — parallel calls and deduplication', () => {
           // due_date_lt call: returns shared task + an exclusive overdue task
           return HttpResponse.json({
             tasks: [
-              makeApiTask({ id: 'shared-1', due_date: localMidnightTimestamp(-1) }),
-              makeApiTask({ id: 'overdue-only', due_date: localMidnightTimestamp(-2) }),
+              makeApiTask({id: 'shared-1', due_date: localMidnightTimestamp(-1)}),
+              makeApiTask({id: 'overdue-only', due_date: localMidnightTimestamp(-2)}),
             ],
             has_more: false,
           })
@@ -464,16 +474,16 @@ describe('getTasksToday() — parallel calls and deduplication', () => {
           // in-progress call: returns shared task + an exclusive in-progress task
           return HttpResponse.json({
             tasks: [
-              makeApiTask({ id: 'shared-1', status: { status: 'in progress', type: 'in_progress' } }),
-              makeApiTask({ id: 'inprogress-only', status: { status: 'in progress', type: 'in_progress' } }),
+              makeApiTask({id: 'shared-1', status: {status: 'in progress', type: 'in_progress'}}),
+              makeApiTask({id: 'inprogress-only', status: {status: 'in progress', type: 'in_progress'}}),
             ],
             has_more: false,
           })
         }
-        return HttpResponse.json({ tasks: [], has_more: false })
+        return HttpResponse.json({tasks: [], has_more: false})
       }),
     )
-    const { getTasksToday } = await import('../../src/services/clickup.js')
+    const {getTasksToday} = await import('../../src/services/clickup.js')
     const tasks = await getTasksToday('12345')
     const ids = tasks.map((t) => t.id)
     // shared-1 must appear exactly once
@@ -493,12 +503,12 @@ describe('getTasksByList()', () => {
   it('calls /v2/list/{listId}/task endpoint (not /team/...)', async () => {
     let capturedUrl = ''
     server.use(
-      http.get('https://api.clickup.com/api/v2/list/:listId/task', ({ request }) => {
+      http.get('https://api.clickup.com/api/v2/list/:listId/task', ({request}) => {
         capturedUrl = request.url
-        return HttpResponse.json({ tasks: [makeApiTask({ id: 'lt1' })], has_more: false })
+        return HttpResponse.json({tasks: [makeApiTask({id: 'lt1'})], has_more: false})
       }),
     )
-    const { getTasksByList } = await import('../../src/services/clickup.js')
+    const {getTasksByList} = await import('../../src/services/clickup.js')
     const tasks = await getTasksByList('L99')
     expect(tasks.length).toBe(1)
     expect(tasks[0].id).toBe('lt1')
@@ -508,20 +518,20 @@ describe('getTasksByList()', () => {
 
   it('paginates correctly across multiple pages', async () => {
     server.use(
-      http.get('https://api.clickup.com/api/v2/list/:listId/task', ({ request }) => {
+      http.get('https://api.clickup.com/api/v2/list/:listId/task', ({request}) => {
         const url = new URL(request.url)
         const page = Number(url.searchParams.get('page') ?? '0')
-        if (page === 0) return HttpResponse.json({ tasks: [makeApiTask({ id: 'l-p0' })], has_more: true })
-        return HttpResponse.json({ tasks: [makeApiTask({ id: 'l-p1' })], has_more: false })
+        if (page === 0) return HttpResponse.json({tasks: [makeApiTask({id: 'l-p0'})], has_more: true})
+        return HttpResponse.json({tasks: [makeApiTask({id: 'l-p1'})], has_more: false})
       }),
     )
-    const { getTasksByList } = await import('../../src/services/clickup.js')
+    const {getTasksByList} = await import('../../src/services/clickup.js')
     const tasks = await getTasksByList('L99')
     expect(tasks.map((t) => t.id)).toEqual(['l-p0', 'l-p1'])
   })
 
   it('throws user-friendly error on 404', async () => {
-    const { getTasksByList } = await import('../../src/services/clickup.js')
+    const {getTasksByList} = await import('../../src/services/clickup.js')
     await expect(getTasksByList('NOTFOUND')).rejects.toThrow('Lista non trovata o non accessibile')
   })
 
@@ -529,12 +539,14 @@ describe('getTasksByList()', () => {
     server.use(
       http.get('https://api.clickup.com/api/v2/list/:listId/task', () =>
         HttpResponse.json({
-          tasks: [makeApiTask({ list: { id: 'L5', name: 'My List' }, folder: { id: 'F5', name: 'My Folder', hidden: false } })],
+          tasks: [
+            makeApiTask({list: {id: 'L5', name: 'My List'}, folder: {id: 'F5', name: 'My Folder', hidden: false}}),
+          ],
           has_more: false,
         }),
       ),
     )
-    const { getTasksByList } = await import('../../src/services/clickup.js')
+    const {getTasksByList} = await import('../../src/services/clickup.js')
     const tasks = await getTasksByList('L5')
     expect(tasks[0].listId).toBe('L5')
     expect(tasks[0].listName).toBe('My List')

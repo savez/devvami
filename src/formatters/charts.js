@@ -3,16 +3,7 @@ import chalk from 'chalk'
 /** @import { ChartSeries } from '../types.js' */
 
 // Colour palette for multi-series charts (cycles if more than 8 series)
-const PALETTE = [
-  chalk.cyan,
-  chalk.yellow,
-  chalk.green,
-  chalk.magenta,
-  chalk.blue,
-  chalk.red,
-  chalk.white,
-  chalk.gray,
-]
+const PALETTE = [chalk.cyan, chalk.yellow, chalk.green, chalk.magenta, chalk.blue, chalk.red, chalk.white, chalk.gray]
 
 /**
  * Get the terminal width, falling back to 80 columns.
@@ -54,9 +45,7 @@ export function barChart(series, options = {}) {
 
   // Combine all series into per-label totals for scaling
   const allLabels = series[0]?.labels ?? []
-  const totals = allLabels.map((_, i) =>
-    series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0),
-  )
+  const totals = allLabels.map((_, i) => series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0))
   const maxTotal = Math.max(...totals, 0)
 
   const lines = []
@@ -71,7 +60,7 @@ export function barChart(series, options = {}) {
 
   // Build chart column by column (one char per day)
   // We render it as a 2D grid: rows = height levels, cols = days
-  const grid = Array.from({ length: BAR_HEIGHT }, () => Array(allLabels.length).fill(' '))
+  const grid = Array.from({length: BAR_HEIGHT}, () => Array(allLabels.length).fill(' '))
 
   for (let col = 0; col < allLabels.length; col++) {
     const total = totals[col]
@@ -110,9 +99,7 @@ export function barChart(series, options = {}) {
 
   // X-axis date labels (sample every ~10 positions)
   const step = Math.max(1, Math.ceil(allLabels.length / Math.floor(chartWidth / 10)))
-  const xLabels = allLabels
-    .filter((_, i) => i % step === 0)
-    .map((l) => l.slice(5)) // "MM-DD"
+  const xLabels = allLabels.filter((_, i) => i % step === 0).map((l) => l.slice(5)) // "MM-DD"
   lines.push(' '.repeat(labelColWidth + 1) + xLabels.join('         '))
 
   // Legend for multi-series
@@ -156,9 +143,7 @@ export function lineChart(series, options = {}) {
   }
 
   // Build a 2D canvas: rows = chartHeight, cols = chartWidth
-  const canvas = Array.from({ length: chartHeight }, () =>
-    Array(chartWidth).fill(' '),
-  )
+  const canvas = Array.from({length: chartHeight}, () => Array(chartWidth).fill(' '))
 
   const step = Math.max(1, Math.ceil(allLabels.length / chartWidth))
 
@@ -186,9 +171,7 @@ export function lineChart(series, options = {}) {
 
   // X-axis date labels
   const xStep = Math.max(1, Math.ceil(allLabels.length / Math.floor(chartWidth / 10)))
-  const xLabels = allLabels
-    .filter((_, i) => i % xStep === 0)
-    .map((l) => l.slice(5))
+  const xLabels = allLabels.filter((_, i) => i % xStep === 0).map((l) => l.slice(5))
   lines.push(' '.repeat(labelColWidth + 1) + xLabels.join('         '))
 
   // Legend

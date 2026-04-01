@@ -1,11 +1,11 @@
-import { Command, Args, Flags } from '@oclif/core'
+import {Command, Args, Flags} from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { select } from '@inquirer/prompts'
-import { searchSkills } from '../../services/skills-sh.js'
-import { fetchAwesomeEntries, AWESOME_CATEGORIES } from '../../services/awesome-copilot.js'
-import { formatSkillTable, formatAwesomeTable } from '../../formatters/prompts.js'
-import { DvmiError } from '../../utils/errors.js'
+import {select} from '@inquirer/prompts'
+import {searchSkills} from '../../services/skills-sh.js'
+import {fetchAwesomeEntries, AWESOME_CATEGORIES} from '../../services/awesome-copilot.js'
+import {formatSkillTable, formatAwesomeTable} from '../../formatters/prompts.js'
+import {DvmiError} from '../../utils/errors.js'
 
 /** @import { Skill, AwesomeEntry } from '../../types.js' */
 
@@ -45,7 +45,7 @@ export default class PromptsBrowse extends Command {
   }
 
   async run() {
-    const { args, flags } = await this.parse(PromptsBrowse)
+    const {args, flags} = await this.parse(PromptsBrowse)
     const isJson = flags.json
     const source = args.source
 
@@ -81,7 +81,7 @@ export default class PromptsBrowse extends Command {
       } catch (err) {
         spinner?.fail()
         if (err instanceof DvmiError) {
-          this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+          this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
         }
         throw err
       }
@@ -89,7 +89,7 @@ export default class PromptsBrowse extends Command {
       spinner?.stop()
 
       if (isJson) {
-        return { skills, total: skills.length }
+        return {skills, total: skills.length}
       }
 
       this.log(
@@ -99,7 +99,7 @@ export default class PromptsBrowse extends Command {
       )
       this.log(formatSkillTable(skills))
 
-      return { skills, total: skills.length }
+      return {skills, total: skills.length}
     }
 
     // source === 'awesome'
@@ -118,7 +118,7 @@ export default class PromptsBrowse extends Command {
     } catch (err) {
       spinner?.fail()
       if (err instanceof DvmiError) {
-        this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+        this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
       }
       throw err
     }
@@ -126,7 +126,7 @@ export default class PromptsBrowse extends Command {
     spinner?.stop()
 
     if (isJson) {
-      return { entries, total: entries.length, category }
+      return {entries, total: entries.length, category}
     }
 
     this.log(
@@ -140,8 +140,8 @@ export default class PromptsBrowse extends Command {
 
     if (entries.length > 0) {
       try {
-        const choices = entries.map((e) => ({ name: `${e.name}  ${chalk.dim(e.url)}`, value: e }))
-        choices.push({ name: chalk.dim('← Exit'), value: /** @type {AwesomeEntry} */ (null) })
+        const choices = entries.map((e) => ({name: `${e.name}  ${chalk.dim(e.url)}`, value: e}))
+        choices.push({name: chalk.dim('← Exit'), value: /** @type {AwesomeEntry} */ (null)})
 
         const selected = await select({
           message: 'Select an entry to view its URL (or Exit):',
@@ -159,6 +159,6 @@ export default class PromptsBrowse extends Command {
       }
     }
 
-    return { entries, total: entries.length, category }
+    return {entries, total: entries.length, category}
   }
 }

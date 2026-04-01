@@ -12,9 +12,9 @@ import readline from 'node:readline'
 
 /** @type {GradientStop[]} */
 export const BRAND_GRADIENT = [
-  [0,   212, 255],  // #00D4FF — ciano elettrico
-  [0,   100, 255],  // #0064FF — blu vivido
-  [100,   0, 220],  // #6400DC — indaco profondo
+  [0, 212, 255], // #00D4FF — ciano elettrico
+  [0, 100, 255], // #0064FF — blu vivido
+  [100, 0, 220], // #6400DC — indaco profondo
 ]
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -51,24 +51,26 @@ export function gradientText(text, stops, phase = 0) {
 
   const segments = stops.length - 1
 
-  return chars.map((char, i) => {
-    if (char === ' ') return char
+  return chars
+    .map((char, i) => {
+      if (char === ' ') return char
 
-    // Normalise t in [0, 1] with phase shift
-    const t = ((i / Math.max(len - 1, 1)) + phase) % 1
+      // Normalise t in [0, 1] with phase shift
+      const t = (i / Math.max(len - 1, 1) + phase) % 1
 
-    const seg = Math.min(Math.floor(t * segments), segments - 1)
-    const localT = t * segments - seg
+      const seg = Math.min(Math.floor(t * segments), segments - 1)
+      const localT = t * segments - seg
 
-    const [r1, g1, b1] = stops[seg]
-    const [r2, g2, b2] = stops[seg + 1]
+      const [r1, g1, b1] = stops[seg]
+      const [r2, g2, b2] = stops[seg + 1]
 
-    const r = Math.round(r1 + (r2 - r1) * localT)
-    const g = Math.round(g1 + (g2 - g1) * localT)
-    const b = Math.round(b1 + (b2 - b1) * localT)
+      const r = Math.round(r1 + (r2 - r1) * localT)
+      const g = Math.round(g1 + (g2 - g1) * localT)
+      const b = Math.round(b1 + (b2 - b1) * localT)
 
-    return chalk.rgb(r, g, b)(char)
-  }).join('')
+      return chalk.rgb(r, g, b)(char)
+    })
+    .join('')
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

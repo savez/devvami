@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest'
-import { runCli } from './helpers.js'
+import {describe, it, expect} from 'vitest'
+import {runCli} from './helpers.js'
 
 describe('dvmi init', () => {
   it('--help exits 0 and contains description', async () => {
-    const { stdout, exitCode } = await runCli(['init', '--help'])
+    const {stdout, exitCode} = await runCli(['init', '--help'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('USAGE')
     expect(stdout).toContain('--dry-run')
   })
 
   it('--dry-run --json exits 0 and returns steps array', async () => {
-    const { stdout, exitCode } = await runCli(['init', '--dry-run', '--json'])
+    const {stdout, exitCode} = await runCli(['init', '--dry-run', '--json'])
     expect(exitCode).toBe(0)
     const data = JSON.parse(stdout)
     expect(data).toHaveProperty('steps')
@@ -19,14 +19,14 @@ describe('dvmi init', () => {
   })
 
   it('--dry-run does not modify real config', async () => {
-    const { exitCode } = await runCli(['init', '--dry-run', '--json'])
+    const {exitCode} = await runCli(['init', '--dry-run', '--json'])
     expect(exitCode).toBe(0)
     // No side effects — config path in test env is isolated
   })
 
   // T011: ClickUp step appears in --dry-run --json output
   it('--dry-run --json includes clickup step with status "would configure"', async () => {
-    const { stdout, exitCode } = await runCli(['init', '--dry-run', '--json'])
+    const {stdout, exitCode} = await runCli(['init', '--dry-run', '--json'])
     expect(exitCode).toBe(0)
     const data = JSON.parse(stdout)
     const clickupStep = data.steps.find((s) => s.name === 'clickup')
@@ -36,14 +36,14 @@ describe('dvmi init', () => {
 
   // T012: --help does not mention branch create
   it('--help does not mention "branch create"', async () => {
-    const { stdout, exitCode } = await runCli(['init', '--help'])
+    const {stdout, exitCode} = await runCli(['init', '--help'])
     expect(exitCode).toBe(0)
     expect(stdout).not.toContain('branch create')
   })
 
   // T015 (US2): --json mode reports clickup not_configured when no clickup settings exist
   it('--json reports clickup not_configured when no clickup teamId in config', async () => {
-    const { stdout, exitCode } = await runCli(['init', '--json'])
+    const {stdout, exitCode} = await runCli(['init', '--json'])
     expect(exitCode).toBe(0)
     const data = JSON.parse(stdout)
     const clickupStep = data.steps.find((s) => s.name === 'clickup')

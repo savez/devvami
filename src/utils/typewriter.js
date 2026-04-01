@@ -1,5 +1,5 @@
 import readline from 'node:readline'
-import { isAnimationEnabled, BRAND_GRADIENT, gradientText } from './gradient.js'
+import {isAnimationEnabled, BRAND_GRADIENT, gradientText} from './gradient.js'
 
 /**
  * Stampa testo con effetto typewriter (lettera per lettera).
@@ -12,7 +12,7 @@ import { isAnimationEnabled, BRAND_GRADIENT, gradientText } from './gradient.js'
  * @returns {Promise<void>}
  */
 export async function typewriter(text, opts = {}) {
-  const { interval = 30, gradient } = opts
+  const {interval = 30, gradient} = opts
 
   if (!isAnimationEnabled) {
     const out = gradient ? gradientText(text, gradient) : text
@@ -44,5 +44,5 @@ export async function typewriter(text, opts = {}) {
  * @returns {Promise<void>}
  */
 export async function typewriterLine(text, gradient = BRAND_GRADIENT) {
-  return typewriter(text, { gradient, interval: 25 })
+  return typewriter(text, {gradient, interval: 25})
 }

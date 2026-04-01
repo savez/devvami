@@ -1,6 +1,6 @@
-import { execa } from 'execa'
-import { which, exec } from './shell.js'
-import { DvmiError } from '../utils/errors.js'
+import {execa} from 'execa'
+import {which, exec} from './shell.js'
+import {DvmiError} from '../utils/errors.js'
 
 /** GitHub spec-kit package source for uv.
  * TODO: pin to a specific tagged release (e.g. #v1.x.x) once one is available upstream.
@@ -68,9 +68,6 @@ export async function runSpecifyInit(cwd, opts = {}) {
   })
 
   if (result.exitCode !== 0) {
-    throw new DvmiError(
-      '`specify init` exited with a non-zero code',
-      'Check the output above for details',
-    )
+    throw new DvmiError('`specify init` exited with a non-zero code', 'Check the output above for details')
   }
 }

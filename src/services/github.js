@@ -1,6 +1,6 @@
-import { Octokit } from 'octokit'
-import { exec } from './shell.js'
-import { AuthError } from '../utils/errors.js'
+import {Octokit} from 'octokit'
+import {exec} from './shell.js'
+import {AuthError} from '../utils/errors.js'
 
 /** @import { Template, Repository, PullRequest, PRComment, QAStep, PRDetail, PipelineRun } from '../types.js' */
 
@@ -21,7 +21,7 @@ async function getToken() {
 export async function createOctokit() {
   const token = await getToken()
   const baseUrl = process.env.GITHUB_API_URL ?? 'https://api.github.com'
-  return new Octokit({ auth: token, baseUrl })
+  return new Octokit({auth: token, baseUrl})
 }
 
 /**
@@ -47,9 +47,7 @@ export async function listRepos(org, filters = {}) {
     isPrivate: r.private,
   }))
   if (filters.language) {
-    results = results.filter(
-      (r) => r.language?.toLowerCase() === filters.language?.toLowerCase(),
-    )
+    results = results.filter((r) => r.language?.toLowerCase() === filters.language?.toLowerCase())
   }
   if (filters.topic) {
     results = results.filter((r) => r.topics.includes(filters.topic ?? ''))
@@ -87,7 +85,7 @@ export async function listTemplates(org) {
  */
 export async function createFromTemplate(opts) {
   const octokit = await createOctokit()
-  const { data } = await octokit.rest.repos.createUsingTemplate({
+  const {data} = await octokit.rest.repos.createUsingTemplate({
     template_owner: opts.templateOwner,
     template_repo: opts.templateRepo,
     name: opts.name,
@@ -96,7 +94,7 @@ export async function createFromTemplate(opts) {
     private: opts.isPrivate,
     include_all_branches: false,
   })
-  return { name: data.name, htmlUrl: data.html_url, cloneUrl: data.clone_url }
+  return {name: data.name, htmlUrl: data.html_url, cloneUrl: data.clone_url}
 }
 
 /**
@@ -113,7 +111,7 @@ export async function setBranchProtection(owner, repo) {
     branch: 'main',
     required_status_checks: null,
     enforce_admins: false,
-    required_pull_request_reviews: { required_approving_review_count: 0 },
+    required_pull_request_reviews: {required_approving_review_count: 0},
     restrictions: null,
     allow_force_pushes: false,
     allow_deletions: false,
@@ -128,8 +126,8 @@ export async function setBranchProtection(owner, repo) {
  */
 export async function enableDependabot(owner, repo) {
   const octokit = await createOctokit()
-  await octokit.rest.repos.enableAutomatedSecurityFixes({ owner, repo })
-  await octokit.rest.repos.enableVulnerabilityAlerts({ owner, repo })
+  await octokit.rest.repos.enableAutomatedSecurityFixes({owner, repo})
+  await octokit.rest.repos.enableVulnerabilityAlerts({owner, repo})
 }
 
 /**
@@ -139,7 +137,7 @@ export async function enableDependabot(owner, repo) {
  */
 export async function createPR(opts) {
   const octokit = await createOctokit()
-  const { data } = await octokit.rest.pulls.create({
+  const {data} = await octokit.rest.pulls.create({
     owner: opts.owner,
     repo: opts.repo,
     title: opts.title,
@@ -164,7 +162,7 @@ export async function createPR(opts) {
       reviewers: opts.reviewers,
     })
   }
-  return { number: data.number, htmlUrl: data.html_url }
+  return {number: data.number, htmlUrl: data.html_url}
 }
 
 /**
@@ -174,7 +172,7 @@ export async function createPR(opts) {
  */
 export async function listMyPRs(org) {
   const octokit = await createOctokit()
-  const { data: user } = await octokit.rest.users.getAuthenticated()
+  const {data: user} = await octokit.rest.users.getAuthenticated()
   const login = user.login
 
   const [authoredRes, reviewingRes] = await Promise.all([
@@ -227,9 +225,9 @@ export async function listWorkflowRuns(owner, repo, filters = {}) {
     owner,
     repo,
     per_page: filters.limit ?? 10,
-    ...(filters.branch ? { branch: filters.branch } : {}),
+    ...(filters.branch ? {branch: filters.branch} : {}),
   }
-  const { data } = await octokit.rest.actions.listWorkflowRunsForRepo(params)
+  const {data} = await octokit.rest.actions.listWorkflowRunsForRepo(params)
   return data.workflow_runs.map((run) => {
     const start = new Date(run.created_at)
     const end = run.updated_at ? new Date(run.updated_at) : new Date()
@@ -259,9 +257,9 @@ export async function listWorkflowRuns(owner, repo, filters = {}) {
 export async function rerunWorkflow(owner, repo, runId, failedOnly = false) {
   const octokit = await createOctokit()
   if (failedOnly) {
-    await octokit.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: runId })
+    await octokit.rest.actions.reRunWorkflowFailedJobs({owner, repo, run_id: runId})
   } else {
-    await octokit.rest.actions.reRunWorkflow({ owner, repo, run_id: runId })
+    await octokit.rest.actions.reRunWorkflow({owner, repo, run_id: runId})
   }
 }
 
@@ -277,7 +275,7 @@ export async function searchCode(org, query, opts = {}) {
   let q = `${query} org:${org}`
   if (opts.language) q += ` language:${opts.language}`
   if (opts.repo) q += ` repo:${org}/${opts.repo}`
-  const { data } = await octokit.rest.search.code({ q, per_page: opts.limit ?? 20 })
+  const {data} = await octokit.rest.search.code({q, per_page: opts.limit ?? 20})
   return data.items.map((item) => ({
     repo: item.repository.name,
     file: item.path,
@@ -297,7 +295,7 @@ export function extractQASteps(body) {
   for (const line of body.split('\n')) {
     const match = line.match(/^\s*-\s*\[([xX ])\]\s+(.+)/)
     if (match) {
-      steps.push({ text: match[2].trim(), checked: match[1].toLowerCase() === 'x' })
+      steps.push({text: match[2].trim(), checked: match[1].toLowerCase() === 'x'})
     }
   }
   return steps
@@ -331,9 +329,9 @@ export async function getPRDetail(owner, repo, prNumber) {
   const octokit = await createOctokit()
 
   const [prRes, commentsRes, reviewsRes] = await Promise.all([
-    octokit.rest.pulls.get({ owner, repo, pull_number: prNumber }),
-    octokit.rest.issues.listComments({ owner, repo, issue_number: prNumber, per_page: 100 }),
-    octokit.rest.pulls.listReviews({ owner, repo, pull_number: prNumber, per_page: 100 }),
+    octokit.rest.pulls.get({owner, repo, pull_number: prNumber}),
+    octokit.rest.issues.listComments({owner, repo, issue_number: prNumber, per_page: 100}),
+    octokit.rest.pulls.listReviews({owner, repo, pull_number: prNumber, per_page: 100}),
   ])
 
   const pr = prRes.data

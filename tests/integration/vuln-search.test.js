@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { runCli, createMockServer, jsonResponse } from './helpers.js'
-import { readFileSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {describe, it, expect} from 'vitest'
+import {runCli, createMockServer, jsonResponse} from './helpers.js'
+import {readFileSync} from 'node:fs'
+import {resolve, dirname} from 'node:path'
+import {fileURLToPath} from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const searchFixture = JSON.parse(
@@ -11,7 +11,7 @@ const searchFixture = JSON.parse(
 
 describe('dvmi vuln search', () => {
   it('shows help', async () => {
-    const { stdout, exitCode } = await runCli(['vuln', 'search', '--help'])
+    const {stdout, exitCode} = await runCli(['vuln', 'search', '--help'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('USAGE')
     expect(stdout).toContain('keyword')
@@ -26,7 +26,7 @@ describe('dvmi vuln search', () => {
     })
 
     try {
-      const { exitCode } = await runCli(['vuln', 'search'], { NVD_BASE_URL: server.url })
+      const {exitCode} = await runCli(['vuln', 'search'], {NVD_BASE_URL: server.url})
       expect(exitCode).toBe(0)
     } finally {
       await server.stop()
@@ -34,13 +34,13 @@ describe('dvmi vuln search', () => {
   })
 
   it('exits 2 when --severity is invalid', async () => {
-    const { stderr, exitCode } = await runCli(['vuln', 'search', 'openssl', '--severity', 'EXTREME'])
+    const {stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--severity', 'EXTREME'])
     expect(exitCode).toBe(2)
     expect(stderr).toMatch(/Expected.*severity/i)
   })
 
   it('exits 2 when --days is out of range', async () => {
-    const { stderr, exitCode } = await runCli(['vuln', 'search', 'openssl', '--days', '200'])
+    const {stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--days', '200'])
     expect(exitCode).toBe(2)
     expect(stderr).toMatch(/days must be between/)
   })
@@ -51,10 +51,7 @@ describe('dvmi vuln search', () => {
     })
 
     try {
-      const { stdout, exitCode } = await runCli(
-        ['vuln', 'search', 'openssl'],
-        { NVD_BASE_URL: server.url },
-      )
+      const {stdout, exitCode} = await runCli(['vuln', 'search', 'openssl'], {NVD_BASE_URL: server.url})
       // The command always succeeds (exit 0) even if the env var isn't wired yet
       // because the MSW mock in vitest intercepts NVD calls
       expect(exitCode).toBe(0)
@@ -72,10 +69,7 @@ describe('dvmi vuln search', () => {
     })
 
     try {
-      const { stdout, exitCode } = await runCli(
-        ['vuln', 'search', 'openssl'],
-        { NVD_BASE_URL: server.url },
-      )
+      const {stdout, exitCode} = await runCli(['vuln', 'search', 'openssl'], {NVD_BASE_URL: server.url})
       expect(exitCode).toBe(0)
       // Static table should be present
       expect(stdout).toMatch(/CVE ID|openssl/i)
@@ -91,10 +85,7 @@ describe('dvmi vuln search', () => {
     // The vitest MSW intercepts fetch — but this is an integration test (runs via execaNode)
     // so we cannot rely on MSW. Instead just check the flag is accepted and JSON is returned
     // even if the NVD call fails (no network in CI). We use DVMI_NO_NVD env to short-circuit.
-    const { stdout, stderr, exitCode } = await runCli(
-      ['vuln', 'search', 'openssl', '--json'],
-      {},
-    )
+    const {stdout, stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--json'], {})
     // May fail with network error in offline env; just check the flag is parsed
     if (exitCode === 0) {
       const data = JSON.parse(stdout)

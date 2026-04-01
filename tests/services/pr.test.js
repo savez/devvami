@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import {describe, it, expect} from 'vitest'
 
 // Test pure logic functions extracted from pr/index.js
 /**
@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest'
 function titleFromBranch(branchName) {
   const [type, ...rest] = branchName.split('/')
   const desc = rest.join('/').replace(/-/g, ' ')
-  const typeMap = { feature: 'Feature', fix: 'Fix', chore: 'Chore', hotfix: 'Hotfix' }
+  const typeMap = {feature: 'Feature', fix: 'Fix', chore: 'Chore', hotfix: 'Hotfix'}
   return `${typeMap[type] ?? type}: ${desc}`
 }
 
@@ -17,7 +17,7 @@ function titleFromBranch(branchName) {
  * @returns {string[]}
  */
 function labelFromType(branchType) {
-  const map = { feature: ['feature'], fix: ['bug'], chore: ['chore'], hotfix: ['critical'] }
+  const map = {feature: ['feature'], fix: ['bug'], chore: ['chore'], hotfix: ['critical']}
   return map[branchType] ?? []
 }
 

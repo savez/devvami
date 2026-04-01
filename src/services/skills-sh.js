@@ -1,4 +1,4 @@
-import { DvmiError } from '../utils/errors.js'
+import {DvmiError} from '../utils/errors.js'
 
 /** @import { Skill } from '../types.js' */
 
@@ -37,17 +37,11 @@ export async function searchSkills(query, limit = 50) {
   try {
     res = await fetch(url.toString())
   } catch {
-    throw new DvmiError(
-      'Unable to reach skills.sh API',
-      'Check your internet connection and try again',
-    )
+    throw new DvmiError('Unable to reach skills.sh API', 'Check your internet connection and try again')
   }
 
   if (!res.ok) {
-    throw new DvmiError(
-      `skills.sh API returned ${res.status}`,
-      'Try again later or visit https://skills.sh',
-    )
+    throw new DvmiError(`skills.sh API returned ${res.status}`, 'Try again later or visit https://skills.sh')
   }
 
   /** @type {unknown} */

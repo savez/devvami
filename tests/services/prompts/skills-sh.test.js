@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { http, HttpResponse } from 'msw'
-import { server } from '../../setup.js'
+import {describe, it, expect} from 'vitest'
+import {http, HttpResponse} from 'msw'
+import {server} from '../../setup.js'
 
 describe('searchSkills', () => {
   it('returns parsed Skill[] from skills.sh API (skills key)', async () => {
@@ -10,8 +10,8 @@ describe('searchSkills', () => {
           query: 'review',
           searchType: 'fuzzy',
           skills: [
-            { id: 'code-review', name: 'Code Review', description: 'Review code changes', installs: 1200 },
-            { id: 'sql-gen', name: 'SQL Generator', description: 'Generate SQL queries', installs: 800 },
+            {id: 'code-review', name: 'Code Review', description: 'Review code changes', installs: 1200},
+            {id: 'sql-gen', name: 'SQL Generator', description: 'Generate SQL queries', installs: 800},
           ],
           count: 2,
           duration_ms: 42,
@@ -19,7 +19,7 @@ describe('searchSkills', () => {
       ),
     )
 
-    const { searchSkills } = await import('../../../src/services/skills-sh.js')
+    const {searchSkills} = await import('../../../src/services/skills-sh.js')
     const skills = await searchSkills('review')
 
     expect(skills).toHaveLength(2)
@@ -35,13 +35,13 @@ describe('searchSkills', () => {
     let capturedUrl
 
     server.use(
-      http.get('https://skills.sh/api/search', ({ request }) => {
+      http.get('https://skills.sh/api/search', ({request}) => {
         capturedUrl = new URL(request.url)
-        return HttpResponse.json({ skills: [] })
+        return HttpResponse.json({skills: []})
       }),
     )
 
-    const { searchSkills } = await import('../../../src/services/skills-sh.js')
+    const {searchSkills} = await import('../../../src/services/skills-sh.js')
     await searchSkills('refactor', 10)
 
     expect(capturedUrl?.searchParams.get('q')).toBe('refactor')
@@ -49,11 +49,9 @@ describe('searchSkills', () => {
   })
 
   it('returns empty array when API returns empty skills array', async () => {
-    server.use(
-      http.get('https://skills.sh/api/search', () => HttpResponse.json({ skills: [], count: 0 })),
-    )
+    server.use(http.get('https://skills.sh/api/search', () => HttpResponse.json({skills: [], count: 0})))
 
-    const { searchSkills } = await import('../../../src/services/skills-sh.js')
+    const {searchSkills} = await import('../../../src/services/skills-sh.js')
     const skills = await searchSkills('coding')
     expect(Array.isArray(skills)).toBe(true)
     expect(skills).toHaveLength(0)
@@ -62,19 +60,19 @@ describe('searchSkills', () => {
   it('also handles plain array response format', async () => {
     server.use(
       http.get('https://skills.sh/api/search', () =>
-        HttpResponse.json([{ id: 'plain', name: 'Plain Skill', installs: 5 }]),
+        HttpResponse.json([{id: 'plain', name: 'Plain Skill', installs: 5}]),
       ),
     )
 
-    const { searchSkills } = await import('../../../src/services/skills-sh.js')
+    const {searchSkills} = await import('../../../src/services/skills-sh.js')
     const skills = await searchSkills('plain')
     expect(skills).toHaveLength(1)
     expect(skills[0].id).toBe('plain')
   })
 
   it('throws DvmiError when query is missing or too short', async () => {
-    const { searchSkills } = await import('../../../src/services/skills-sh.js')
-    const { DvmiError } = await import('../../../src/utils/errors.js')
+    const {searchSkills} = await import('../../../src/services/skills-sh.js')
+    const {DvmiError} = await import('../../../src/utils/errors.js')
 
     await expect(searchSkills('')).rejects.toThrow(DvmiError)
     await expect(searchSkills('a')).rejects.toThrow(DvmiError)
@@ -83,13 +81,11 @@ describe('searchSkills', () => {
 
   it('throws DvmiError when API returns non-OK status', async () => {
     server.use(
-      http.get('https://skills.sh/api/search', () =>
-        HttpResponse.json({ error: 'server error' }, { status: 500 }),
-      ),
+      http.get('https://skills.sh/api/search', () => HttpResponse.json({error: 'server error'}, {status: 500})),
     )
 
-    const { searchSkills } = await import('../../../src/services/skills-sh.js')
-    const { DvmiError } = await import('../../../src/utils/errors.js')
+    const {searchSkills} = await import('../../../src/services/skills-sh.js')
+    const {DvmiError} = await import('../../../src/utils/errors.js')
 
     await expect(searchSkills('test-query')).rejects.toThrow(DvmiError)
   })

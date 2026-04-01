@@ -1,5 +1,14 @@
-import { describe, it, expect } from 'vitest'
-import { colorSeverity, formatScore, formatDate, formatCveSearchTable, formatCveDetail, formatFindingsTable, formatScanSummary, formatMarkdownReport } from '../../../src/formatters/vuln.js'
+import {describe, it, expect} from 'vitest'
+import {
+  colorSeverity,
+  formatScore,
+  formatDate,
+  formatCveSearchTable,
+  formatCveDetail,
+  formatFindingsTable,
+  formatScanSummary,
+  formatMarkdownReport,
+} from '../../../src/formatters/vuln.js'
 
 describe('colorSeverity', () => {
   it('returns a non-empty string for each severity level', () => {
@@ -83,7 +92,7 @@ describe('formatCveSearchTable', () => {
   })
 
   it('shows — when firstReference is null', () => {
-    const noRef = [{ ...mockResults[0], firstReference: null }]
+    const noRef = [{...mockResults[0], firstReference: null}]
     const out = formatCveSearchTable(noRef, 'openssl', 14, 1)
     expect(out).toContain('—')
   })
@@ -99,9 +108,9 @@ describe('formatCveDetail', () => {
     publishedDate: '2021-12-10T04:15:07.917',
     lastModified: '2023-11-07T03:39:36.747',
     status: 'Analyzed',
-    weaknesses: [{ id: 'CWE-502', description: 'CWE-502' }],
-    affectedProducts: [{ vendor: 'apache', product: 'log4j', versions: '2.0-beta9 to 2.15.0' }],
-    references: [{ url: 'https://example.com', source: 'test', tags: ['Vendor Advisory'] }],
+    weaknesses: [{id: 'CWE-502', description: 'CWE-502'}],
+    affectedProducts: [{vendor: 'apache', product: 'log4j', versions: '2.0-beta9 to 2.15.0'}],
+    references: [{url: 'https://example.com', source: 'test', tags: ['Vendor Advisory']}],
   }
 
   it('includes CVE ID in output', () => {
@@ -170,7 +179,7 @@ describe('formatFindingsTable', () => {
 
 describe('formatScanSummary', () => {
   it('includes counts for all severity levels', () => {
-    const summary = { critical: 2, high: 1, medium: 3, low: 0, unknown: 0, total: 6 }
+    const summary = {critical: 2, high: 1, medium: 3, low: 0, unknown: 0, total: 6}
     const out = formatScanSummary(summary)
     expect(out).toContain('2')
     expect(out).toContain('Critical')
@@ -182,11 +191,29 @@ describe('formatMarkdownReport', () => {
   const mockResult = {
     projectPath: '/path/to/project',
     scanDate: '2026-03-28T10:30:00.000Z',
-    ecosystems: [{ name: 'pnpm', lockFile: 'pnpm-lock.yaml', lockFilePath: '/path/pnpm-lock.yaml', auditCommand: 'pnpm audit --json', builtIn: true }],
-    findings: [
-      { package: 'lodash', installedVersion: '4.17.20', severity: 'Critical', cveId: 'CVE-2021-23337', advisoryUrl: null, title: 'Prototype Pollution', patchedVersions: null, ecosystem: 'pnpm', isDirect: false },
+    ecosystems: [
+      {
+        name: 'pnpm',
+        lockFile: 'pnpm-lock.yaml',
+        lockFilePath: '/path/pnpm-lock.yaml',
+        auditCommand: 'pnpm audit --json',
+        builtIn: true,
+      },
     ],
-    summary: { critical: 1, high: 0, medium: 0, low: 0, unknown: 0, total: 1 },
+    findings: [
+      {
+        package: 'lodash',
+        installedVersion: '4.17.20',
+        severity: 'Critical',
+        cveId: 'CVE-2021-23337',
+        advisoryUrl: null,
+        title: 'Prototype Pollution',
+        patchedVersions: null,
+        ecosystem: 'pnpm',
+        isDirect: false,
+      },
+    ],
+    summary: {critical: 1, high: 0, medium: 0, low: 0, unknown: 0, total: 1},
     errors: [],
   }
 

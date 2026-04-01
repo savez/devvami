@@ -1,10 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import {
-  parseOpenApi,
-  parseAsyncApi,
-  isOpenApi,
-  isAsyncApi,
-} from '../../../src/formatters/openapi.js'
+import {describe, it, expect} from 'vitest'
+import {parseOpenApi, parseAsyncApi, isOpenApi, isAsyncApi} from '../../../src/formatters/openapi.js'
 
 const OPENAPI_3_YAML = `
 openapi: '3.0.0'
@@ -66,34 +61,34 @@ channels:
 
 describe('isOpenApi', () => {
   it('returns true for OpenAPI 3.x doc', () => {
-    expect(isOpenApi({ openapi: '3.0.0' })).toBe(true)
+    expect(isOpenApi({openapi: '3.0.0'})).toBe(true)
   })
 
   it('returns true for Swagger 2.0 doc', () => {
-    expect(isOpenApi({ swagger: '2.0' })).toBe(true)
+    expect(isOpenApi({swagger: '2.0'})).toBe(true)
   })
 
   it('returns false for non-OpenAPI doc', () => {
-    expect(isOpenApi({ asyncapi: '2.0.0' })).toBe(false)
+    expect(isOpenApi({asyncapi: '2.0.0'})).toBe(false)
     expect(isOpenApi({})).toBe(false)
   })
 })
 
 describe('isAsyncApi', () => {
   it('returns true for AsyncAPI doc', () => {
-    expect(isAsyncApi({ asyncapi: '2.0.0' })).toBe(true)
-    expect(isAsyncApi({ asyncapi: '3.0.0' })).toBe(true)
+    expect(isAsyncApi({asyncapi: '2.0.0'})).toBe(true)
+    expect(isAsyncApi({asyncapi: '3.0.0'})).toBe(true)
   })
 
   it('returns false for non-AsyncAPI doc', () => {
-    expect(isAsyncApi({ openapi: '3.0.0' })).toBe(false)
+    expect(isAsyncApi({openapi: '3.0.0'})).toBe(false)
     expect(isAsyncApi({})).toBe(false)
   })
 })
 
 describe('parseOpenApi', () => {
   it('parses a valid OpenAPI 3.x YAML', () => {
-    const { endpoints, error } = parseOpenApi(OPENAPI_3_YAML)
+    const {endpoints, error} = parseOpenApi(OPENAPI_3_YAML)
     expect(error).toBeNull()
     expect(endpoints.length).toBeGreaterThan(0)
 
@@ -107,19 +102,19 @@ describe('parseOpenApi', () => {
   })
 
   it('parses a valid Swagger 2.0 YAML', () => {
-    const { endpoints, error } = parseOpenApi(SWAGGER_2_YAML)
+    const {endpoints, error} = parseOpenApi(SWAGGER_2_YAML)
     expect(error).toBeNull()
     expect(endpoints.some((e) => e.path === '/items' && e.method === 'GET')).toBe(true)
   })
 
   it('returns error for non-OpenAPI content', () => {
-    const { endpoints, error } = parseOpenApi('# Just a markdown document')
+    const {endpoints, error} = parseOpenApi('# Just a markdown document')
     expect(endpoints).toHaveLength(0)
     expect(error).toBeTruthy()
   })
 
   it('returns error for invalid YAML', () => {
-    const { endpoints, error } = parseOpenApi(': invalid: yaml: :::')
+    const {endpoints, error} = parseOpenApi(': invalid: yaml: :::')
     expect(endpoints).toHaveLength(0)
     expect(error).toBeTruthy()
   })
@@ -127,12 +122,12 @@ describe('parseOpenApi', () => {
   it('parses valid JSON input', () => {
     const json = JSON.stringify({
       openapi: '3.0.0',
-      info: { title: 'T', version: '1' },
+      info: {title: 'T', version: '1'},
       paths: {
-        '/ping': { get: { summary: 'Ping' } },
+        '/ping': {get: {summary: 'Ping'}},
       },
     })
-    const { endpoints, error } = parseOpenApi(json)
+    const {endpoints, error} = parseOpenApi(json)
     expect(error).toBeNull()
     expect(endpoints[0].path).toBe('/ping')
   })
@@ -140,7 +135,7 @@ describe('parseOpenApi', () => {
 
 describe('parseAsyncApi', () => {
   it('parses AsyncAPI 2.x YAML with publish/subscribe', () => {
-    const { channels, error } = parseAsyncApi(ASYNCAPI_2_YAML)
+    const {channels, error} = parseAsyncApi(ASYNCAPI_2_YAML)
     expect(error).toBeNull()
     expect(channels.length).toBeGreaterThanOrEqual(2)
 
@@ -155,13 +150,13 @@ describe('parseAsyncApi', () => {
   })
 
   it('returns error for non-AsyncAPI content', () => {
-    const { channels, error } = parseAsyncApi('# Not asyncapi')
+    const {channels, error} = parseAsyncApi('# Not asyncapi')
     expect(channels).toHaveLength(0)
     expect(error).toBeTruthy()
   })
 
   it('returns error for invalid YAML', () => {
-    const { channels, error } = parseAsyncApi('::: bad yaml')
+    const {channels, error} = parseAsyncApi('::: bad yaml')
     expect(channels).toHaveLength(0)
     expect(error).toBeTruthy()
   })

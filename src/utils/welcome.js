@@ -1,7 +1,7 @@
 import chalk from 'chalk'
-import { printBanner } from './banner.js'
-import { isColorEnabled } from './gradient.js'
-import { typewriterLine } from './typewriter.js'
+import {printBanner} from './banner.js'
+import {isColorEnabled} from './gradient.js'
+import {typewriterLine} from './typewriter.js'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -14,21 +14,18 @@ const nl = () => process.stdout.write('\n')
 
 const p = isColorEnabled
   ? {
-      sep:    (t) => chalk.hex('#4A9EFF').dim(t),
-      cyan:   (t) => chalk.hex('#00D4FF').bold(t),
-      green:  (t) => chalk.hex('#00FF88').bold(t),
-      pink:   (t) => chalk.hex('#FF3399').bold(t),
-      gold:   (t) => chalk.hex('#FFD700').bold(t),
+      sep: (t) => chalk.hex('#4A9EFF').dim(t),
+      cyan: (t) => chalk.hex('#00D4FF').bold(t),
+      green: (t) => chalk.hex('#00FF88').bold(t),
+      pink: (t) => chalk.hex('#FF3399').bold(t),
+      gold: (t) => chalk.hex('#FFD700').bold(t),
       orange: (t) => chalk.hex('#FF6B2B').bold(t),
-      blue:   (t) => chalk.hex('#4A9EFF')(t),
-      white:  (t) => chalk.white(t),
-      dim:    (t) => chalk.dim(t),
+      blue: (t) => chalk.hex('#4A9EFF')(t),
+      white: (t) => chalk.white(t),
+      dim: (t) => chalk.dim(t),
     }
   : Object.fromEntries(
-      ['sep', 'cyan', 'green', 'pink', 'gold', 'orange', 'blue', 'white', 'dim'].map((k) => [
-        k,
-        (t) => t,
-      ]),
+      ['sep', 'cyan', 'green', 'pink', 'gold', 'orange', 'blue', 'white', 'dim'].map((k) => [k, (t) => t]),
     )
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -151,13 +148,13 @@ export async function printWelcomeScreen(version = '') {
 
   /** @type {Array<[string, string]>} */
   const commands = [
-    ['dvmi init',            'configure your workspace'],
-    ['dvmi auth login',      'connect GitHub & ClickUp'],
-    ['dvmi pr status',       'open pull requests'],
+    ['dvmi init', 'configure your workspace'],
+    ['dvmi auth login', 'connect GitHub & ClickUp'],
+    ['dvmi pr status', 'open pull requests'],
     ['dvmi pipeline status', 'CI/CD health check'],
-    ['dvmi tasks today',     'focus mode: what to ship today'],
-    ['dvmi costs get',       'AWS bill reality check'],
-    ['dvmi doctor',          'diagnose config issues'],
+    ['dvmi tasks today', 'focus mode: what to ship today'],
+    ['dvmi costs get', 'AWS bill reality check'],
+    ['dvmi doctor', 'diagnose config issues'],
   ]
   for (const [cmd, comment] of commands) {
     out('  ' + p.blue('$ ' + cmd.padEnd(24)) + p.dim('# ' + comment))

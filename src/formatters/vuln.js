@@ -1,6 +1,6 @@
 import chalk from 'chalk'
-import { renderTable } from './table.js'
-import { NVD_ATTRIBUTION } from '../services/nvd.js'
+import {renderTable} from './table.js'
+import {NVD_ATTRIBUTION} from '../services/nvd.js'
 
 /** @import { CveSearchResult, CveDetail, VulnerabilityFinding, ScanResult } from '../types.js' */
 
@@ -11,11 +11,16 @@ import { NVD_ATTRIBUTION } from '../services/nvd.js'
  */
 export function colorSeverity(severity) {
   switch (severity) {
-    case 'Critical': return chalk.red.bold(severity)
-    case 'High':     return chalk.red(severity)
-    case 'Medium':   return chalk.yellow(severity)
-    case 'Low':      return chalk.blue(severity)
-    default:         return chalk.gray(severity)
+    case 'Critical':
+      return chalk.red.bold(severity)
+    case 'High':
+      return chalk.red(severity)
+    case 'Medium':
+      return chalk.yellow(severity)
+    case 'Low':
+      return chalk.blue(severity)
+    default:
+      return chalk.gray(severity)
   }
 }
 
@@ -83,16 +88,21 @@ export function formatCveSearchTable(results, keyword, days, totalResults) {
   }))
 
   const table = renderTable(rows, [
-    { header: 'CVE ID',      key: 'id',          colorize: (v) => chalk.cyan(v) },
-    { header: 'Severity',    key: 'severity',     colorize: (v) => colorSeverity(v) },
-    { header: 'Score',       key: 'score',        width: 5 },
-    { header: 'Published',   key: 'published',    width: 10 },
-    { header: 'Description', key: 'description',  width: 90 },
-    { header: 'Reference',   key: 'reference',    width: 45 },
+    {header: 'CVE ID', key: 'id', colorize: (v) => chalk.cyan(v)},
+    {header: 'Severity', key: 'severity', colorize: (v) => colorSeverity(v)},
+    {header: 'Score', key: 'score', width: 5},
+    {header: 'Published', key: 'published', width: 10},
+    {header: 'Description', key: 'description', width: 90},
+    {header: 'Reference', key: 'reference', width: 45},
   ])
 
   // Indent table by 2 spaces
-  lines.push(table.split('\n').map((l) => `  ${l}`).join('\n'))
+  lines.push(
+    table
+      .split('\n')
+      .map((l) => `  ${l}`)
+      .join('\n'),
+  )
   lines.push('')
   lines.push(`Showing ${results.length} of ${totalResults} results.`)
   lines.push(chalk.dim(NVD_ATTRIBUTION))
@@ -250,14 +260,17 @@ export function formatFindingsTable(findings) {
   }))
 
   const table = renderTable(rows, [
-    { header: 'Package',  key: 'pkg',      width: 20 },
-    { header: 'Version',  key: 'version',  width: 12 },
-    { header: 'Severity', key: 'severity', colorize: (v) => colorSeverity(v) },
-    { header: 'CVE',      key: 'cve',      colorize: (v) => (v !== '—' ? chalk.cyan(v) : chalk.gray(v)) },
-    { header: 'Title',    key: 'title',    width: 40 },
+    {header: 'Package', key: 'pkg', width: 20},
+    {header: 'Version', key: 'version', width: 12},
+    {header: 'Severity', key: 'severity', colorize: (v) => colorSeverity(v)},
+    {header: 'CVE', key: 'cve', colorize: (v) => (v !== '—' ? chalk.cyan(v) : chalk.gray(v))},
+    {header: 'Title', key: 'title', width: 40},
   ])
 
-  return table.split('\n').map((l) => `  ${l}`).join('\n')
+  return table
+    .split('\n')
+    .map((l) => `  ${l}`)
+    .join('\n')
 }
 
 /**

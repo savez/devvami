@@ -1,5 +1,5 @@
-import { execa } from 'execa'
-import { dirname } from 'node:path'
+import {execa} from 'execa'
+import {dirname} from 'node:path'
 
 /** @import { PackageEcosystem, VulnerabilityFinding } from '../types.js' */
 
@@ -141,8 +141,9 @@ function parsePipAudit(data, ecosystem) {
     if (!Array.isArray(dep.vulns) || dep.vulns.length === 0) continue
     for (const vuln of dep.vulns) {
       // Determine best ID: prefer CVE
-      const cveId = vuln.id?.startsWith('CVE-') ? vuln.id
-        : (vuln.aliases ?? []).find((a) => a.startsWith('CVE-')) ?? null
+      const cveId = vuln.id?.startsWith('CVE-')
+        ? vuln.id
+        : ((vuln.aliases ?? []).find((a) => a.startsWith('CVE-')) ?? null)
 
       findings.push({
         package: dep.name,
@@ -151,9 +152,8 @@ function parsePipAudit(data, ecosystem) {
         cveId,
         advisoryUrl: null,
         title: vuln.description ?? null,
-        patchedVersions: Array.isArray(vuln.fix_versions) && vuln.fix_versions.length > 0
-          ? `>=${vuln.fix_versions[0]}`
-          : null,
+        patchedVersions:
+          Array.isArray(vuln.fix_versions) && vuln.fix_versions.length > 0 ? `>=${vuln.fix_versions[0]}` : null,
         ecosystem,
         isDirect: null,
       })
@@ -177,9 +177,7 @@ function parseCargoAudit(data, ecosystem) {
     const advisory = item.advisory ?? {}
     const pkg = item.package ?? {}
 
-    const cveId = Array.isArray(advisory.aliases)
-      ? (advisory.aliases.find((a) => /^CVE-/i.test(a)) ?? null)
-      : null
+    const cveId = Array.isArray(advisory.aliases) ? (advisory.aliases.find((a) => /^CVE-/i.test(a)) ?? null) : null
 
     // CVSS vector string — extract base score from it? Too complex; mark Unknown for now
     findings.push({
@@ -275,55 +273,56 @@ export async function runAudit(ecosystem) {
     })
   } catch (err) {
     // Binary not found — tool not installed
-    const errMsg = /** @type {any} */ (err).code === 'ENOENT'
-      ? `"${cmd}" is not installed. Install it to scan ${ecosystem.name} dependencies.`
-      : String(err)
-    return { findings: [], error: errMsg }
+    const errMsg =
+      /** @type {any} */ (err).code === 'ENOENT'
+        ? `"${cmd}" is not installed. Install it to scan ${ecosystem.name} dependencies.`
+        : String(err)
+    return {findings: [], error: errMsg}
   }
 
   const output = result.stdout ?? result.all ?? ''
 
   if (!output.trim()) {
     if (result.exitCode !== 0 && result.exitCode !== 1) {
-      return { findings: [], error: `${cmd} exited with code ${result.exitCode}: ${result.stderr ?? ''}` }
+      return {findings: [], error: `${cmd} exited with code ${result.exitCode}: ${result.stderr ?? ''}`}
     }
-    return { findings: [], error: null }
+    return {findings: [], error: null}
   }
 
   try {
     switch (ecosystem.name) {
       case 'npm': {
         const data = JSON.parse(output)
-        return { findings: parseNpmAudit(data, ecosystem.name), error: null }
+        return {findings: parseNpmAudit(data, ecosystem.name), error: null}
       }
       case 'pnpm': {
         const data = JSON.parse(output)
-        return { findings: parsePnpmAudit(data, ecosystem.name), error: null }
+        return {findings: parsePnpmAudit(data, ecosystem.name), error: null}
       }
       case 'yarn': {
-        return { findings: parseYarnAudit(output, ecosystem.name), error: null }
+        return {findings: parseYarnAudit(output, ecosystem.name), error: null}
       }
       case 'pip': {
         const data = JSON.parse(output)
-        return { findings: parsePipAudit(data, ecosystem.name), error: null }
+        return {findings: parsePipAudit(data, ecosystem.name), error: null}
       }
       case 'cargo': {
         const data = JSON.parse(output)
-        return { findings: parseCargoAudit(data, ecosystem.name), error: null }
+        return {findings: parseCargoAudit(data, ecosystem.name), error: null}
       }
       case 'bundler': {
         const data = JSON.parse(output)
-        return { findings: parseBundlerAudit(data, ecosystem.name), error: null }
+        return {findings: parseBundlerAudit(data, ecosystem.name), error: null}
       }
       case 'composer': {
         const data = JSON.parse(output)
-        return { findings: parseComposerAudit(data, ecosystem.name), error: null }
+        return {findings: parseComposerAudit(data, ecosystem.name), error: null}
       }
       default:
-        return { findings: [], error: `Unknown ecosystem: ${ecosystem.name}` }
+        return {findings: [], error: `Unknown ecosystem: ${ecosystem.name}`}
     }
   } catch (parseErr) {
-    return { findings: [], error: `Failed to parse ${ecosystem.name} audit output: ${parseErr.message}` }
+    return {findings: [], error: `Failed to parse ${ecosystem.name} audit output: ${parseErr.message}`}
   }
 }
 
@@ -333,15 +332,25 @@ export async function runAudit(ecosystem) {
  * @returns {import('../types.js').ScanSummary}
  */
 export function summarizeFindings(findings) {
-  const summary = { critical: 0, high: 0, medium: 0, low: 0, unknown: 0, total: 0 }
+  const summary = {critical: 0, high: 0, medium: 0, low: 0, unknown: 0, total: 0}
   for (const f of findings) {
     summary.total++
     switch (f.severity) {
-      case 'Critical': summary.critical++; break
-      case 'High':     summary.high++;     break
-      case 'Medium':   summary.medium++;   break
-      case 'Low':      summary.low++;      break
-      default:         summary.unknown++;  break
+      case 'Critical':
+        summary.critical++
+        break
+      case 'High':
+        summary.high++
+        break
+      case 'Medium':
+        summary.medium++
+        break
+      case 'Low':
+        summary.low++
+        break
+      default:
+        summary.unknown++
+        break
     }
   }
   return summary
