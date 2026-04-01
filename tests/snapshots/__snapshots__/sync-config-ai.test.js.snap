@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`dvmi sync-config-ai snapshots > --help output matches snapshot 1`] = `
+"Manage AI coding tool configurations across environments via TUI
+
+USAGE
+  $ dvmi sync-config-ai [--json] [-h]
+
+FLAGS
+  -h, --help  Show CLI help.
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Manage AI coding tool configurations across environments via TUI
+
+EXAMPLES
+  $ dvmi sync-config-ai
+
+  $ dvmi sync-config-ai --json
+"
+`;
