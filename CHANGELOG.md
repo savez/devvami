@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-04-01
+
 ### Added
 
 - `dvmi sync-config-ai` — interactive TUI to manage AI coding tool configurations (MCP servers, commands, skills, agents) across VS Code Copilot, Claude Code, OpenCode, Gemini CLI, and GitHub Copilot CLI
