@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import {describe, it, expect, vi, beforeEach} from 'vitest'
 
 vi.mock('../../../src/services/shell.js', () => ({
   which: vi.fn(),
@@ -23,7 +23,7 @@ import {
   getChezmoiRemote,
   hasLocalChanges,
 } from '../../../src/services/dotfiles.js'
-import { which, exec } from '../../../src/services/shell.js'
+import {which, exec} from '../../../src/services/shell.js'
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -49,25 +49,25 @@ describe('isChezmoiInstalled()', () => {
 // ---------------------------------------------------------------------------
 describe('getChezmoiConfig()', () => {
   it('returns parsed object when chezmoi dump-config succeeds', async () => {
-    const mockConfig = { encryption: { tool: 'age' }, sourceDir: '/home/user/.local/share/chezmoi' }
-    exec.mockResolvedValue({ stdout: JSON.stringify(mockConfig), stderr: '', exitCode: 0 })
+    const mockConfig = {encryption: {tool: 'age'}, sourceDir: '/home/user/.local/share/chezmoi'}
+    exec.mockResolvedValue({stdout: JSON.stringify(mockConfig), stderr: '', exitCode: 0})
     const result = await getChezmoiConfig()
     expect(result).toEqual(mockConfig)
     expect(exec).toHaveBeenCalledWith('chezmoi', ['dump-config', '--format', 'json'])
   })
 
   it('returns null when chezmoi exits non-zero', async () => {
-    exec.mockResolvedValue({ stdout: '', stderr: 'not initialized', exitCode: 1 })
+    exec.mockResolvedValue({stdout: '', stderr: 'not initialized', exitCode: 1})
     expect(await getChezmoiConfig()).toBeNull()
   })
 
   it('returns null when output is empty', async () => {
-    exec.mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: '', stderr: '', exitCode: 0})
     expect(await getChezmoiConfig()).toBeNull()
   })
 
   it('returns null when output is invalid JSON', async () => {
-    exec.mockResolvedValue({ stdout: 'not json', stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: 'not json', stderr: '', exitCode: 0})
     expect(await getChezmoiConfig()).toBeNull()
   })
 })
@@ -77,16 +77,16 @@ describe('getChezmoiConfig()', () => {
 // ---------------------------------------------------------------------------
 describe('getManagedFiles()', () => {
   it('returns empty array when chezmoi managed exits non-zero', async () => {
-    exec.mockResolvedValue({ stdout: '', stderr: 'error', exitCode: 1 })
+    exec.mockResolvedValue({stdout: '', stderr: 'error', exitCode: 1})
     expect(await getManagedFiles()).toEqual([])
   })
 
   it('parses managed files with plaintext source paths', async () => {
     const raw = [
-      { targetPath: '/home/user/.zshrc', sourcePath: '/home/user/.local/share/chezmoi/dot_zshrc', type: 'file' },
-      { targetPath: '/home/user/.gitconfig', sourcePath: '/home/user/.local/share/chezmoi/dot_gitconfig', type: 'file' },
+      {targetPath: '/home/user/.zshrc', sourcePath: '/home/user/.local/share/chezmoi/dot_zshrc', type: 'file'},
+      {targetPath: '/home/user/.gitconfig', sourcePath: '/home/user/.local/share/chezmoi/dot_gitconfig', type: 'file'},
     ]
-    exec.mockResolvedValue({ stdout: JSON.stringify(raw), stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: JSON.stringify(raw), stderr: '', exitCode: 0})
     const files = await getManagedFiles()
     expect(files).toHaveLength(2)
     expect(files[0].path).toBe('/home/user/.zshrc')
@@ -96,29 +96,37 @@ describe('getManagedFiles()', () => {
 
   it('detects encrypted files from source path basename', async () => {
     const raw = [
-      { targetPath: '/home/user/.ssh/id_ed25519', sourcePath: '/home/user/.local/share/chezmoi/private_dot_ssh/encrypted_id_ed25519.age', type: 'file' },
+      {
+        targetPath: '/home/user/.ssh/id_ed25519',
+        sourcePath: '/home/user/.local/share/chezmoi/private_dot_ssh/encrypted_id_ed25519.age',
+        type: 'file',
+      },
     ]
-    exec.mockResolvedValue({ stdout: JSON.stringify(raw), stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: JSON.stringify(raw), stderr: '', exitCode: 0})
     const files = await getManagedFiles()
     expect(files[0].encrypted).toBe(true)
   })
 
   it('detects encrypted files from source path parent dir', async () => {
     const raw = [
-      { targetPath: '/home/user/.netrc', sourcePath: '/home/user/.local/share/chezmoi/encrypted_dot_netrc.age', type: 'file' },
+      {
+        targetPath: '/home/user/.netrc',
+        sourcePath: '/home/user/.local/share/chezmoi/encrypted_dot_netrc.age',
+        type: 'file',
+      },
     ]
-    exec.mockResolvedValue({ stdout: JSON.stringify(raw), stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: JSON.stringify(raw), stderr: '', exitCode: 0})
     const files = await getManagedFiles()
     expect(files[0].encrypted).toBe(true)
   })
 
   it('returns empty array when JSON parse fails', async () => {
-    exec.mockResolvedValue({ stdout: 'bad json', stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: 'bad json', stderr: '', exitCode: 0})
     expect(await getManagedFiles()).toEqual([])
   })
 
   it('returns empty array when chezmoi returns non-array JSON', async () => {
-    exec.mockResolvedValue({ stdout: '{}', stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: '{}', stderr: '', exitCode: 0})
     expect(await getManagedFiles()).toEqual([])
   })
 })
@@ -240,13 +248,13 @@ describe('getDefaultFileList()', () => {
 // ---------------------------------------------------------------------------
 describe('getSensitivePatterns()', () => {
   it('returns default SENSITIVE_PATTERNS when no custom patterns set', () => {
-    const config = { org: 'acme', awsProfile: 'dev' }
+    const config = {org: 'acme', awsProfile: 'dev'}
     const patterns = getSensitivePatterns(config)
     expect(patterns).toEqual(SENSITIVE_PATTERNS)
   })
 
   it('merges custom patterns with defaults', () => {
-    const config = { org: 'acme', awsProfile: 'dev', dotfiles: { enabled: true, customSensitivePatterns: ['~/.my-vault'] } }
+    const config = {org: 'acme', awsProfile: 'dev', dotfiles: {enabled: true, customSensitivePatterns: ['~/.my-vault']}}
     const patterns = getSensitivePatterns(config)
     expect(patterns).toContain('~/.my-vault')
     expect(patterns).toContain('~/.netrc') // still has defaults
@@ -254,7 +262,7 @@ describe('getSensitivePatterns()', () => {
   })
 
   it('returns defaults when dotfiles config has no customSensitivePatterns', () => {
-    const config = { org: 'acme', awsProfile: 'dev', dotfiles: { enabled: true } }
+    const config = {org: 'acme', awsProfile: 'dev', dotfiles: {enabled: true}}
     const patterns = getSensitivePatterns(config)
     expect(patterns).toEqual(SENSITIVE_PATTERNS)
   })
@@ -265,14 +273,14 @@ describe('getSensitivePatterns()', () => {
 // ---------------------------------------------------------------------------
 describe('getChezmoiRemote()', () => {
   it('returns URL when remote is configured', async () => {
-    exec.mockResolvedValue({ stdout: 'git@github.com:user/dotfiles.git', stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: 'git@github.com:user/dotfiles.git', stderr: '', exitCode: 0})
     const remote = await getChezmoiRemote()
     expect(remote).toBe('git@github.com:user/dotfiles.git')
     expect(exec).toHaveBeenCalledWith('chezmoi', ['git', '--', 'remote', 'get-url', 'origin'])
   })
 
   it('returns null when no remote configured', async () => {
-    exec.mockResolvedValue({ stdout: '', stderr: 'fatal: no such remote', exitCode: 128 })
+    exec.mockResolvedValue({stdout: '', stderr: 'fatal: no such remote', exitCode: 128})
     expect(await getChezmoiRemote()).toBeNull()
   })
 })
@@ -282,17 +290,17 @@ describe('getChezmoiRemote()', () => {
 // ---------------------------------------------------------------------------
 describe('hasLocalChanges()', () => {
   it('returns true when there are local changes', async () => {
-    exec.mockResolvedValue({ stdout: ' M dot_zshrc\n M dot_gitconfig', stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: ' M dot_zshrc\n M dot_gitconfig', stderr: '', exitCode: 0})
     expect(await hasLocalChanges()).toBe(true)
   })
 
   it('returns false when working tree is clean', async () => {
-    exec.mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 })
+    exec.mockResolvedValue({stdout: '', stderr: '', exitCode: 0})
     expect(await hasLocalChanges()).toBe(false)
   })
 
   it('returns false when chezmoi git status fails', async () => {
-    exec.mockResolvedValue({ stdout: '', stderr: 'not a git repo', exitCode: 128 })
+    exec.mockResolvedValue({stdout: '', stderr: 'not a git repo', exitCode: 128})
     expect(await hasLocalChanges()).toBe(false)
   })
 })

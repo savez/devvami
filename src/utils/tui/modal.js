@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { NVD_ATTRIBUTION } from '../../services/nvd.js'
+import {NVD_ATTRIBUTION} from '../../services/nvd.js'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ANSI escape sequences (re-declared locally — avoids cross-module coupling)
@@ -49,7 +49,7 @@ function centerText(text, width) {
  * @returns {string}
  */
 export function buildModalScreen(state) {
-  const { modalContent, modalScrollOffset, termRows, termCols, firstRefUrl } = state
+  const {modalContent, modalScrollOffset, termRows, termCols, firstRefUrl} = state
 
   const lines = []
 
@@ -84,7 +84,9 @@ export function buildModalScreen(state) {
 
   // ── Footer ─────────────────────────────────────────────────────────────────
   lines.push(chalk.bold.cyan('╠' + '═'.repeat(innerWidth + 2) + '╣'))
-  lines.push(chalk.bold.cyan('║ ') + chalk.dim(NVD_ATTRIBUTION).slice(0, innerWidth).padEnd(innerWidth) + chalk.bold.cyan(' ║'))
+  lines.push(
+    chalk.bold.cyan('║ ') + chalk.dim(NVD_ATTRIBUTION).slice(0, innerWidth).padEnd(innerWidth) + chalk.bold.cyan(' ║'),
+  )
 
   const scrollHint = content.length > contentViewport ? '  ↑↓/PgUp/PgDn scroll' : ''
   const openHint = firstRefUrl ? '  o open ref' : ''
@@ -159,8 +161,7 @@ export function buildErrorScreen(cveId, errorMessage, termRows, termCols) {
   lines.push(chalk.bold.cyan('║ ') + chalk.red.bold(centerText(titleText, innerWidth)) + chalk.bold.cyan(' ║'))
   lines.push(chalk.bold.cyan('║ ') + ' '.repeat(innerWidth) + chalk.bold.cyan(' ║'))
 
-  const truncErr =
-    errorMessage.length > innerWidth ? errorMessage.slice(0, innerWidth - 1) + '…' : errorMessage
+  const truncErr = errorMessage.length > innerWidth ? errorMessage.slice(0, innerWidth - 1) + '…' : errorMessage
   lines.push(chalk.bold.cyan('║ ') + chalk.red(truncErr.padEnd(innerWidth)) + chalk.bold.cyan(' ║'))
 
   const remaining = termRows - lines.length - 2
@@ -192,14 +193,14 @@ export function buildErrorScreen(cveId, errorMessage, termRows, termCols) {
  * }
  */
 export function handleModalKeypress(state, key) {
-  const { modalContent, modalScrollOffset, termRows, firstRefUrl } = state
+  const {modalContent, modalScrollOffset, termRows, firstRefUrl} = state
 
-  if (key.ctrl && key.name === 'c') return { exit: true }
-  if (key.name === 'q') return { exit: true }
+  if (key.ctrl && key.name === 'c') return {exit: true}
+  if (key.name === 'q') return {exit: true}
 
-  if (key.name === 'escape') return { backToTable: true }
+  if (key.name === 'escape') return {backToTable: true}
 
-  if (key.name === 'o' && firstRefUrl) return { openUrl: firstRefUrl }
+  if (key.name === 'o' && firstRefUrl) return {openUrl: firstRefUrl}
 
   const contentLen = modalContent ? modalContent.length : 0
   const BORDER_LINES = 3
@@ -208,16 +209,16 @@ export function handleModalKeypress(state, key) {
   const maxOffset = Math.max(0, contentLen - contentViewport)
 
   if (key.name === 'up') {
-    return { ...state, modalScrollOffset: clamp(modalScrollOffset - 1, 0, maxOffset) }
+    return {...state, modalScrollOffset: clamp(modalScrollOffset - 1, 0, maxOffset)}
   }
   if (key.name === 'down') {
-    return { ...state, modalScrollOffset: clamp(modalScrollOffset + 1, 0, maxOffset) }
+    return {...state, modalScrollOffset: clamp(modalScrollOffset + 1, 0, maxOffset)}
   }
   if (key.name === 'pageup') {
-    return { ...state, modalScrollOffset: clamp(modalScrollOffset - contentViewport, 0, maxOffset) }
+    return {...state, modalScrollOffset: clamp(modalScrollOffset - contentViewport, 0, maxOffset)}
   }
   if (key.name === 'pagedown') {
-    return { ...state, modalScrollOffset: clamp(modalScrollOffset + contentViewport, 0, maxOffset) }
+    return {...state, modalScrollOffset: clamp(modalScrollOffset + contentViewport, 0, maxOffset)}
   }
 
   return state // unrecognized key — no state change

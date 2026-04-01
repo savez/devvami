@@ -1,6 +1,6 @@
-import { marked } from 'marked'
+import {marked} from 'marked'
 import chalk from 'chalk'
-import { deflate } from 'pako'
+import {deflate} from 'pako'
 
 // Custom terminal renderer — outputs ANSI-formatted text using chalk.
 // marked-terminal@7 is incompatible with all currently released versions of marked
@@ -30,7 +30,12 @@ const terminalRenderer = {
     return '\n' + lines.join('\n') + '\n\n'
   },
   blockquote(quote) {
-    return quote.split('\n').map((l) => chalk.dim('│ ') + chalk.italic(l)).join('\n') + '\n'
+    return (
+      quote
+        .split('\n')
+        .map((l) => chalk.dim('│ ') + chalk.italic(l))
+        .join('\n') + '\n'
+    )
   },
   link(href, _title, text) {
     return `${text} ${chalk.dim(`(${href})`)}`
@@ -61,7 +66,7 @@ const terminalRenderer = {
   },
 }
 
-marked.use({ renderer: terminalRenderer })
+marked.use({renderer: terminalRenderer})
 
 /**
  * Render a markdown string as ANSI-formatted terminal output.
@@ -95,14 +100,14 @@ export function extractMermaidBlocks(content) {
 export function toMermaidLiveUrl(diagramCode) {
   const state = JSON.stringify({
     code: diagramCode,
-    mermaid: JSON.stringify({ theme: 'default' }),
+    mermaid: JSON.stringify({theme: 'default'}),
     updateDiagram: true,
     grid: true,
     panZoom: true,
     rough: false,
   })
   const data = new TextEncoder().encode(state)
-  const compressed = deflate(data, { level: 9 })
+  const compressed = deflate(data, {level: 9})
   const encoded = Buffer.from(compressed).toString('base64url')
   return `https://mermaid.live/view#pako:${encoded}`
 }

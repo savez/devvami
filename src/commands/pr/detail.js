@@ -1,8 +1,8 @@
-import { Command, Args, Flags } from '@oclif/core'
+import {Command, Args, Flags} from '@oclif/core'
 import chalk from 'chalk'
 import ora from 'ora'
-import { getPRDetail } from '../../services/github.js'
-import { exec } from '../../services/shell.js'
+import {getPRDetail} from '../../services/github.js'
+import {exec} from '../../services/shell.js'
 
 export default class PRDetail extends Command {
   static description = 'Dettaglio PR con commenti QA e checklist degli step'
@@ -16,15 +16,15 @@ export default class PRDetail extends Command {
   static enableJsonFlag = true
 
   static args = {
-    number: Args.integer({ description: 'Numero della PR', required: true }),
+    number: Args.integer({description: 'Numero della PR', required: true}),
   }
 
   static flags = {
-    repo: Flags.string({ description: 'Repository nel formato owner/repo (default: rilevato da git remote)' }),
+    repo: Flags.string({description: 'Repository nel formato owner/repo (default: rilevato da git remote)'}),
   }
 
   async run() {
-    const { args, flags } = await this.parse(PRDetail)
+    const {args, flags} = await this.parse(PRDetail)
     const isJson = flags.json
 
     let owner, repo
@@ -39,7 +39,9 @@ export default class PRDetail extends Command {
       ;[, owner, repo] = match
     }
 
-    const spinner = isJson ? null : ora({ spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Caricamento PR...') }).start()
+    const spinner = isJson
+      ? null
+      : ora({spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Caricamento PR...')}).start()
     const detail = await getPRDetail(owner, repo, args.number)
     spinner?.stop()
 

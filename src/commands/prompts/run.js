@@ -1,12 +1,12 @@
-import { Command, Args, Flags } from '@oclif/core'
+import {Command, Args, Flags} from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { select, confirm } from '@inquirer/prompts'
-import { join } from 'node:path'
-import { readdir } from 'node:fs/promises'
-import { resolveLocalPrompt, invokeTool, SUPPORTED_TOOLS } from '../../services/prompts.js'
-import { loadConfig } from '../../services/config.js'
-import { DvmiError } from '../../utils/errors.js'
+import {select, confirm} from '@inquirer/prompts'
+import {join} from 'node:path'
+import {readdir} from 'node:fs/promises'
+import {resolveLocalPrompt, invokeTool, SUPPORTED_TOOLS} from '../../services/prompts.js'
+import {loadConfig} from '../../services/config.js'
+import {DvmiError} from '../../utils/errors.js'
 
 /** @import { AITool } from '../../types.js' */
 
@@ -23,7 +23,7 @@ async function walkPrompts(dir, base) {
   const results = []
   let entries
   try {
-    entries = await readdir(dir, { withFileTypes: true })
+    entries = await readdir(dir, {withFileTypes: true})
   } catch {
     return results
   }
@@ -67,7 +67,7 @@ export default class PromptsRun extends Command {
   }
 
   async run() {
-    const { args, flags } = await this.parse(PromptsRun)
+    const {args, flags} = await this.parse(PromptsRun)
     const isJson = flags.json
 
     // Load config
@@ -78,8 +78,7 @@ export default class PromptsRun extends Command {
       /* use defaults */
     }
 
-    const localDir =
-      process.env.DVMI_PROMPTS_DIR ?? config.promptsDir ?? join(process.cwd(), DEFAULT_PROMPTS_DIR)
+    const localDir = process.env.DVMI_PROMPTS_DIR ?? config.promptsDir ?? join(process.cwd(), DEFAULT_PROMPTS_DIR)
 
     // Resolve tool: --tool flag > config.aiTool
     const toolName = /** @type {AITool | undefined} */ (flags.tool ?? config.aiTool)
@@ -111,7 +110,7 @@ export default class PromptsRun extends Command {
         prompt = await resolveLocalPrompt(args.path, localDir)
       } catch (err) {
         if (err instanceof DvmiError) {
-          this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+          this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
         }
         throw err
       }
@@ -142,7 +141,7 @@ export default class PromptsRun extends Command {
 
       relativePath = await select({
         message: 'Select a local prompt to run:',
-        choices: localPaths.map((p) => ({ name: p, value: p })),
+        choices: localPaths.map((p) => ({name: p, value: p})),
       })
     }
 
@@ -168,7 +167,7 @@ export default class PromptsRun extends Command {
     } catch (err) {
       spinner.fail()
       if (err instanceof DvmiError) {
-        this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+        this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
       }
       throw err
     }
@@ -180,14 +179,12 @@ export default class PromptsRun extends Command {
     // This protects against prompt injection from tampered local files (originally
     // downloaded from remote repositories). Skipped in CI/non-interactive environments.
     if (!process.env.CI && process.stdin.isTTY) {
-      const preview = prompt.body.length > 500
-        ? prompt.body.slice(0, 500) + chalk.dim('\n…[truncated]')
-        : prompt.body
+      const preview = prompt.body.length > 500 ? prompt.body.slice(0, 500) + chalk.dim('\n…[truncated]') : prompt.body
       this.log(chalk.yellow('Prompt preview:'))
       this.log(chalk.dim('─'.repeat(50)))
       this.log(chalk.dim(preview))
       this.log(chalk.dim('─'.repeat(50)) + '\n')
-      const ok = await confirm({ message: `Run this prompt with ${toolName}?`, default: true })
+      const ok = await confirm({message: `Run this prompt with ${toolName}?`, default: true})
       if (!ok) {
         this.log(chalk.dim('Aborted.'))
         return
@@ -199,7 +196,7 @@ export default class PromptsRun extends Command {
       await invokeTool(toolName, prompt.body)
     } catch (err) {
       if (err instanceof DvmiError) {
-        this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+        this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
       }
       throw err
     }

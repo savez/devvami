@@ -1,8 +1,8 @@
-import { homedir } from 'node:os'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
-import { which, exec, execOrThrow } from './shell.js'
-import { loadConfig, saveConfig } from './config.js'
+import {homedir} from 'node:os'
+import {existsSync} from 'node:fs'
+import {join} from 'node:path'
+import {which, exec, execOrThrow} from './shell.js'
+import {loadConfig, saveConfig} from './config.js'
 
 /** @import { Platform, DotfileEntry, DotfileRecommendation, DotfilesSetupResult, DotfilesAddResult, SetupStep, StepResult, CLIConfig } from '../types.js' */
 
@@ -31,26 +31,116 @@ export const SENSITIVE_PATTERNS = [
  */
 export const DEFAULT_FILE_LIST = [
   // Shell
-  { path: '~/.zshrc', category: 'shell', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Zsh configuration' },
-  { path: '~/.bashrc', category: 'shell', platforms: ['linux', 'wsl2'], autoEncrypt: false, description: 'Bash configuration' },
-  { path: '~/.bash_profile', category: 'shell', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Bash profile' },
-  { path: '~/.zprofile', category: 'shell', platforms: ['macos'], autoEncrypt: false, description: 'Zsh login profile' },
-  { path: '~/.config/fish/config.fish', category: 'shell', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Fish shell configuration' },
+  {
+    path: '~/.zshrc',
+    category: 'shell',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Zsh configuration',
+  },
+  {
+    path: '~/.bashrc',
+    category: 'shell',
+    platforms: ['linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Bash configuration',
+  },
+  {
+    path: '~/.bash_profile',
+    category: 'shell',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Bash profile',
+  },
+  {path: '~/.zprofile', category: 'shell', platforms: ['macos'], autoEncrypt: false, description: 'Zsh login profile'},
+  {
+    path: '~/.config/fish/config.fish',
+    category: 'shell',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Fish shell configuration',
+  },
   // Git
-  { path: '~/.gitconfig', category: 'git', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Git global config' },
-  { path: '~/.gitignore_global', category: 'git', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Global gitignore patterns' },
+  {
+    path: '~/.gitconfig',
+    category: 'git',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Git global config',
+  },
+  {
+    path: '~/.gitignore_global',
+    category: 'git',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Global gitignore patterns',
+  },
   // Editor
-  { path: '~/.vimrc', category: 'editor', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Vim configuration' },
-  { path: '~/.config/nvim/init.vim', category: 'editor', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Neovim configuration' },
-  { path: '~/.config/nvim/init.lua', category: 'editor', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Neovim Lua configuration' },
+  {
+    path: '~/.vimrc',
+    category: 'editor',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Vim configuration',
+  },
+  {
+    path: '~/.config/nvim/init.vim',
+    category: 'editor',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Neovim configuration',
+  },
+  {
+    path: '~/.config/nvim/init.lua',
+    category: 'editor',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Neovim Lua configuration',
+  },
   // Package / macOS-specific
-  { path: '~/.Brewfile', category: 'package', platforms: ['macos'], autoEncrypt: false, description: 'Homebrew bundle file' },
-  { path: '~/.config/nvim', category: 'editor', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: false, description: 'Neovim config directory' },
+  {
+    path: '~/.Brewfile',
+    category: 'package',
+    platforms: ['macos'],
+    autoEncrypt: false,
+    description: 'Homebrew bundle file',
+  },
+  {
+    path: '~/.config/nvim',
+    category: 'editor',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: false,
+    description: 'Neovim config directory',
+  },
   // Security
-  { path: '~/.ssh/config', category: 'security', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: true, description: 'SSH client configuration (auto-encrypted)' },
-  { path: '~/.ssh/id_ed25519', category: 'security', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: true, description: 'SSH private key (auto-encrypted)' },
-  { path: '~/.ssh/id_rsa', category: 'security', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: true, description: 'SSH RSA private key (auto-encrypted)' },
-  { path: '~/.gnupg/pubring.kbx', category: 'security', platforms: ['macos', 'linux', 'wsl2'], autoEncrypt: true, description: 'GPG public keyring (auto-encrypted)' },
+  {
+    path: '~/.ssh/config',
+    category: 'security',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: true,
+    description: 'SSH client configuration (auto-encrypted)',
+  },
+  {
+    path: '~/.ssh/id_ed25519',
+    category: 'security',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: true,
+    description: 'SSH private key (auto-encrypted)',
+  },
+  {
+    path: '~/.ssh/id_rsa',
+    category: 'security',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: true,
+    description: 'SSH RSA private key (auto-encrypted)',
+  },
+  {
+    path: '~/.gnupg/pubring.kbx',
+    category: 'security',
+    platforms: ['macos', 'linux', 'wsl2'],
+    autoEncrypt: true,
+    description: 'GPG public keyring (auto-encrypted)',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -149,11 +239,12 @@ function globToRegex(pattern) {
   const expanded = expandTilde(pattern)
   // Split on `**` to handle double-star separately
   const parts = expanded.split('**')
-  const escaped = parts.map((part) =>
-    part
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex special chars
-      .replace(/\*/g, '[^/]*') // single * → any non-separator
-      .replace(/\?/g, '[^/]'), // ? → any single non-separator char
+  const escaped = parts.map(
+    (part) =>
+      part
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex special chars
+        .replace(/\*/g, '[^/]*') // single * → any non-separator
+        .replace(/\?/g, '[^/]'), // ? → any single non-separator char
   )
   const src = escaped.join('.*') // ** → match anything including /
   return new RegExp(`^${src}$`, 'i')
@@ -246,14 +337,15 @@ export function buildSetupSteps(platform, options = {}) {
     run: async () => {
       const installed = await isChezmoiInstalled()
       if (!installed) {
-        const hint = platform === 'macos'
-          ? 'Run `brew install chezmoi` or visit https://chezmoi.io/install'
-          : 'Run `sh -c "$(curl -fsLS get.chezmoi.io)"` or visit https://chezmoi.io/install'
-        return { status: 'failed', hint }
+        const hint =
+          platform === 'macos'
+            ? 'Run `brew install chezmoi` or visit https://chezmoi.io/install'
+            : 'Run `sh -c "$(curl -fsLS get.chezmoi.io)"` or visit https://chezmoi.io/install'
+        return {status: 'failed', hint}
       }
       const result = await exec('chezmoi', ['--version'])
       const version = (result.stdout || result.stderr).trim()
-      return { status: 'success', message: `chezmoi ${version}` }
+      return {status: 'success', message: `chezmoi ${version}`}
     },
   })
 
@@ -267,13 +359,13 @@ export function buildSetupSteps(platform, options = {}) {
     run: async () => {
       const config = options.existingConfig !== undefined ? options.existingConfig : await getChezmoiConfig()
       if (!config) {
-        return { status: 'success', message: 'No existing configuration — fresh setup' }
+        return {status: 'success', message: 'No existing configuration — fresh setup'}
       }
       const hasEncryption = config.encryption?.tool === 'age' || !!config.age?.identity
       if (hasEncryption) {
-        return { status: 'skipped', message: 'Age encryption already configured' }
+        return {status: 'skipped', message: 'Age encryption already configured'}
       }
-      return { status: 'success', message: 'Existing config found without encryption — will add age' }
+      return {status: 'success', message: 'Existing config found without encryption — will add age'}
     },
   })
 
@@ -287,18 +379,18 @@ export function buildSetupSteps(platform, options = {}) {
     run: async () => {
       // Skip if key already exists
       if (existsSync(ageKeyPath)) {
-        return { status: 'skipped', message: `Age key already exists at ${ageKeyPath}` }
+        return {status: 'skipped', message: `Age key already exists at ${ageKeyPath}`}
       }
       try {
         // chezmoi uses `age-keygen` via its own embedded command
         await execOrThrow('chezmoi', ['age', 'keygen', '-o', ageKeyPath])
-        return { status: 'success', message: `Age key generated at ${ageKeyPath}` }
+        return {status: 'success', message: `Age key generated at ${ageKeyPath}`}
       } catch {
         // Fallback: try standalone age-keygen
         try {
           // age-keygen writes public key to stderr, private key to file
           await execOrThrow('age-keygen', ['-o', ageKeyPath])
-          return { status: 'success', message: `Age key generated at ${ageKeyPath}` }
+          return {status: 'success', message: `Age key generated at ${ageKeyPath}`}
         } catch {
           return {
             status: 'failed',
@@ -337,11 +429,14 @@ export function buildSetupSteps(platform, options = {}) {
           .filter((l) => l !== undefined)
           .join('\n')
 
-        const { writeFile, mkdir } = await import('node:fs/promises')
-        await mkdir(chezmoiConfigDir, { recursive: true })
+        const {writeFile, mkdir} = await import('node:fs/promises')
+        await mkdir(chezmoiConfigDir, {recursive: true})
         await writeFile(configPath, tomlContent, 'utf8')
 
-        return { status: 'success', message: `chezmoi.toml written with age encryption${publicKey ? ` (public key: ${publicKey.slice(0, 16)}...)` : ''}` }
+        return {
+          status: 'success',
+          message: `chezmoi.toml written with age encryption${publicKey ? ` (public key: ${publicKey.slice(0, 16)}...)` : ''}`,
+        }
       } catch (err) {
         return {
           status: 'failed',
@@ -363,14 +458,14 @@ export function buildSetupSteps(platform, options = {}) {
         await execOrThrow('chezmoi', ['init'])
         const configResult = await getChezmoiConfig()
         const sourceDir = configResult?.sourceDir ?? configResult?.sourcePath ?? null
-        return { status: 'success', message: sourceDir ? `Source dir: ${sourceDir}` : 'chezmoi initialised' }
+        return {status: 'success', message: sourceDir ? `Source dir: ${sourceDir}` : 'chezmoi initialised'}
       } catch {
         // init may fail if already initialised — that's ok
         const configResult = await getChezmoiConfig()
         if (configResult) {
-          return { status: 'skipped', message: 'chezmoi already initialised' }
+          return {status: 'skipped', message: 'chezmoi already initialised'}
         }
-        return { status: 'failed', hint: 'Run `chezmoi doctor` to diagnose init failure' }
+        return {status: 'failed', hint: 'Run `chezmoi doctor` to diagnose init failure'}
       }
     },
   })
@@ -385,9 +480,9 @@ export function buildSetupSteps(platform, options = {}) {
     run: async () => {
       try {
         const config = await loadConfig()
-        config.dotfiles = { ...config.dotfiles, enabled: true }
+        config.dotfiles = {...config.dotfiles, enabled: true}
         await saveConfig(config)
-        return { status: 'success', message: 'dvmi config updated: dotfiles.enabled = true' }
+        return {status: 'success', message: 'dvmi config updated: dotfiles.enabled = true'}
       } catch (err) {
         return {
           status: 'failed',
@@ -456,8 +551,8 @@ export async function setupChezmoiInline(platform) {
       .filter((l) => l !== undefined)
       .join('\n')
 
-    const { writeFile, mkdir } = await import('node:fs/promises')
-    await mkdir(chezmoiConfigDir, { recursive: true })
+    const {writeFile, mkdir} = await import('node:fs/promises')
+    await mkdir(chezmoiConfigDir, {recursive: true})
     await writeFile(configPath, tomlContent, 'utf8')
 
     // Init chezmoi
@@ -469,7 +564,7 @@ export async function setupChezmoiInline(platform) {
 
     // Save dvmi config
     const dvmiConfig = await loadConfig()
-    dvmiConfig.dotfiles = { ...(dvmiConfig.dotfiles ?? {}), enabled: true }
+    dvmiConfig.dotfiles = {...(dvmiConfig.dotfiles ?? {}), enabled: true}
     await saveConfig(dvmiConfig)
 
     return {
@@ -519,18 +614,21 @@ export function buildAddSteps(files, platform) {
       run: async () => {
         // V-001: file must exist
         if (!existsSync(absPath)) {
-          return { status: 'skipped', message: `${file.path}: file not found` }
+          return {status: 'skipped', message: `${file.path}: file not found`}
         }
         // V-002: WSL2 Windows path rejection
         if (platform === 'wsl2' && isWSLWindowsPath(absPath)) {
-          return { status: 'failed', hint: `${file.path}: Windows filesystem paths not supported on WSL2. Use Linux-native paths (~/) instead.` }
+          return {
+            status: 'failed',
+            hint: `${file.path}: Windows filesystem paths not supported on WSL2. Use Linux-native paths (~/) instead.`,
+          }
         }
         try {
           const args = ['add']
           if (file.encrypt) args.push('--encrypt')
           args.push(absPath)
           await execOrThrow('chezmoi', args)
-          return { status: 'success', message: `${file.path} added${file.encrypt ? ' (encrypted)' : ''}` }
+          return {status: 'success', message: `${file.path} added${file.encrypt ? ' (encrypted)' : ''}`}
         } catch {
           return {
             status: 'failed',

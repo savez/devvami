@@ -1,13 +1,13 @@
-import { Command, Flags, Args } from '@oclif/core'
+import {Command, Flags, Args} from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { confirm, input, select } from '@inquirer/prompts'
-import { detectPlatform } from '../../services/platform.js'
-import { isChezmoiInstalled, getChezmoiRemote, hasLocalChanges } from '../../services/dotfiles.js'
-import { loadConfig, saveConfig } from '../../services/config.js'
-import { exec, execOrThrow } from '../../services/shell.js'
-import { formatDotfilesSync } from '../../formatters/dotfiles.js'
-import { DvmiError } from '../../utils/errors.js'
+import {confirm, input, select} from '@inquirer/prompts'
+import {detectPlatform} from '../../services/platform.js'
+import {isChezmoiInstalled, getChezmoiRemote, hasLocalChanges} from '../../services/dotfiles.js'
+import {loadConfig, saveConfig} from '../../services/config.js'
+import {exec, execOrThrow} from '../../services/shell.js'
+import {formatDotfilesSync} from '../../formatters/dotfiles.js'
+import {DvmiError} from '../../utils/errors.js'
 
 /** @import { DotfilesSyncResult } from '../../types.js' */
 
@@ -26,18 +26,18 @@ export default class DotfilesSync extends Command {
   static enableJsonFlag = true
 
   static flags = {
-    help: Flags.help({ char: 'h' }),
-    push: Flags.boolean({ description: 'Push local changes to remote', default: false }),
-    pull: Flags.boolean({ description: 'Pull remote changes and apply', default: false }),
-    'dry-run': Flags.boolean({ description: 'Show what would change without applying', default: false }),
+    help: Flags.help({char: 'h'}),
+    push: Flags.boolean({description: 'Push local changes to remote', default: false}),
+    pull: Flags.boolean({description: 'Pull remote changes and apply', default: false}),
+    'dry-run': Flags.boolean({description: 'Show what would change without applying', default: false}),
   }
 
   static args = {
-    repo: Args.string({ description: 'Remote repository URL (for initial remote setup)', required: false }),
+    repo: Args.string({description: 'Remote repository URL (for initial remote setup)', required: false}),
   }
 
   async run() {
-    const { flags, args } = await this.parse(DotfilesSync)
+    const {flags, args} = await this.parse(DotfilesSync)
     const isJson = flags.json
     const isPush = flags.push
     const isPull = flags.pull
@@ -56,30 +56,27 @@ export default class DotfilesSync extends Command {
     const isCI = process.env.CI === 'true'
     const isNonInteractive = !process.stdout.isTTY
     if ((isCI || isNonInteractive) && !isJson) {
-      this.error(
-        'This command requires an interactive terminal (TTY). Run with --json for a non-interactive sync.',
-        { exit: 1 },
-      )
+      this.error('This command requires an interactive terminal (TTY). Run with --json for a non-interactive sync.', {
+        exit: 1,
+      })
     }
 
     const config = await loadConfig()
     if (!config.dotfiles?.enabled) {
-      throw new DvmiError(
-        'Chezmoi dotfiles management is not configured',
-        'Run `dvmi dotfiles setup` first',
-      )
+      throw new DvmiError('Chezmoi dotfiles management is not configured', 'Run `dvmi dotfiles setup` first')
     }
 
     const chezmoiInstalled = await isChezmoiInstalled()
     if (!chezmoiInstalled) {
       const platformInfo = await detectPlatform()
-      const hint = platformInfo.platform === 'macos'
-        ? 'Run `brew install chezmoi` or visit https://chezmoi.io/install'
-        : 'Run `sh -c "$(curl -fsLS get.chezmoi.io)"` or visit https://chezmoi.io/install'
+      const hint =
+        platformInfo.platform === 'macos'
+          ? 'Run `brew install chezmoi` or visit https://chezmoi.io/install'
+          : 'Run `sh -c "$(curl -fsLS get.chezmoi.io)"` or visit https://chezmoi.io/install'
       throw new DvmiError('chezmoi is not installed', hint)
     }
 
-    const remote = config.dotfiles?.repo ?? await getChezmoiRemote()
+    const remote = config.dotfiles?.repo ?? (await getChezmoiRemote())
 
     // --json mode: attempt push/pull or report status
     if (isJson) {
@@ -105,7 +102,13 @@ export default class DotfilesSync extends Command {
       }
 
       /** @type {DotfilesSyncResult} */
-      return { action: 'skipped', repo: effectiveRemote ?? null, status: 'skipped', message: 'No action specified', conflicts: [] }
+      return {
+        action: 'skipped',
+        repo: effectiveRemote ?? null,
+        status: 'skipped',
+        message: 'No action specified',
+        conflicts: [],
+      }
     }
 
     // ---------------------------------------------------------------------------
@@ -140,22 +143,29 @@ export default class DotfilesSync extends Command {
     const action = await select({
       message: 'What would you like to do?',
       choices: [
-        { name: 'Push local changes to remote', value: 'push' },
-        { name: 'Pull remote changes and apply', value: 'pull' },
-        { name: 'Cancel', value: 'cancel' },
+        {name: 'Push local changes to remote', value: 'push'},
+        {name: 'Pull remote changes and apply', value: 'pull'},
+        {name: 'Cancel', value: 'cancel'},
       ],
     })
 
     if (action === 'cancel') {
       /** @type {DotfilesSyncResult} */
-      const cancelResult = { action: 'skipped', repo: effectiveRemote ?? null, status: 'skipped', message: 'Cancelled by user', conflicts: [] }
+      const cancelResult = {
+        action: 'skipped',
+        repo: effectiveRemote ?? null,
+        status: 'skipped',
+        message: 'Cancelled by user',
+        conflicts: [],
+      }
       this.log(formatDotfilesSync(cancelResult))
       return cancelResult
     }
 
-    const result = action === 'push'
-      ? await this._push(effectiveRemote, isDryRun, false)
-      : await this._pull(effectiveRemote, isDryRun, false)
+    const result =
+      action === 'push'
+        ? await this._push(effectiveRemote, isDryRun, false)
+        : await this._pull(effectiveRemote, isDryRun, false)
 
     this.log(formatDotfilesSync(result))
     return result
@@ -174,25 +184,25 @@ export default class DotfilesSync extends Command {
     const choice = await select({
       message: 'Connect to an existing dotfiles repository or create a new one?',
       choices: [
-        { name: 'Connect to existing repository', value: 'existing' },
-        { name: 'Create new repository on GitHub', value: 'new' },
+        {name: 'Connect to existing repository', value: 'existing'},
+        {name: 'Create new repository on GitHub', value: 'new'},
       ],
     })
 
     let repoUrl = ''
 
     if (choice === 'existing') {
-      repoUrl = await input({ message: 'Repository URL (SSH or HTTPS):' })
+      repoUrl = await input({message: 'Repository URL (SSH or HTTPS):'})
     } else {
-      const repoName = await input({ message: 'Repository name:', default: 'dotfiles' })
-      const isPrivate = await confirm({ message: 'Make repository private?', default: true })
+      const repoName = await input({message: 'Repository name:', default: 'dotfiles'})
+      const isPrivate = await confirm({message: 'Make repository private?', default: true})
 
       if (!isDryRun) {
         try {
           const visFlag = isPrivate ? '--private' : '--public'
           await execOrThrow('gh', ['repo', 'create', repoName, visFlag, '--confirm'])
           // Get the SSH URL from the created repo
-          const { exec } = await import('../../services/shell.js')
+          const {exec} = await import('../../services/shell.js')
           const result = await exec('gh', ['repo', 'view', repoName, '--json', 'sshUrl', '--jq', '.sshUrl'])
           repoUrl = result.stdout.trim() || `git@github.com:${repoName}.git`
         } catch {
@@ -211,7 +221,7 @@ export default class DotfilesSync extends Command {
         await execOrThrow('chezmoi', ['git', '--', 'remote', 'add', 'origin', repoUrl])
         await execOrThrow('chezmoi', ['git', '--', 'push', '-u', 'origin', 'main'])
         // Save repo to dvmi config
-        config.dotfiles = { ...(config.dotfiles ?? { enabled: true }), repo: repoUrl }
+        config.dotfiles = {...(config.dotfiles ?? {enabled: true}), repo: repoUrl}
         await saveConfig(config)
       } catch (err) {
         /** @type {DotfilesSyncResult} */
@@ -232,7 +242,9 @@ export default class DotfilesSync extends Command {
       action: 'init-remote',
       repo: repoUrl,
       status: isDryRun ? 'skipped' : 'success',
-      message: isDryRun ? `Would configure remote: ${repoUrl}` : 'Remote repository configured and initial push completed',
+      message: isDryRun
+        ? `Would configure remote: ${repoUrl}`
+        : 'Remote repository configured and initial push completed',
       conflicts: [],
     }
     this.log(formatDotfilesSync(result))
@@ -271,7 +283,9 @@ export default class DotfilesSync extends Command {
       }
     }
 
-    const spinner = isJson ? null : ora({ spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Pushing to remote...') }).start()
+    const spinner = isJson
+      ? null
+      : ora({spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Pushing to remote...')}).start()
 
     try {
       // Stage all changes
@@ -282,7 +296,7 @@ export default class DotfilesSync extends Command {
       await execOrThrow('chezmoi', ['git', '--', 'push', 'origin', 'HEAD'])
       spinner?.succeed(chalk.green('Pushed to remote'))
 
-      return { action: 'push', repo: remote, status: 'success', message: 'Changes pushed to remote', conflicts: [] }
+      return {action: 'push', repo: remote, status: 'success', message: 'Changes pushed to remote', conflicts: []}
     } catch (err) {
       spinner?.fail(chalk.red('Push failed'))
       return {
@@ -327,7 +341,9 @@ export default class DotfilesSync extends Command {
       }
     }
 
-    const spinner = isJson ? null : ora({ spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Pulling from remote...') }).start()
+    const spinner = isJson
+      ? null
+      : ora({spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Pulling from remote...')}).start()
 
     try {
       // Check if chezmoi init was done with this remote (first-time pull)
@@ -360,7 +376,7 @@ export default class DotfilesSync extends Command {
         }
       }
 
-      return { action: 'pull', repo: remote, status: 'success', message: 'Remote changes applied', conflicts: [] }
+      return {action: 'pull', repo: remote, status: 'success', message: 'Remote changes applied', conflicts: []}
     } catch (err) {
       spinner?.fail(chalk.red('Pull failed'))
       return {

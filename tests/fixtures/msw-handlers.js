@@ -1,17 +1,45 @@
-import { http, HttpResponse } from 'msw'
+import {http, HttpResponse} from 'msw'
 
 export const handlers = [
   // GitHub: authenticated user
-  http.get('https://api.github.com/user', () =>
-    HttpResponse.json({ login: 'testdev', name: 'Test Dev', id: 1 }),
-  ),
+  http.get('https://api.github.com/user', () => HttpResponse.json({login: 'testdev', name: 'Test Dev', id: 1})),
 
   // GitHub: list org repos (includes templates)
   http.get('https://api.github.com/orgs/:org/repos', () =>
     HttpResponse.json([
-      { name: 'template-lambda', is_template: true, language: 'JavaScript', description: 'Lambda starter', html_url: 'https://github.com/acme/template-lambda', pushed_at: '2026-03-01T00:00:00Z', topics: ['template'], private: true, updated_at: '2026-03-01T00:00:00Z' },
-      { name: 'template-microservice', is_template: true, language: 'JavaScript', description: 'Microservice starter', html_url: 'https://github.com/acme/template-microservice', pushed_at: '2026-03-01T00:00:00Z', topics: ['template'], private: true, updated_at: '2026-03-01T00:00:00Z' },
-      { name: 'my-api', is_template: false, language: 'JavaScript', description: 'Main API', html_url: 'https://github.com/acme/my-api', pushed_at: '2026-03-15T00:00:00Z', topics: ['microservice'], private: true, updated_at: '2026-03-15T00:00:00Z' },
+      {
+        name: 'template-lambda',
+        is_template: true,
+        language: 'JavaScript',
+        description: 'Lambda starter',
+        html_url: 'https://github.com/acme/template-lambda',
+        pushed_at: '2026-03-01T00:00:00Z',
+        topics: ['template'],
+        private: true,
+        updated_at: '2026-03-01T00:00:00Z',
+      },
+      {
+        name: 'template-microservice',
+        is_template: true,
+        language: 'JavaScript',
+        description: 'Microservice starter',
+        html_url: 'https://github.com/acme/template-microservice',
+        pushed_at: '2026-03-01T00:00:00Z',
+        topics: ['template'],
+        private: true,
+        updated_at: '2026-03-01T00:00:00Z',
+      },
+      {
+        name: 'my-api',
+        is_template: false,
+        language: 'JavaScript',
+        description: 'Main API',
+        html_url: 'https://github.com/acme/my-api',
+        pushed_at: '2026-03-15T00:00:00Z',
+        topics: ['microservice'],
+        private: true,
+        updated_at: '2026-03-15T00:00:00Z',
+      },
     ]),
   ),
 
@@ -19,25 +47,47 @@ export const handlers = [
   http.get('https://api.github.com/repos/:owner/:repo/actions/runs', () =>
     HttpResponse.json({
       workflow_runs: [
-        { id: 12345, name: 'CI/CD', status: 'completed', conclusion: 'success', head_branch: 'main', created_at: '2026-03-18T10:00:00Z', updated_at: '2026-03-18T10:03:00Z', actor: { login: 'testdev' }, html_url: 'https://github.com/acme/my-api/actions/runs/12345', display_title: 'CI/CD' },
-        { id: 12344, name: 'CI/CD', status: 'completed', conclusion: 'failure', head_branch: 'feature/x', created_at: '2026-03-18T08:00:00Z', updated_at: '2026-03-18T08:01:00Z', actor: { login: 'testdev' }, html_url: 'https://github.com/acme/my-api/actions/runs/12344', display_title: 'CI/CD' },
+        {
+          id: 12345,
+          name: 'CI/CD',
+          status: 'completed',
+          conclusion: 'success',
+          head_branch: 'main',
+          created_at: '2026-03-18T10:00:00Z',
+          updated_at: '2026-03-18T10:03:00Z',
+          actor: {login: 'testdev'},
+          html_url: 'https://github.com/acme/my-api/actions/runs/12345',
+          display_title: 'CI/CD',
+        },
+        {
+          id: 12344,
+          name: 'CI/CD',
+          status: 'completed',
+          conclusion: 'failure',
+          head_branch: 'feature/x',
+          created_at: '2026-03-18T08:00:00Z',
+          updated_at: '2026-03-18T08:01:00Z',
+          actor: {login: 'testdev'},
+          html_url: 'https://github.com/acme/my-api/actions/runs/12344',
+          display_title: 'CI/CD',
+        },
       ],
     }),
   ),
 
   // GitHub: PR detail
-  http.get('https://api.github.com/repos/:owner/:repo/pulls/:pull_number', ({ params }) =>
+  http.get('https://api.github.com/repos/:owner/:repo/pulls/:pull_number', ({params}) =>
     HttpResponse.json({
       number: Number(params.pull_number),
       title: 'Feature: user auth',
       state: 'open',
       html_url: `https://github.com/${params.owner}/${params.repo}/pull/${params.pull_number}`,
       draft: false,
-      user: { login: 'developer1' },
-      head: { ref: 'feature/user-auth' },
-      base: { ref: 'main' },
-      labels: [{ name: 'feature' }],
-      requested_reviewers: [{ login: 'qa-engineer' }],
+      user: {login: 'developer1'},
+      head: {ref: 'feature/user-auth'},
+      base: {ref: 'main'},
+      labels: [{name: 'feature'}],
+      requested_reviewers: [{login: 'qa-engineer'}],
     }),
   ),
 
@@ -46,13 +96,13 @@ export const handlers = [
     HttpResponse.json([
       {
         id: 1001,
-        user: { login: 'developer1' },
+        user: {login: 'developer1'},
         body: 'Implementazione completata.',
         created_at: '2026-03-17T09:00:00Z',
       },
       {
         id: 1002,
-        user: { login: 'qa-engineer' },
+        user: {login: 'qa-engineer'},
         body: 'QA: review in corso\n- [x] Testare flusso login\n- [ ] Verificare logout',
         created_at: '2026-03-17T10:00:00Z',
       },
@@ -64,7 +114,7 @@ export const handlers = [
     HttpResponse.json([
       {
         id: 2001,
-        user: { login: 'qa-engineer' },
+        user: {login: 'qa-engineer'},
         body: 'QA review completata parzialmente.',
         submitted_at: '2026-03-17T11:00:00Z',
         state: 'CHANGES_REQUESTED',
@@ -73,7 +123,7 @@ export const handlers = [
   ),
 
   // GitHub: search issues/PRs (authored + review-requested)
-  http.get('https://api.github.com/search/issues', ({ request }) => {
+  http.get('https://api.github.com/search/issues', ({request}) => {
     const url = new URL(request.url)
     const q = url.searchParams.get('q') ?? ''
     const items = q.includes('review-requested')
@@ -84,8 +134,8 @@ export const handlers = [
             state: 'open',
             html_url: 'https://github.com/acme/my-api/pull/42',
             draft: false,
-            user: { login: 'developer1' },
-            pull_request: { head: { ref: 'feature/user-auth' }, base: { ref: 'main' } },
+            user: {login: 'developer1'},
+            pull_request: {head: {ref: 'feature/user-auth'}, base: {ref: 'main'}},
           },
         ]
       : [
@@ -95,41 +145,42 @@ export const handlers = [
             state: 'open',
             html_url: 'https://github.com/acme/my-api/pull/10',
             draft: false,
-            user: { login: 'testdev' },
-            pull_request: { head: { ref: 'fix/login-timeout' }, base: { ref: 'main' } },
+            user: {login: 'testdev'},
+            pull_request: {head: {ref: 'fix/login-timeout'}, base: {ref: 'main'}},
           },
         ]
-    return HttpResponse.json({ items, total_count: items.length })
+    return HttpResponse.json({items, total_count: items.length})
   }),
 
   // GitHub: search code
-  http.get('https://api.github.com/search/code', ({ request }) => {
+  http.get('https://api.github.com/search/code', ({request}) => {
     const url = new URL(request.url)
     const q = url.searchParams.get('q') ?? ''
     return HttpResponse.json({
       items: q
-        ? [{ repository: { name: 'my-api' }, path: 'src/services/user.js', name: 'user.js', html_url: 'https://github.com/acme/my-api/blob/main/src/services/user.js' }]
+        ? [
+            {
+              repository: {name: 'my-api'},
+              path: 'src/services/user.js',
+              name: 'user.js',
+              html_url: 'https://github.com/acme/my-api/blob/main/src/services/user.js',
+            },
+          ]
         : [],
     })
   }),
 
   // ClickUp: get user
-  http.get('https://api.clickup.com/api/v2/user', () =>
-    HttpResponse.json({ user: { id: 42, username: 'testdev' } }),
-  ),
+  http.get('https://api.clickup.com/api/v2/user', () => HttpResponse.json({user: {id: 42, username: 'testdev'}})),
 
   // ClickUp: list teams/workspaces
-  http.get('https://api.clickup.com/api/v2/team', () =>
-    HttpResponse.json({ teams: [{ id: '12345', name: 'Acme' }] }),
-  ),
+  http.get('https://api.clickup.com/api/v2/team', () => HttpResponse.json({teams: [{id: '12345', name: 'Acme'}]})),
 
   // ClickUp: OAuth token exchange
-  http.post('https://api.clickup.com/api/v2/oauth/token', () =>
-    HttpResponse.json({ access_token: 'test-token' }),
-  ),
+  http.post('https://api.clickup.com/api/v2/oauth/token', () => HttpResponse.json({access_token: 'test-token'})),
 
   // ClickUp: get tasks (team-wide, supports pagination and due_date_lt)
-  http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({ request }) => {
+  http.get('https://api.clickup.com/api/v2/team/:teamId/task', ({request}) => {
     const url = new URL(request.url)
     const page = Number(url.searchParams.get('page') ?? '0')
 
@@ -138,14 +189,26 @@ export const handlers = [
       return HttpResponse.json({
         tasks: [
           {
-            id: 'def456', name: 'Fix login bug', status: { status: 'in progress', type: 'in_progress' }, priority: { id: '2' },
-            due_date: null, url: 'https://app.clickup.com/t/def456', assignees: [{ username: 'testdev' }],
-            list: { id: 'L1', name: 'Sprint 42' }, folder: { id: 'F1', name: 'Backend', hidden: false },
+            id: 'def456',
+            name: 'Fix login bug',
+            status: {status: 'in progress', type: 'in_progress'},
+            priority: {id: '2'},
+            due_date: null,
+            url: 'https://app.clickup.com/t/def456',
+            assignees: [{username: 'testdev'}],
+            list: {id: 'L1', name: 'Sprint 42'},
+            folder: {id: 'F1', name: 'Backend', hidden: false},
           },
           {
-            id: 'ghi789', name: 'Write unit tests', status: { status: 'todo', type: 'open' }, priority: { id: '3' },
-            due_date: null, url: 'https://app.clickup.com/t/ghi789', assignees: [{ username: 'testdev' }],
-            list: { id: 'L2', name: 'Backlog' }, folder: { hidden: true },
+            id: 'ghi789',
+            name: 'Write unit tests',
+            status: {status: 'todo', type: 'open'},
+            priority: {id: '3'},
+            due_date: null,
+            url: 'https://app.clickup.com/t/ghi789',
+            assignees: [{username: 'testdev'}],
+            list: {id: 'L2', name: 'Backlog'},
+            folder: {hidden: true},
           },
         ],
         has_more: false,
@@ -156,9 +219,15 @@ export const handlers = [
     return HttpResponse.json({
       tasks: [
         {
-          id: 'abc123', name: 'Implement user auth', status: { status: 'in progress', type: 'in_progress' }, priority: { id: '2' },
-          due_date: null, url: 'https://app.clickup.com/t/abc123', assignees: [{ username: 'testdev' }],
-          list: { id: 'L1', name: 'Sprint 42' }, folder: { id: 'F1', name: 'Backend', hidden: false },
+          id: 'abc123',
+          name: 'Implement user auth',
+          status: {status: 'in progress', type: 'in_progress'},
+          priority: {id: '2'},
+          due_date: null,
+          url: 'https://app.clickup.com/t/abc123',
+          assignees: [{username: 'testdev'}],
+          list: {id: 'L1', name: 'Sprint 42'},
+          folder: {id: 'F1', name: 'Backend', hidden: false},
         },
       ],
       has_more: false,
@@ -166,21 +235,33 @@ export const handlers = [
   }),
 
   // ClickUp: get tasks by list (specific list endpoint)
-  http.get('https://api.clickup.com/api/v2/list/:listId/task', ({ params }) => {
+  http.get('https://api.clickup.com/api/v2/list/:listId/task', ({params}) => {
     if (params.listId === 'NOTFOUND') {
-      return HttpResponse.json({ err: 'List not found' }, { status: 404 })
+      return HttpResponse.json({err: 'List not found'}, {status: 404})
     }
     return HttpResponse.json({
       tasks: [
         {
-          id: 'list-task-1', name: 'List task alpha', status: { status: 'in progress', type: 'in_progress' }, priority: { id: '2' },
-          due_date: null, url: 'https://app.clickup.com/t/list-task-1', assignees: [{ username: 'testdev' }],
-          list: { id: String(params.listId), name: 'Sprint 42' }, folder: { id: 'F1', name: 'Backend', hidden: false },
+          id: 'list-task-1',
+          name: 'List task alpha',
+          status: {status: 'in progress', type: 'in_progress'},
+          priority: {id: '2'},
+          due_date: null,
+          url: 'https://app.clickup.com/t/list-task-1',
+          assignees: [{username: 'testdev'}],
+          list: {id: String(params.listId), name: 'Sprint 42'},
+          folder: {id: 'F1', name: 'Backend', hidden: false},
         },
         {
-          id: 'list-task-2', name: 'List task beta (root list)', status: { status: 'todo', type: 'open' }, priority: { id: '3' },
-          due_date: null, url: 'https://app.clickup.com/t/list-task-2', assignees: [{ username: 'testdev' }],
-          list: { id: String(params.listId), name: 'Sprint 42' }, folder: { hidden: true },
+          id: 'list-task-2',
+          name: 'List task beta (root list)',
+          status: {status: 'todo', type: 'open'},
+          priority: {id: '3'},
+          due_date: null,
+          url: 'https://app.clickup.com/t/list-task-2',
+          assignees: [{username: 'testdev'}],
+          list: {id: String(params.listId), name: 'Sprint 42'},
+          folder: {hidden: true},
         },
       ],
       has_more: false,
@@ -190,23 +271,23 @@ export const handlers = [
   // AWS Cost Explorer
   http.post('https://ce.us-east-1.amazonaws.com/', () =>
     HttpResponse.json({
-      ResultsByTime: [{
-        TimePeriod: { Start: '2026-02-01', End: '2026-03-01' },
-        Groups: [
-          { Keys: ['AWS Lambda'], Metrics: { UnblendedCost: { Amount: '12.34', Unit: 'USD' } } },
-          { Keys: ['Amazon API Gateway'], Metrics: { UnblendedCost: { Amount: '5.67', Unit: 'USD' } } },
-        ],
-      }],
+      ResultsByTime: [
+        {
+          TimePeriod: {Start: '2026-02-01', End: '2026-03-01'},
+          Groups: [
+            {Keys: ['AWS Lambda'], Metrics: {UnblendedCost: {Amount: '12.34', Unit: 'USD'}}},
+            {Keys: ['Amazon API Gateway'], Metrics: {UnblendedCost: {Amount: '5.67', Unit: 'USD'}}},
+          ],
+        },
+      ],
     }),
   ),
 
   // npm registry version check
-  http.get('https://npm.pkg.github.com/devvami', () =>
-    HttpResponse.json({ 'dist-tags': { latest: '1.0.0' } }),
-  ),
+  http.get('https://npm.pkg.github.com/devvami', () => HttpResponse.json({'dist-tags': {latest: '1.0.0'}})),
 
   // NVD API: CVE search by keyword
-  http.get('https://services.nvd.nist.gov/rest/json/cves/2.0', ({ request }) => {
+  http.get('https://services.nvd.nist.gov/rest/json/cves/2.0', ({request}) => {
     const url = new URL(request.url)
     const cveId = url.searchParams.get('cveId')
     const keyword = url.searchParams.get('keywordSearch')
@@ -229,7 +310,11 @@ export const handlers = [
               lastModified: '2023-11-07T03:39:36.747',
               vulnStatus: 'Analyzed',
               descriptions: [
-                { lang: 'en', value: 'Apache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints.' },
+                {
+                  lang: 'en',
+                  value:
+                    'Apache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints.',
+                },
               ],
               metrics: {
                 cvssMetricV31: [
@@ -242,12 +327,14 @@ export const handlers = [
                   },
                 ],
               },
-              weaknesses: [
-                { source: 'nvd@nist.gov', type: 'Primary', description: [{ lang: 'en', value: 'CWE-502' }] },
-              ],
+              weaknesses: [{source: 'nvd@nist.gov', type: 'Primary', description: [{lang: 'en', value: 'CWE-502'}]}],
               configurations: [],
               references: [
-                { url: 'https://logging.apache.org/log4j/2.x/security.html', source: 'cve@mitre.org', tags: ['Vendor Advisory'] },
+                {
+                  url: 'https://logging.apache.org/log4j/2.x/security.html',
+                  source: 'cve@mitre.org',
+                  tags: ['Vendor Advisory'],
+                },
               ],
             },
           },
@@ -258,8 +345,13 @@ export const handlers = [
     // CVE not found
     if (cveId) {
       return HttpResponse.json({
-        resultsPerPage: 0, startIndex: 0, totalResults: 0, format: 'NVD_CVE', version: '2.0',
-        timestamp: '2026-03-28T00:00:00.000', vulnerabilities: [],
+        resultsPerPage: 0,
+        startIndex: 0,
+        totalResults: 0,
+        format: 'NVD_CVE',
+        version: '2.0',
+        timestamp: '2026-03-28T00:00:00.000',
+        vulnerabilities: [],
       })
     }
 
@@ -280,11 +372,26 @@ export const handlers = [
               published: '2026-03-25T00:00:00.000',
               lastModified: '2026-03-26T00:00:00.000',
               vulnStatus: 'Analyzed',
-              descriptions: [{ lang: 'en', value: `Buffer overflow in ${keyword} allows remote attackers to cause a denial of service.` }],
+              descriptions: [
+                {
+                  lang: 'en',
+                  value: `Buffer overflow in ${keyword} allows remote attackers to cause a denial of service.`,
+                },
+              ],
               metrics: {
-                cvssMetricV31: [{ cvssData: { baseScore: 9.8, baseSeverity: 'CRITICAL', vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' } }],
+                cvssMetricV31: [
+                  {
+                    cvssData: {
+                      baseScore: 9.8,
+                      baseSeverity: 'CRITICAL',
+                      vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+                    },
+                  },
+                ],
               },
-              weaknesses: [], configurations: [], references: [],
+              weaknesses: [],
+              configurations: [],
+              references: [],
             },
           },
           {
@@ -294,11 +401,21 @@ export const handlers = [
               published: '2026-03-22T00:00:00.000',
               lastModified: '2026-03-23T00:00:00.000',
               vulnStatus: 'Analyzed',
-              descriptions: [{ lang: 'en', value: 'Denial of service via crafted TLS handshake.' }],
+              descriptions: [{lang: 'en', value: 'Denial of service via crafted TLS handshake.'}],
               metrics: {
-                cvssMetricV31: [{ cvssData: { baseScore: 7.5, baseSeverity: 'HIGH', vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H' } }],
+                cvssMetricV31: [
+                  {
+                    cvssData: {
+                      baseScore: 7.5,
+                      baseSeverity: 'HIGH',
+                      vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H',
+                    },
+                  },
+                ],
               },
-              weaknesses: [], configurations: [], references: [],
+              weaknesses: [],
+              configurations: [],
+              references: [],
             },
           },
           {
@@ -308,11 +425,21 @@ export const handlers = [
               published: '2026-03-20T00:00:00.000',
               lastModified: '2026-03-21T00:00:00.000',
               vulnStatus: 'Awaiting Analysis',
-              descriptions: [{ lang: 'en', value: 'Information disclosure due to improper memory handling.' }],
+              descriptions: [{lang: 'en', value: 'Information disclosure due to improper memory handling.'}],
               metrics: {
-                cvssMetricV31: [{ cvssData: { baseScore: 5.3, baseSeverity: 'MEDIUM', vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N' } }],
+                cvssMetricV31: [
+                  {
+                    cvssData: {
+                      baseScore: 5.3,
+                      baseSeverity: 'MEDIUM',
+                      vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N',
+                    },
+                  },
+                ],
               },
-              weaknesses: [], configurations: [], references: [],
+              weaknesses: [],
+              configurations: [],
+              references: [],
             },
           },
         ],
@@ -320,8 +447,13 @@ export const handlers = [
     }
 
     return HttpResponse.json({
-      resultsPerPage: 0, startIndex: 0, totalResults: 0, format: 'NVD_CVE', version: '2.0',
-      timestamp: '2026-03-28T00:00:00.000', vulnerabilities: [],
+      resultsPerPage: 0,
+      startIndex: 0,
+      totalResults: 0,
+      format: 'NVD_CVE',
+      version: '2.0',
+      timestamp: '2026-03-28T00:00:00.000',
+      vulnerabilities: [],
     })
   }),
 ]

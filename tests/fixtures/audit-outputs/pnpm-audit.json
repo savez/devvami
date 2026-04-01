@@ -10,9 +10,7 @@
       "cves": ["CVE-2021-23337"],
       "vulnerable_versions": "<4.17.21",
       "patched_versions": ">=4.17.21",
-      "findings": [
-        { "version": "4.17.20", "paths": ["project > lodash"] }
-      ]
+      "findings": [{"version": "4.17.20", "paths": ["project > lodash"]}]
     },
     "1002": {
       "id": 1002,
@@ -23,9 +21,7 @@
       "cves": ["CVE-2021-35065"],
       "vulnerable_versions": "<5.1.2",
       "patched_versions": ">=5.1.2",
-      "findings": [
-        { "version": "5.1.1", "paths": ["project > chokidar > glob-parent"] }
-      ]
+      "findings": [{"version": "5.1.1", "paths": ["project > chokidar > glob-parent"]}]
     }
   },
   "metadata": {

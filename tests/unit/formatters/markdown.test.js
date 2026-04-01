@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { renderMarkdown, extractMermaidBlocks, toMermaidLiveUrl } from '../../../src/formatters/markdown.js'
+import {describe, it, expect} from 'vitest'
+import {renderMarkdown, extractMermaidBlocks, toMermaidLiveUrl} from '../../../src/formatters/markdown.js'
 
 describe('renderMarkdown', () => {
   it('returns a non-empty string for markdown input', () => {

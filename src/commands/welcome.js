@@ -1,5 +1,5 @@
-import { Command } from '@oclif/core'
-import { printWelcomeScreen } from '../utils/welcome.js'
+import {Command} from '@oclif/core'
+import {printWelcomeScreen} from '../utils/welcome.js'
 
 /**
  * Display the dvmi cyberpunk mission dashboard.

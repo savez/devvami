@@ -1,10 +1,10 @@
-import { mkdir, writeFile, readFile, access } from 'node:fs/promises'
-import { join, dirname, resolve, sep } from 'node:path'
-import { execa } from 'execa'
-import { createOctokit } from './github.js'
-import { which } from './shell.js'
-import { parseFrontmatter, serializeFrontmatter } from '../utils/frontmatter.js'
-import { DvmiError } from '../utils/errors.js'
+import {mkdir, writeFile, readFile, access} from 'node:fs/promises'
+import {join, dirname, resolve, sep} from 'node:path'
+import {execa} from 'execa'
+import {createOctokit} from './github.js'
+import {which} from './shell.js'
+import {parseFrontmatter, serializeFrontmatter} from '../utils/frontmatter.js'
+import {DvmiError} from '../utils/errors.js'
 
 /** @import { Prompt, AITool } from '../types.js' */
 
@@ -13,15 +13,15 @@ import { DvmiError } from '../utils/errors.js'
  * @type {Record<AITool, { bin: string[], promptFlag: string }>}
  */
 export const SUPPORTED_TOOLS = {
-  opencode: { bin: ['opencode'], promptFlag: '--prompt' },
-  copilot: { bin: ['gh', 'copilot'], promptFlag: '-p' },
+  opencode: {bin: ['opencode'], promptFlag: '--prompt'},
+  copilot: {bin: ['gh', 'copilot'], promptFlag: '-p'},
 }
 
 /**
  * GitHub repository containing the personal prompt collection.
  * @type {{ owner: string, repo: string }}
  */
-export const PROMPT_REPO = { owner: 'savez', repo: 'prompt-for-ai' }
+export const PROMPT_REPO = {owner: 'savez', repo: 'prompt-for-ai'}
 
 /**
  * Default branch used when fetching the repository tree.
@@ -75,7 +75,7 @@ function categoryFromPath(filePath) {
  */
 function contentToPrompt(path, base64Content) {
   const raw = Buffer.from(base64Content, 'base64').toString('utf8')
-  const { frontmatter, body } = parseFrontmatter(raw)
+  const {frontmatter, body} = parseFrontmatter(raw)
   return {
     path,
     title: typeof frontmatter.title === 'string' ? frontmatter.title : titleFromPath(path),
@@ -101,7 +101,7 @@ export async function listPrompts() {
   const octokit = await createOctokit()
   let tree
   try {
-    const { data } = await octokit.rest.git.getTree({
+    const {data} = await octokit.rest.git.getTree({
       owner: PROMPT_REPO.owner,
       repo: PROMPT_REPO.repo,
       tree_sha: DEFAULT_BRANCH,
@@ -132,7 +132,7 @@ export async function listPrompts() {
 
   const prompts = await Promise.all(
     mdFiles.map(async (item) => {
-      const { data } = await octokit.rest.repos.getContent({
+      const {data} = await octokit.rest.repos.getContent({
         owner: PROMPT_REPO.owner,
         repo: PROMPT_REPO.repo,
         path: item.path ?? '',
@@ -169,10 +169,7 @@ export async function fetchPromptByPath(relativePath) {
   } catch (err) {
     const status = /** @type {{ status?: number }} */ (err).status
     if (status === 404) {
-      throw new DvmiError(
-        `Prompt not found: ${relativePath}`,
-        `Run \`dvmi prompts list\` to see available prompts`,
-      )
+      throw new DvmiError(`Prompt not found: ${relativePath}`, `Run \`dvmi prompts list\` to see available prompts`)
     }
     throw err
   }
@@ -207,17 +204,14 @@ export async function downloadPrompt(relativePath, localDir, opts = {}) {
   // Prevent path traversal: destPath must remain within localDir
   const safeBase = resolve(localDir) + sep
   if (!resolve(destPath).startsWith(safeBase)) {
-    throw new DvmiError(
-      `Invalid prompt path: "${relativePath}"`,
-      'Path must stay within the prompts directory',
-    )
+    throw new DvmiError(`Invalid prompt path: "${relativePath}"`, 'Path must stay within the prompts directory')
   }
 
   // Fast-path: skip without a network round-trip if file exists and no overwrite
   if (!opts.overwrite) {
     try {
       await access(destPath)
-      return { path: destPath, skipped: true }
+      return {path: destPath, skipped: true}
     } catch {
       // File does not exist — fall through to download
     }
@@ -237,10 +231,10 @@ export async function downloadPrompt(relativePath, localDir, opts = {}) {
 
   const content = serializeFrontmatter(fm, prompt.body)
 
-  await mkdir(dirname(destPath), { recursive: true, mode: 0o700 })
-  await writeFile(destPath, content, { encoding: 'utf8', mode: 0o600 })
+  await mkdir(dirname(destPath), {recursive: true, mode: 0o700})
+  await writeFile(destPath, content, {encoding: 'utf8', mode: 0o600})
 
-  return { path: destPath, skipped: false }
+  return {path: destPath, skipped: false}
 }
 
 /**
@@ -258,10 +252,7 @@ export async function resolveLocalPrompt(relativePath, localDir) {
   // Prevent path traversal: fullPath must remain within localDir
   const safeBase = resolve(localDir) + sep
   if (!resolve(fullPath).startsWith(safeBase)) {
-    throw new DvmiError(
-      `Invalid prompt path: "${relativePath}"`,
-      'Path must stay within the prompts directory',
-    )
+    throw new DvmiError(`Invalid prompt path: "${relativePath}"`, 'Path must stay within the prompts directory')
   }
 
   let raw
@@ -274,7 +265,7 @@ export async function resolveLocalPrompt(relativePath, localDir) {
     )
   }
 
-  const { frontmatter, body } = parseFrontmatter(raw)
+  const {frontmatter, body} = parseFrontmatter(raw)
   return {
     path: relativePath,
     title: typeof frontmatter.title === 'string' ? frontmatter.title : titleFromPath(relativePath),
@@ -301,10 +292,7 @@ export async function resolveLocalPrompt(relativePath, localDir) {
 export async function invokeTool(toolName, promptContent) {
   const tool = SUPPORTED_TOOLS[toolName]
   if (!tool) {
-    throw new DvmiError(
-      `Unknown AI tool: "${toolName}"`,
-      `Supported tools: ${Object.keys(SUPPORTED_TOOLS).join(', ')}`,
-    )
+    throw new DvmiError(`Unknown AI tool: "${toolName}"`, `Supported tools: ${Object.keys(SUPPORTED_TOOLS).join(', ')}`)
   }
 
   // Verify binary availability
@@ -322,5 +310,5 @@ export async function invokeTool(toolName, promptContent) {
   }
 
   // Spawn tool with prompt content — inherits stdio so TUI/interactive tools work
-  await execa(bin, [...subArgs, tool.promptFlag, promptContent], { stdio: 'inherit' })
+  await execa(bin, [...subArgs, tool.promptFlag, promptContent], {stdio: 'inherit'})
 }

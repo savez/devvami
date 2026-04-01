@@ -1,42 +1,92 @@
-import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {describe, it, expect} from 'vitest'
+import {readFileSync} from 'node:fs'
+import {resolve, dirname} from 'node:path'
+import {fileURLToPath} from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const fixturesDir = resolve(__dirname, '../fixtures/audit-outputs')
 
 describe('normalizeSeverity', () => {
   it('maps "critical" → Critical', async () => {
-    const { normalizeSeverity } = await import('../../src/services/audit-runner.js')
+    const {normalizeSeverity} = await import('../../src/services/audit-runner.js')
     expect(normalizeSeverity('critical')).toBe('Critical')
   })
 
   it('maps "moderate" → Medium', async () => {
-    const { normalizeSeverity } = await import('../../src/services/audit-runner.js')
+    const {normalizeSeverity} = await import('../../src/services/audit-runner.js')
     expect(normalizeSeverity('moderate')).toBe('Medium')
   })
 
   it('maps "info" → Low', async () => {
-    const { normalizeSeverity } = await import('../../src/services/audit-runner.js')
+    const {normalizeSeverity} = await import('../../src/services/audit-runner.js')
     expect(normalizeSeverity('info')).toBe('Low')
   })
 
   it('returns Unknown for undefined', async () => {
-    const { normalizeSeverity } = await import('../../src/services/audit-runner.js')
+    const {normalizeSeverity} = await import('../../src/services/audit-runner.js')
     expect(normalizeSeverity(undefined)).toBe('Unknown')
   })
 })
 
 describe('summarizeFindings', () => {
   it('counts findings by severity', async () => {
-    const { summarizeFindings } = await import('../../src/services/audit-runner.js')
+    const {summarizeFindings} = await import('../../src/services/audit-runner.js')
     const findings = [
-      { package: 'a', installedVersion: '1.0', severity: 'Critical', cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
-      { package: 'b', installedVersion: '1.0', severity: 'High',     cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
-      { package: 'c', installedVersion: '1.0', severity: 'Medium',   cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
-      { package: 'd', installedVersion: '1.0', severity: 'Low',      cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
-      { package: 'e', installedVersion: '1.0', severity: 'Unknown',  cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
+      {
+        package: 'a',
+        installedVersion: '1.0',
+        severity: 'Critical',
+        cveId: null,
+        advisoryUrl: null,
+        title: null,
+        patchedVersions: null,
+        ecosystem: 'npm',
+        isDirect: null,
+      },
+      {
+        package: 'b',
+        installedVersion: '1.0',
+        severity: 'High',
+        cveId: null,
+        advisoryUrl: null,
+        title: null,
+        patchedVersions: null,
+        ecosystem: 'npm',
+        isDirect: null,
+      },
+      {
+        package: 'c',
+        installedVersion: '1.0',
+        severity: 'Medium',
+        cveId: null,
+        advisoryUrl: null,
+        title: null,
+        patchedVersions: null,
+        ecosystem: 'npm',
+        isDirect: null,
+      },
+      {
+        package: 'd',
+        installedVersion: '1.0',
+        severity: 'Low',
+        cveId: null,
+        advisoryUrl: null,
+        title: null,
+        patchedVersions: null,
+        ecosystem: 'npm',
+        isDirect: null,
+      },
+      {
+        package: 'e',
+        installedVersion: '1.0',
+        severity: 'Unknown',
+        cveId: null,
+        advisoryUrl: null,
+        title: null,
+        patchedVersions: null,
+        ecosystem: 'npm',
+        isDirect: null,
+      },
     ]
     const summary = summarizeFindings(findings)
     expect(summary.critical).toBe(1)
@@ -48,7 +98,7 @@ describe('summarizeFindings', () => {
   })
 
   it('returns all zeros for empty findings', async () => {
-    const { summarizeFindings } = await import('../../src/services/audit-runner.js')
+    const {summarizeFindings} = await import('../../src/services/audit-runner.js')
     const summary = summarizeFindings([])
     expect(summary.total).toBe(0)
     expect(summary.critical).toBe(0)
@@ -57,33 +107,73 @@ describe('summarizeFindings', () => {
 
 describe('filterBySeverity', () => {
   const findings = [
-    { package: 'a', installedVersion: '1.0', severity: 'Critical', cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
-    { package: 'b', installedVersion: '1.0', severity: 'High',     cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
-    { package: 'c', installedVersion: '1.0', severity: 'Medium',   cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
-    { package: 'd', installedVersion: '1.0', severity: 'Low',      cveId: null, advisoryUrl: null, title: null, patchedVersions: null, ecosystem: 'npm', isDirect: null },
+    {
+      package: 'a',
+      installedVersion: '1.0',
+      severity: 'Critical',
+      cveId: null,
+      advisoryUrl: null,
+      title: null,
+      patchedVersions: null,
+      ecosystem: 'npm',
+      isDirect: null,
+    },
+    {
+      package: 'b',
+      installedVersion: '1.0',
+      severity: 'High',
+      cveId: null,
+      advisoryUrl: null,
+      title: null,
+      patchedVersions: null,
+      ecosystem: 'npm',
+      isDirect: null,
+    },
+    {
+      package: 'c',
+      installedVersion: '1.0',
+      severity: 'Medium',
+      cveId: null,
+      advisoryUrl: null,
+      title: null,
+      patchedVersions: null,
+      ecosystem: 'npm',
+      isDirect: null,
+    },
+    {
+      package: 'd',
+      installedVersion: '1.0',
+      severity: 'Low',
+      cveId: null,
+      advisoryUrl: null,
+      title: null,
+      patchedVersions: null,
+      ecosystem: 'npm',
+      isDirect: null,
+    },
   ]
 
   it('returns all findings when no filter', async () => {
-    const { filterBySeverity } = await import('../../src/services/audit-runner.js')
+    const {filterBySeverity} = await import('../../src/services/audit-runner.js')
     expect(filterBySeverity(findings, undefined)).toHaveLength(4)
   })
 
   it('filters to high and above when minSeverity=high', async () => {
-    const { filterBySeverity } = await import('../../src/services/audit-runner.js')
+    const {filterBySeverity} = await import('../../src/services/audit-runner.js')
     const result = filterBySeverity(findings, 'high')
     expect(result).toHaveLength(2)
     expect(result.map((f) => f.severity)).toEqual(['Critical', 'High'])
   })
 
   it('filters to only critical when minSeverity=critical', async () => {
-    const { filterBySeverity } = await import('../../src/services/audit-runner.js')
+    const {filterBySeverity} = await import('../../src/services/audit-runner.js')
     const result = filterBySeverity(findings, 'critical')
     expect(result).toHaveLength(1)
     expect(result[0].severity).toBe('Critical')
   })
 
   it('returns all when minSeverity=low', async () => {
-    const { filterBySeverity } = await import('../../src/services/audit-runner.js')
+    const {filterBySeverity} = await import('../../src/services/audit-runner.js')
     const result = filterBySeverity(findings, 'low')
     expect(result).toHaveLength(4)
   })
@@ -95,7 +185,7 @@ describe('filterBySeverity', () => {
 
 describe('pnpm audit fixture parsing', () => {
   it('parses pnpm-audit.json fixture correctly via runAudit stub', async () => {
-    const { normalizeSeverity } = await import('../../src/services/audit-runner.js')
+    const {normalizeSeverity} = await import('../../src/services/audit-runner.js')
 
     // Test the normalization logic which drives pnpm parsing
     expect(normalizeSeverity('critical')).toBe('Critical')

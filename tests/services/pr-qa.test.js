@@ -1,39 +1,39 @@
-import { describe, it, expect, vi } from 'vitest'
-import { extractQASteps, isQAComment } from '../../src/services/github.js'
+import {describe, it, expect, vi} from 'vitest'
+import {extractQASteps, isQAComment} from '../../src/services/github.js'
 
 vi.mock('../../src/services/shell.js', () => ({
-  exec: vi.fn().mockResolvedValue({ stdout: 'fake-gh-token', stderr: '', exitCode: 0 }),
+  exec: vi.fn().mockResolvedValue({stdout: 'fake-gh-token', stderr: '', exitCode: 0}),
 }))
 
 describe('extractQASteps', () => {
   it('estrae step non completati', () => {
     const body = '- [ ] Testare login\n- [ ] Verificare logout'
     expect(extractQASteps(body)).toEqual([
-      { text: 'Testare login', checked: false },
-      { text: 'Verificare logout', checked: false },
+      {text: 'Testare login', checked: false},
+      {text: 'Verificare logout', checked: false},
     ])
   })
 
   it('estrae step completati con [x]', () => {
     const body = '- [x] Step completato\n- [X] Altro step maiuscolo'
     expect(extractQASteps(body)).toEqual([
-      { text: 'Step completato', checked: true },
-      { text: 'Altro step maiuscolo', checked: true },
+      {text: 'Step completato', checked: true},
+      {text: 'Altro step maiuscolo', checked: true},
     ])
   })
 
   it('gestisce mix di step completati e non', () => {
     const body = '- [x] Primo\n- [ ] Secondo\n- [x] Terzo'
     expect(extractQASteps(body)).toEqual([
-      { text: 'Primo', checked: true },
-      { text: 'Secondo', checked: false },
-      { text: 'Terzo', checked: true },
+      {text: 'Primo', checked: true},
+      {text: 'Secondo', checked: false},
+      {text: 'Terzo', checked: true},
     ])
   })
 
   it('ignora righe di testo normale', () => {
     const body = 'Testo normale\n- [ ] Solo questo\nAltro testo'
-    expect(extractQASteps(body)).toEqual([{ text: 'Solo questo', checked: false }])
+    expect(extractQASteps(body)).toEqual([{text: 'Solo questo', checked: false}])
   })
 
   it('restituisce array vuoto se nessuna checklist', () => {
@@ -42,7 +42,7 @@ describe('extractQASteps', () => {
 
   it('gestisce indentazione negli step', () => {
     const body = '  - [ ] Step indentato'
-    expect(extractQASteps(body)).toEqual([{ text: 'Step indentato', checked: false }])
+    expect(extractQASteps(body)).toEqual([{text: 'Step indentato', checked: false}])
   })
 })
 

@@ -8,9 +8,7 @@
         "link": "https://symfony.com/cve-2022-24894",
         "cve": "CVE-2022-24894",
         "affectedVersions": ">=5.4.0 <5.4.19|>=6.0.0 <6.0.19|>=6.1.0 <6.1.11|>=6.2.0 <6.2.4",
-        "sources": [
-          { "name": "GitHub", "remoteId": "GHSA-h7vf-5wrv-9fhv" }
-        ],
+        "sources": [{"name": "GitHub", "remoteId": "GHSA-h7vf-5wrv-9fhv"}],
         "reportedAt": "2023-02-01T00:00:00+00:00",
         "composerRepository": "https://packagist.org"
       }

@@ -1,5 +1,5 @@
-import { existsSync } from 'node:fs'
-import { resolve, join } from 'node:path'
+import {existsSync} from 'node:fs'
+import {resolve, join} from 'node:path'
 
 /** @import { PackageEcosystem } from '../types.js' */
 

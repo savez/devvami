@@ -1,8 +1,8 @@
-import { Command, Flags, Args } from '@oclif/core'
+import {Command, Flags, Args} from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { checkbox, confirm, input } from '@inquirer/prompts'
-import { detectPlatform } from '../../services/platform.js'
+import {checkbox, confirm, input} from '@inquirer/prompts'
+import {detectPlatform} from '../../services/platform.js'
 import {
   isChezmoiInstalled,
   getManagedFiles,
@@ -11,13 +11,13 @@ import {
   isPathSensitive,
   isWSLWindowsPath,
 } from '../../services/dotfiles.js'
-import { loadConfig } from '../../services/config.js'
-import { execOrThrow } from '../../services/shell.js'
-import { formatDotfilesAdd } from '../../formatters/dotfiles.js'
-import { DvmiError } from '../../utils/errors.js'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
-import { existsSync } from 'node:fs'
+import {loadConfig} from '../../services/config.js'
+import {execOrThrow} from '../../services/shell.js'
+import {formatDotfilesAdd} from '../../formatters/dotfiles.js'
+import {DvmiError} from '../../utils/errors.js'
+import {homedir} from 'node:os'
+import {join} from 'node:path'
+import {existsSync} from 'node:fs'
 
 /** @import { DotfilesAddResult } from '../../types.js' */
 
@@ -47,13 +47,13 @@ export default class DotfilesAdd extends Command {
   static enableJsonFlag = true
 
   static flags = {
-    help: Flags.help({ char: 'h' }),
-    encrypt: Flags.boolean({ char: 'e', description: 'Force encryption for all files being added', default: false }),
-    'no-encrypt': Flags.boolean({ description: 'Disable auto-encryption (add all as plaintext)', default: false }),
+    help: Flags.help({char: 'h'}),
+    encrypt: Flags.boolean({char: 'e', description: 'Force encryption for all files being added', default: false}),
+    'no-encrypt': Flags.boolean({description: 'Disable auto-encryption (add all as plaintext)', default: false}),
   }
 
   static args = {
-    files: Args.string({ description: 'File paths to add', required: false }),
+    files: Args.string({description: 'File paths to add', required: false}),
   }
 
   // oclif does not support variadic args natively via Args.string for multiple values;
@@ -61,7 +61,7 @@ export default class DotfilesAdd extends Command {
   static strict = false
 
   async run() {
-    const { flags } = await this.parse(DotfilesAdd)
+    const {flags} = await this.parse(DotfilesAdd)
     const isJson = flags.json
     const forceEncrypt = flags.encrypt
     const forceNoEncrypt = flags['no-encrypt']
@@ -73,23 +73,21 @@ export default class DotfilesAdd extends Command {
     // Pre-checks
     const config = await loadConfig()
     if (!config.dotfiles?.enabled) {
-      throw new DvmiError(
-        'Chezmoi dotfiles management is not configured',
-        'Run `dvmi dotfiles setup` first',
-      )
+      throw new DvmiError('Chezmoi dotfiles management is not configured', 'Run `dvmi dotfiles setup` first')
     }
 
     const chezmoiInstalled = await isChezmoiInstalled()
     if (!chezmoiInstalled) {
       const platformInfo = await detectPlatform()
-      const hint = platformInfo.platform === 'macos'
-        ? 'Run `brew install chezmoi` or visit https://chezmoi.io/install'
-        : 'Run `sh -c "$(curl -fsLS get.chezmoi.io)"` or visit https://chezmoi.io/install'
+      const hint =
+        platformInfo.platform === 'macos'
+          ? 'Run `brew install chezmoi` or visit https://chezmoi.io/install'
+          : 'Run `sh -c "$(curl -fsLS get.chezmoi.io)"` or visit https://chezmoi.io/install'
       throw new DvmiError('chezmoi is not installed', hint)
     }
 
     const platformInfo = await detectPlatform()
-    const { platform } = platformInfo
+    const {platform} = platformInfo
     const sensitivePatterns = getSensitivePatterns(config)
 
     // Get already-managed files for V-007 check
@@ -97,7 +95,7 @@ export default class DotfilesAdd extends Command {
     const managedPaths = new Set(managedFiles.map((f) => f.path))
 
     /** @type {DotfilesAddResult} */
-    const result = { added: [], skipped: [], rejected: [] }
+    const result = {added: [], skipped: [], rejected: []}
 
     if (fileArgs.length > 0) {
       // Direct mode — files provided as arguments
@@ -107,19 +105,22 @@ export default class DotfilesAdd extends Command {
 
         // V-002: WSL2 Windows path rejection
         if (platform === 'wsl2' && isWSLWindowsPath(absPath)) {
-          result.rejected.push({ path: displayPath, reason: 'Windows filesystem paths not supported on WSL2. Use Linux-native paths (~/) instead.' })
+          result.rejected.push({
+            path: displayPath,
+            reason: 'Windows filesystem paths not supported on WSL2. Use Linux-native paths (~/) instead.',
+          })
           continue
         }
 
         // V-001: file must exist
         if (!existsSync(absPath)) {
-          result.skipped.push({ path: displayPath, reason: 'File not found' })
+          result.skipped.push({path: displayPath, reason: 'File not found'})
           continue
         }
 
         // V-007: not already managed
         if (managedPaths.has(absPath)) {
-          result.skipped.push({ path: displayPath, reason: 'Already managed by chezmoi' })
+          result.skipped.push({path: displayPath, reason: 'Already managed by chezmoi'})
           continue
         }
 
@@ -138,9 +139,12 @@ export default class DotfilesAdd extends Command {
           if (encrypt) args.push('--encrypt')
           args.push(absPath)
           await execOrThrow('chezmoi', args)
-          result.added.push({ path: displayPath, encrypted: encrypt })
+          result.added.push({path: displayPath, encrypted: encrypt})
         } catch {
-          result.skipped.push({ path: displayPath, reason: `Failed to add to chezmoi. Run \`chezmoi doctor\` to verify your setup.` })
+          result.skipped.push({
+            path: displayPath,
+            reason: `Failed to add to chezmoi. Run \`chezmoi doctor\` to verify your setup.`,
+          })
         }
       }
 
@@ -161,11 +165,15 @@ export default class DotfilesAdd extends Command {
     if (isCI || isNonInteractive) {
       this.error(
         'This command requires an interactive terminal (TTY) when no files are specified. Provide file paths as arguments or run with --json.',
-        { exit: 1 },
+        {exit: 1},
       )
     }
 
-    const spinner = ora({ spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Loading recommended files...') }).start()
+    const spinner = ora({
+      spinner: 'arc',
+      color: false,
+      text: chalk.hex('#FF6B2B')('Loading recommended files...'),
+    }).start()
     const recommended = getDefaultFileList(platform)
     spinner.stop()
 
@@ -191,9 +199,9 @@ export default class DotfilesAdd extends Command {
     })
 
     // Offer custom file
-    const addCustom = await confirm({ message: 'Add a custom file path?', default: false })
+    const addCustom = await confirm({message: 'Add a custom file path?', default: false})
     if (addCustom) {
-      const customPath = await input({ message: 'Enter file path:' })
+      const customPath = await input({message: 'Enter file path:'})
       if (customPath.trim()) selected.push(customPath.trim())
     }
 
@@ -202,24 +210,28 @@ export default class DotfilesAdd extends Command {
       return result
     }
 
-    const addSpinner = ora({ spinner: 'arc', color: false, text: chalk.hex('#FF6B2B')('Adding files to chezmoi...') }).start()
+    const addSpinner = ora({
+      spinner: 'arc',
+      color: false,
+      text: chalk.hex('#FF6B2B')('Adding files to chezmoi...'),
+    }).start()
     addSpinner.stop()
 
     for (const rawPath of selected) {
       const absPath = expandTilde(rawPath)
 
       if (platform === 'wsl2' && isWSLWindowsPath(absPath)) {
-        result.rejected.push({ path: rawPath, reason: 'Windows filesystem paths not supported on WSL2' })
+        result.rejected.push({path: rawPath, reason: 'Windows filesystem paths not supported on WSL2'})
         continue
       }
 
       if (!existsSync(absPath)) {
-        result.skipped.push({ path: rawPath, reason: 'File not found' })
+        result.skipped.push({path: rawPath, reason: 'File not found'})
         continue
       }
 
       if (managedPaths.has(absPath)) {
-        result.skipped.push({ path: rawPath, reason: 'Already managed by chezmoi' })
+        result.skipped.push({path: rawPath, reason: 'Already managed by chezmoi'})
         continue
       }
 
@@ -237,9 +249,9 @@ export default class DotfilesAdd extends Command {
         if (encrypt) args.push('--encrypt')
         args.push(absPath)
         await execOrThrow('chezmoi', args)
-        result.added.push({ path: rawPath, encrypted: encrypt })
+        result.added.push({path: rawPath, encrypted: encrypt})
       } catch {
-        result.skipped.push({ path: rawPath, reason: `Failed to add. Run \`chezmoi doctor\` to verify your setup.` })
+        result.skipped.push({path: rawPath, reason: `Failed to add. Run \`chezmoi doctor\` to verify your setup.`})
       }
     }
 

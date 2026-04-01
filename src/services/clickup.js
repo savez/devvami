@@ -1,7 +1,7 @@
 import http from 'node:http'
-import { randomBytes } from 'node:crypto'
-import { openBrowser } from '../utils/open-browser.js'
-import { loadConfig, saveConfig } from './config.js'
+import {randomBytes} from 'node:crypto'
+import {openBrowser} from '../utils/open-browser.js'
+import {loadConfig, saveConfig} from './config.js'
 
 /** @import { ClickUpTask } from '../types.js' */
 
@@ -25,10 +25,10 @@ function localDateString(date) {
 async function getToken() {
   // Allow tests / CI to inject a token via environment variable
   if (process.env.CLICKUP_TOKEN) return process.env.CLICKUP_TOKEN
-   try {
-     const { default: keytar } = await import('keytar')
-     return keytar.getPassword('devvami', TOKEN_KEY)
-   } catch {
+  try {
+    const {default: keytar} = await import('keytar')
+    return keytar.getPassword('devvami', TOKEN_KEY)
+  } catch {
     // keytar not available (e.g. WSL2 without D-Bus) — fallback to config
     const config = await loadConfig()
     return config.clickup?.token ?? null
@@ -41,17 +41,17 @@ async function getToken() {
  * @returns {Promise<void>}
  */
 export async function storeToken(token) {
-   try {
-     const { default: keytar } = await import('keytar')
-     await keytar.setPassword('devvami', TOKEN_KEY, token)
-   } catch {
+  try {
+    const {default: keytar} = await import('keytar')
+    await keytar.setPassword('devvami', TOKEN_KEY, token)
+  } catch {
     // Fallback: store in config (less secure)
     process.stderr.write(
       'Warning: keytar unavailable. ClickUp token will be stored in plaintext.\n' +
-      'Run `dvmi auth logout` after this session on shared machines.\n',
+        'Run `dvmi auth logout` after this session on shared machines.\n',
     )
     const config = await loadConfig()
-    await saveConfig({ ...config, clickup: { ...config.clickup, token } })
+    await saveConfig({...config, clickup: {...config.clickup, token}})
   }
 }
 
@@ -81,8 +81,8 @@ export async function oauthFlow(clientId, clientSecret) {
       try {
         const resp = await fetch(`${API_BASE}/oauth/token`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code }),
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({client_id: clientId, client_secret: clientSecret, code}),
         })
         const data = /** @type {any} */ (await resp.json())
         await storeToken(data.access_token)
@@ -108,12 +108,12 @@ export async function oauthFlow(clientId, clientSecret) {
  * @param {number} [retries]
  * @returns {Promise<unknown>}
  */
- async function clickupFetch(path, retries = 0) {
-   const MAX_RETRIES = 5
-   const token = await getToken()
-   if (!token) throw new Error('ClickUp not authenticated. Run `dvmi init` to authorize.')
+async function clickupFetch(path, retries = 0) {
+  const MAX_RETRIES = 5
+  const token = await getToken()
+  if (!token) throw new Error('ClickUp not authenticated. Run `dvmi init` to authorize.')
   const resp = await fetch(`${API_BASE}${path}`, {
-    headers: { Authorization: token },
+    headers: {Authorization: token},
   })
   if (resp.status === 429) {
     if (retries >= MAX_RETRIES) {
@@ -136,7 +136,7 @@ export async function oauthFlow(clientId, clientSecret) {
  */
 export async function getUser() {
   const data = /** @type {any} */ (await clickupFetch('/user'))
-  return { id: String(data.user.id), username: data.user.username }
+  return {id: String(data.user.id), username: data.user.username}
 }
 
 /**
@@ -201,8 +201,8 @@ export async function getTasksToday(teamId) {
   const endOfTodayMs = new Date().setHours(23, 59, 59, 999)
 
   const [overdueTasks, inProgressTasks] = await Promise.all([
-    getTasks(teamId, { due_date_lt: endOfTodayMs }),
-    getTasks(teamId, { status: 'in progress' }),
+    getTasks(teamId, {due_date_lt: endOfTodayMs}),
+    getTasks(teamId, {status: 'in progress'}),
   ])
 
   // De-duplicate by task ID (a task may appear in both result sets)
@@ -288,11 +288,11 @@ export async function isAuthenticated() {
 export async function validateToken() {
   try {
     const data = /** @type {any} */ (await clickupFetch('/user'))
-    return { valid: true, user: { id: data.user.id, username: data.user.username } }
+    return {valid: true, user: {id: data.user.id, username: data.user.username}}
   } catch (err) {
     // 401 or no token → not valid
     if (err instanceof Error && (err.message.includes('401') || err.message.includes('not authenticated'))) {
-      return { valid: false }
+      return {valid: false}
     }
     throw err
   }
@@ -304,5 +304,5 @@ export async function validateToken() {
  */
 export async function getTeams() {
   const data = /** @type {any} */ (await clickupFetch('/team'))
-  return (data.teams ?? []).map((t) => ({ id: String(t.id), name: t.name }))
+  return (data.teams ?? []).map((t) => ({id: String(t.id), name: t.name}))
 }

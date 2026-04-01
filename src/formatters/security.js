@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { deriveOverallStatus } from '../services/security.js'
+import {deriveOverallStatus} from '../services/security.js'
 
 /** @import { SetupSession, SecurityToolStatus, PlatformInfo } from '../types.js' */
 
@@ -116,4 +116,4 @@ export function formatSecuritySummary(session, platformInfo) {
  * @param {SecurityToolStatus[]} tools
  * @returns {'success'|'partial'|'not-configured'}
  */
-export { deriveOverallStatus }
+export {deriveOverallStatus}

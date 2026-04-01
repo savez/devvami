@@ -1,9 +1,9 @@
-import { Command, Args, Flags } from '@oclif/core'
+import {Command, Args, Flags} from '@oclif/core'
 import ora from 'ora'
-import { getCveDetail } from '../../services/nvd.js'
-import { formatCveDetail } from '../../formatters/vuln.js'
-import { openBrowser } from '../../utils/open-browser.js'
-import { ValidationError } from '../../utils/errors.js'
+import {getCveDetail} from '../../services/nvd.js'
+import {formatCveDetail} from '../../formatters/vuln.js'
+import {openBrowser} from '../../utils/open-browser.js'
+import {ValidationError} from '../../utils/errors.js'
 
 export default class VulnDetail extends Command {
   static description = 'View full details for a specific CVE'
@@ -17,7 +17,7 @@ export default class VulnDetail extends Command {
   static enableJsonFlag = true
 
   static args = {
-    cveId: Args.string({ description: 'CVE identifier (e.g. CVE-2021-44228)', required: true }),
+    cveId: Args.string({description: 'CVE identifier (e.g. CVE-2021-44228)', required: true}),
   }
 
   static flags = {
@@ -29,9 +29,9 @@ export default class VulnDetail extends Command {
   }
 
   async run() {
-    const { args, flags } = await this.parse(VulnDetail)
+    const {args, flags} = await this.parse(VulnDetail)
     const isJson = flags.json
-    const { cveId } = args
+    const {cveId} = args
 
     if (!cveId || !/^CVE-\d{4}-\d{4,}$/i.test(cveId)) {
       throw new ValidationError(

@@ -1,6 +1,6 @@
 import figlet from 'figlet'
 import chalk from 'chalk'
-import { BRAND_GRADIENT, animateGradientBanner, isColorEnabled } from './gradient.js'
+import {BRAND_GRADIENT, animateGradientBanner, isColorEnabled} from './gradient.js'
 
 // Brand colors
 export const ORANGE = '#FF6B2B'
@@ -24,13 +24,11 @@ function figletAsync(text, opts) {
  * @returns {Promise<void>}
  */
 export async function printBanner() {
-   const art = await figletAsync('DVMI', { font: 'ANSI Shadow' })
-   const artLines = art.split('\n').filter((l) => l.trim() !== '')
-   const width = Math.max(...artLines.map((l) => l.length)) + 4
+  const art = await figletAsync('DVMI', {font: 'ANSI Shadow'})
+  const artLines = art.split('\n').filter((l) => l.trim() !== '')
+  const width = Math.max(...artLines.map((l) => l.length)) + 4
 
-   const tagline = isColorEnabled
-     ? chalk.hex(BLUE).bold('  Devvami Developer CLI')
-     : '  Devvami Developer CLI'
+  const tagline = isColorEnabled ? chalk.hex(BLUE).bold('  Devvami Developer CLI') : '  Devvami Developer CLI'
 
   const separator = isColorEnabled
     ? chalk.hex(BLUE).dim('─'.repeat(Math.min(width, 60)))

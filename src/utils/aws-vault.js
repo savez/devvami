@@ -1,5 +1,5 @@
-import { loadConfigSync } from '../services/config.js'
-import { execa } from 'execa'
+import {loadConfigSync} from '../services/config.js'
+import {execa} from 'execa'
 
 /**
  * Returns the aws-vault exec prefix to prepend to AWS CLI commands.
@@ -44,10 +44,7 @@ export function awsVaultPrefix(config = null) {
  * @returns {boolean}
  */
 export function hasAwsCredentialEnv() {
-  return Boolean(
-    process.env.AWS_ACCESS_KEY_ID ||
-      process.env.AWS_SESSION_TOKEN,
-  )
+  return Boolean(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_SESSION_TOKEN)
 }
 
 /**
@@ -79,24 +76,14 @@ export async function reexecCurrentCommandWithAwsVault(config = null) {
   if (process.env.DVMI_AWS_VAULT_REEXEC === '1') return null
 
   try {
-    const child = await execa(
-      'aws-vault',
-      [
-        'exec',
-        profile,
-        '--',
-        process.execPath,
-        ...process.argv.slice(1),
-      ],
-      {
-        reject: false,
-        stdio: 'inherit',
-        env: {
-          ...process.env,
-          DVMI_AWS_VAULT_REEXEC: '1',
-        },
+    const child = await execa('aws-vault', ['exec', profile, '--', process.execPath, ...process.argv.slice(1)], {
+      reject: false,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        DVMI_AWS_VAULT_REEXEC: '1',
       },
-    )
+    })
 
     return child.exitCode ?? 1
   } catch {
@@ -117,25 +104,15 @@ export async function reexecCurrentCommandWithAwsVaultProfile(profile, extraEnv 
   if (!profile) return null
 
   try {
-    const child = await execa(
-      'aws-vault',
-      [
-        'exec',
-        profile,
-        '--',
-        process.execPath,
-        ...process.argv.slice(1),
-      ],
-      {
-        reject: false,
-        stdio: 'inherit',
-        env: {
-          ...process.env,
-          DVMI_AWS_VAULT_REEXEC: '1',
-          ...extraEnv,
-        },
+    const child = await execa('aws-vault', ['exec', profile, '--', process.execPath, ...process.argv.slice(1)], {
+      reject: false,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        DVMI_AWS_VAULT_REEXEC: '1',
+        ...extraEnv,
       },
-    )
+    })
 
     return child.exitCode ?? 1
   } catch {

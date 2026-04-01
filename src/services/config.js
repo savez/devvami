@@ -1,13 +1,13 @@
-import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { homedir } from 'node:os'
+import {readFile, writeFile, mkdir, chmod} from 'node:fs/promises'
+import {existsSync, readFileSync} from 'node:fs'
+import {join} from 'node:path'
+import {homedir} from 'node:os'
 
 /** @import { CLIConfig } from '../types.js' */
 
 const CONFIG_DIR = process.env.XDG_CONFIG_HOME
-   ? join(process.env.XDG_CONFIG_HOME, 'dvmi')
-   : join(homedir(), '.config', 'dvmi')
+  ? join(process.env.XDG_CONFIG_HOME, 'dvmi')
+  : join(homedir(), '.config', 'dvmi')
 
 export const CONFIG_PATH = join(CONFIG_DIR, 'config.json')
 
@@ -26,12 +26,12 @@ const DEFAULTS = {
  * @returns {Promise<CLIConfig>}
  */
 export async function loadConfig(configPath = process.env.DVMI_CONFIG_PATH ?? CONFIG_PATH) {
-  if (!existsSync(configPath)) return { ...DEFAULTS }
+  if (!existsSync(configPath)) return {...DEFAULTS}
   try {
     const raw = await readFile(configPath, 'utf8')
-    return { ...DEFAULTS, ...JSON.parse(raw) }
+    return {...DEFAULTS, ...JSON.parse(raw)}
   } catch {
-    return { ...DEFAULTS }
+    return {...DEFAULTS}
   }
 }
 
@@ -44,7 +44,7 @@ export async function loadConfig(configPath = process.env.DVMI_CONFIG_PATH ?? CO
 export async function saveConfig(config, configPath = CONFIG_PATH) {
   const dir = configPath.replace(/\/[^/]+$/, '')
   if (!existsSync(dir)) {
-    await mkdir(dir, { recursive: true })
+    await mkdir(dir, {recursive: true})
   }
   await writeFile(configPath, JSON.stringify(config, null, 2), 'utf8')
   await chmod(configPath, 0o600)
@@ -66,11 +66,11 @@ export function configExists(configPath = CONFIG_PATH) {
  * @returns {CLIConfig}
  */
 export function loadConfigSync(configPath = process.env.DVMI_CONFIG_PATH ?? CONFIG_PATH) {
-  if (!existsSync(configPath)) return { ...DEFAULTS }
+  if (!existsSync(configPath)) return {...DEFAULTS}
   try {
     const raw = readFileSync(configPath, 'utf8')
-    return { ...DEFAULTS, ...JSON.parse(raw) }
+    return {...DEFAULTS, ...JSON.parse(raw)}
   } catch {
-    return { ...DEFAULTS }
+    return {...DEFAULTS}
   }
 }
