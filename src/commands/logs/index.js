@@ -1,9 +1,9 @@
-import { Command, Flags } from '@oclif/core'
+import {Command, Flags} from '@oclif/core'
 import ora from 'ora'
-import { search, input } from '@inquirer/prompts'
-import { listLogGroups, filterLogEvents, sinceToEpochMs } from '../../services/cloudwatch-logs.js'
-import { loadConfig } from '../../services/config.js'
-import { DvmiError } from '../../utils/errors.js'
+import {search, input} from '@inquirer/prompts'
+import {listLogGroups, filterLogEvents, sinceToEpochMs} from '../../services/cloudwatch-logs.js'
+import {loadConfig} from '../../services/config.js'
+import {DvmiError} from '../../utils/errors.js'
 
 const SINCE_OPTIONS = ['1h', '24h', '7d']
 
@@ -44,7 +44,7 @@ export default class Logs extends Command {
   }
 
   async run() {
-    const { flags } = await this.parse(Logs)
+    const {flags} = await this.parse(Logs)
     const isJson = flags.json
 
     // Validate --limit
@@ -86,9 +86,7 @@ export default class Logs extends Command {
           message: 'Select a log group',
           source: async (input) => {
             const term = (input ?? '').toLowerCase()
-            return groups
-              .filter((g) => g.name.toLowerCase().includes(term))
-              .map((g) => ({ name: g.name, value: g.name }))
+            return groups.filter((g) => g.name.toLowerCase().includes(term)).map((g) => ({name: g.name, value: g.name}))
           },
         })
 
@@ -102,7 +100,7 @@ export default class Logs extends Command {
       }
     }
 
-    const { startTime, endTime } = sinceToEpochMs(/** @type {'1h'|'24h'|'7d'} */ (flags.since))
+    const {startTime, endTime} = sinceToEpochMs(/** @type {'1h'|'24h'|'7d'} */ (flags.since))
 
     const fetchSpinner = isJson ? null : ora('Fetching log events...').start()
 
@@ -171,14 +169,10 @@ export default class Logs extends Command {
   _handleAwsError(err, _region, _logGroupName) {
     const msg = String(err)
     if (msg.includes('AccessDenied') || msg.includes('UnauthorizedAccess')) {
-      this.error(
-        'Access denied. Ensure your role has logs:DescribeLogGroups and logs:FilterLogEvents permissions.',
-      )
+      this.error('Access denied. Ensure your role has logs:DescribeLogGroups and logs:FilterLogEvents permissions.')
     }
     if (msg.includes('ResourceNotFoundException')) {
-      this.error(
-        `Log group not found. Check the name and confirm you are using the correct region (--region).`,
-      )
+      this.error(`Log group not found. Check the name and confirm you are using the correct region (--region).`)
     }
     if (msg.includes('InvalidParameterException')) {
       this.error('Invalid filter pattern or parameter. Check the pattern syntax and time range.')

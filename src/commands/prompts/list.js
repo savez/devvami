@@ -1,10 +1,10 @@
-import { Command, Flags } from '@oclif/core'
+import {Command, Flags} from '@oclif/core'
 import ora from 'ora'
 import chalk from 'chalk'
-import { select } from '@inquirer/prompts'
-import { listPrompts } from '../../services/prompts.js'
-import { formatPromptTable, formatPromptBody } from '../../formatters/prompts.js'
-import { DvmiError } from '../../utils/errors.js'
+import {select} from '@inquirer/prompts'
+import {listPrompts} from '../../services/prompts.js'
+import {formatPromptTable, formatPromptBody} from '../../formatters/prompts.js'
+import {DvmiError} from '../../utils/errors.js'
 
 /** @import { Prompt } from '../../types.js' */
 
@@ -27,7 +27,7 @@ export default class PromptsList extends Command {
   }
 
   async run() {
-    const { flags } = await this.parse(PromptsList)
+    const {flags} = await this.parse(PromptsList)
     const isJson = flags.json
 
     const spinner = isJson
@@ -45,7 +45,7 @@ export default class PromptsList extends Command {
     } catch (err) {
       spinner?.fail()
       if (err instanceof DvmiError) {
-        this.error(err.message, { exit: err.exitCode, suggestions: [err.hint] })
+        this.error(err.message, {exit: err.exitCode, suggestions: [err.hint]})
       }
       throw err
     }
@@ -65,7 +65,7 @@ export default class PromptsList extends Command {
       : prompts
 
     if (isJson) {
-      return { prompts: filtered, total: filtered.length }
+      return {prompts: filtered, total: filtered.length}
     }
 
     if (filtered.length === 0) {
@@ -73,7 +73,7 @@ export default class PromptsList extends Command {
         ? chalk.dim(`No prompts matching "${flags.filter}".`)
         : chalk.yellow('No prompts found in the repository.')
       this.log(msg)
-      return { prompts: [], total: 0 }
+      return {prompts: [], total: 0}
     }
 
     const filterInfo = query ? chalk.dim(`  —  filter: ${chalk.white(`"${flags.filter}"`)}`) : ''
@@ -87,8 +87,8 @@ export default class PromptsList extends Command {
 
     // Interactive selection to view full prompt content
     try {
-      const choices = filtered.map((p) => ({ name: p.title, value: p }))
-      choices.push({ name: chalk.dim('← Exit'), value: /** @type {Prompt} */ (null) })
+      const choices = filtered.map((p) => ({name: p.title, value: p}))
+      choices.push({name: chalk.dim('← Exit'), value: /** @type {Prompt} */ (null)})
 
       const selected = await select({
         message: 'Select a prompt to view its content (or Exit):',
@@ -102,6 +102,6 @@ export default class PromptsList extends Command {
       // User pressed Ctrl+C — exit gracefully
     }
 
-    return { prompts: filtered, total: filtered.length }
+    return {prompts: filtered, total: filtered.length}
   }
 }

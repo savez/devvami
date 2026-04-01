@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { runCli } from './helpers.js'
+import {describe, it, expect} from 'vitest'
+import {runCli} from './helpers.js'
 
 const commands = [
   ['--help'],
@@ -40,7 +40,7 @@ const commands = [
 describe('--help output', () => {
   for (const args of commands) {
     it(`dvmi ${args.join(' ')}`, async () => {
-      const { stdout, exitCode } = await runCli(args)
+      const {stdout, exitCode} = await runCli(args)
       expect(exitCode).toBe(0)
       expect(stdout.length).toBeGreaterThan(10)
       expect(stdout).toContain('USAGE')
@@ -49,7 +49,7 @@ describe('--help output', () => {
 
   // T022 (US3): branch create must not appear in top-level --help
   it('dvmi --help does not list branch create', async () => {
-    const { stdout, exitCode } = await runCli(['--help'])
+    const {stdout, exitCode} = await runCli(['--help'])
     expect(exitCode).toBe(0)
     expect(stdout).not.toContain('branch create')
   })

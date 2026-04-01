@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { barChart, lineChart } from '../../../src/formatters/charts.js'
+import {describe, it, expect} from 'vitest'
+import {barChart, lineChart} from '../../../src/formatters/charts.js'
 
 /** @type {import('../../../src/formatters/charts.js').ChartSeries} */
 const singleSeries = {
@@ -23,7 +23,7 @@ describe('barChart', () => {
   })
 
   it('includes the title when provided', () => {
-    const result = barChart([singleSeries], { title: 'My Cost Chart' })
+    const result = barChart([singleSeries], {title: 'My Cost Chart'})
     expect(result).toContain('My Cost Chart')
   })
 
@@ -44,13 +44,13 @@ describe('barChart', () => {
   })
 
   it('handles a series with all-zero values without errors', () => {
-    const zeroSeries = { name: 'Empty', values: [0, 0, 0], labels: ['2026-01-01', '2026-01-02', '2026-01-03'] }
+    const zeroSeries = {name: 'Empty', values: [0, 0, 0], labels: ['2026-01-01', '2026-01-02', '2026-01-03']}
     const result = barChart([zeroSeries])
     expect(typeof result).toBe('string')
   })
 
   it('respects the width option', () => {
-    const result = barChart([singleSeries], { width: 60 })
+    const result = barChart([singleSeries], {width: 60})
     const lines = result.split('\n')
     // No line should far exceed the requested width (accounting for ANSI escape codes stripped)
     expect(lines.length).toBeGreaterThan(0)
@@ -65,7 +65,7 @@ describe('lineChart', () => {
   })
 
   it('includes the title when provided', () => {
-    const result = lineChart([singleSeries], { title: 'My Trend' })
+    const result = lineChart([singleSeries], {title: 'My Trend'})
     expect(result).toContain('My Trend')
   })
 
@@ -81,7 +81,7 @@ describe('lineChart', () => {
   })
 
   it('handles single data point without errors', () => {
-    const onePt = { name: 'EC2', values: [42], labels: ['2026-01-01'] }
+    const onePt = {name: 'EC2', values: [42], labels: ['2026-01-01']}
     const result = lineChart([onePt])
     expect(typeof result).toBe('string')
   })

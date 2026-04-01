@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { runCli } from './helpers.js'
+import {describe, it, expect} from 'vitest'
+import {runCli} from './helpers.js'
 
 describe('dvmi doctor', () => {
   it('exits 0 and returns checks', async () => {
-    const { stdout, exitCode } = await runCli(['doctor', '--json'])
+    const {stdout, exitCode} = await runCli(['doctor', '--json'])
     expect(exitCode).toBe(0)
     const data = JSON.parse(stdout)
     expect(data.checks.length).toBeGreaterThan(0)
@@ -16,7 +16,7 @@ describe('dvmi doctor', () => {
   })
 
   it('includes Node.js check', async () => {
-    const { stdout } = await runCli(['doctor', '--json'])
+    const {stdout} = await runCli(['doctor', '--json'])
     const data = JSON.parse(stdout)
     const nodeCheck = data.checks.find((c) => c.name === 'Node.js')
     expect(nodeCheck).toBeDefined()
@@ -24,12 +24,12 @@ describe('dvmi doctor', () => {
   })
 
   it('summary counts match checks', async () => {
-    const { stdout } = await runCli(['doctor', '--json'])
+    const {stdout} = await runCli(['doctor', '--json'])
     const data = JSON.parse(stdout)
-    const expected = data.checks.reduce(
-      (acc, c) => { acc[c.status] = (acc[c.status] ?? 0) + 1; return acc },
-      {},
-    )
+    const expected = data.checks.reduce((acc, c) => {
+      acc[c.status] = (acc[c.status] ?? 0) + 1
+      return acc
+    }, {})
     expect(data.summary.ok).toBe(expected.ok ?? 0)
     expect(data.summary.warn).toBe(expected.warn ?? 0)
     expect(data.summary.fail).toBe(expected.fail ?? 0)

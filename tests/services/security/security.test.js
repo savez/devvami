@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { writeFile, unlink, mkdtemp } from 'node:fs/promises'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
+import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest'
+import {writeFile, unlink, mkdtemp} from 'node:fs/promises'
+import {join} from 'node:path'
+import {tmpdir} from 'node:os'
 
 // We mock shell.js before importing security.js
 vi.mock('../../../src/services/shell.js', () => ({
@@ -10,8 +10,8 @@ vi.mock('../../../src/services/shell.js', () => ({
   execOrThrow: vi.fn(),
 }))
 
-import { checkToolStatus, appendToShellProfile, deriveOverallStatus } from '../../../src/services/security.js'
-import { which, exec } from '../../../src/services/shell.js'
+import {checkToolStatus, appendToShellProfile, deriveOverallStatus} from '../../../src/services/security.js'
+import {which, exec} from '../../../src/services/shell.js'
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -23,7 +23,7 @@ beforeEach(() => {
 describe('checkToolStatus() — macOS', () => {
   it('returns n/a for gpg, pass, gcm on macOS', async () => {
     which.mockResolvedValue(null)
-    exec.mockResolvedValue({ stdout: '', stderr: '', exitCode: 1 })
+    exec.mockResolvedValue({stdout: '', stderr: '', exitCode: 1})
 
     const tools = await checkToolStatus('macos')
     const ids = tools.map((t) => t.id)
@@ -41,9 +41,9 @@ describe('checkToolStatus() — macOS', () => {
   it('aws-vault installed on macOS returns installed', async () => {
     which.mockImplementation((cmd) => (cmd === 'aws-vault' ? '/usr/local/bin/aws-vault' : null))
     exec.mockImplementation((cmd, _args) => {
-      if (cmd === 'aws-vault') return Promise.resolve({ stdout: 'v6.6.2', stderr: '', exitCode: 0 })
-      if (cmd === 'git') return Promise.resolve({ stdout: 'osxkeychain', stderr: '', exitCode: 0 })
-      return Promise.resolve({ stdout: '', stderr: '', exitCode: 0 })
+      if (cmd === 'aws-vault') return Promise.resolve({stdout: 'v6.6.2', stderr: '', exitCode: 0})
+      if (cmd === 'git') return Promise.resolve({stdout: 'osxkeychain', stderr: '', exitCode: 0})
+      return Promise.resolve({stdout: '', stderr: '', exitCode: 0})
     })
 
     const tools = await checkToolStatus('macos')
@@ -54,7 +54,7 @@ describe('checkToolStatus() — macOS', () => {
 
   it('aws-vault not installed returns not-installed', async () => {
     which.mockResolvedValue(null)
-    exec.mockResolvedValue({ stdout: '', stderr: '', exitCode: 1 })
+    exec.mockResolvedValue({stdout: '', stderr: '', exitCode: 1})
 
     const tools = await checkToolStatus('macos')
     const awsVault = tools.find((t) => t.id === 'aws-vault')
@@ -65,9 +65,9 @@ describe('checkToolStatus() — macOS', () => {
     which.mockResolvedValue(null)
     exec.mockImplementation((cmd, args) => {
       if (cmd === 'git' && args?.includes('credential.helper')) {
-        return Promise.resolve({ stdout: 'osxkeychain', stderr: '', exitCode: 0 })
+        return Promise.resolve({stdout: 'osxkeychain', stderr: '', exitCode: 0})
       }
-      return Promise.resolve({ stdout: '', stderr: '', exitCode: 1 })
+      return Promise.resolve({stdout: '', stderr: '', exitCode: 1})
     })
 
     const tools = await checkToolStatus('macos')
@@ -79,9 +79,9 @@ describe('checkToolStatus() — macOS', () => {
     which.mockResolvedValue(null)
     exec.mockImplementation((cmd, args) => {
       if (cmd === 'git' && args?.includes('credential.helper')) {
-        return Promise.resolve({ stdout: 'store', stderr: '', exitCode: 0 })
+        return Promise.resolve({stdout: 'store', stderr: '', exitCode: 0})
       }
-      return Promise.resolve({ stdout: '', stderr: '', exitCode: 1 })
+      return Promise.resolve({stdout: '', stderr: '', exitCode: 1})
     })
 
     const tools = await checkToolStatus('macos')
@@ -96,7 +96,7 @@ describe('checkToolStatus() — macOS', () => {
 describe('checkToolStatus() — Linux', () => {
   it('returns n/a for osxkeychain on Linux', async () => {
     which.mockResolvedValue(null)
-    exec.mockResolvedValue({ stdout: '', stderr: '', exitCode: 1 })
+    exec.mockResolvedValue({stdout: '', stderr: '', exitCode: 1})
 
     const tools = await checkToolStatus('linux')
     const ks = tools.find((t) => t.id === 'osxkeychain')
@@ -109,8 +109,8 @@ describe('checkToolStatus() — Linux', () => {
 
     which.mockImplementation((cmd) => (cmd === 'aws-vault' ? '/usr/local/bin/aws-vault' : null))
     exec.mockImplementation((cmd) => {
-      if (cmd === 'aws-vault') return Promise.resolve({ stdout: 'v6.6.2', stderr: '', exitCode: 0 })
-      return Promise.resolve({ stdout: '', stderr: '', exitCode: 1 })
+      if (cmd === 'aws-vault') return Promise.resolve({stdout: 'v6.6.2', stderr: '', exitCode: 0})
+      return Promise.resolve({stdout: '', stderr: '', exitCode: 1})
     })
 
     const tools = await checkToolStatus('linux')
@@ -125,8 +125,8 @@ describe('checkToolStatus() — Linux', () => {
 
     which.mockImplementation((cmd) => (cmd === 'aws-vault' ? '/usr/local/bin/aws-vault' : null))
     exec.mockImplementation((cmd) => {
-      if (cmd === 'aws-vault') return Promise.resolve({ stdout: 'v6.6.2', stderr: '', exitCode: 0 })
-      return Promise.resolve({ stdout: '', stderr: '', exitCode: 0 })
+      if (cmd === 'aws-vault') return Promise.resolve({stdout: 'v6.6.2', stderr: '', exitCode: 0})
+      return Promise.resolve({stdout: '', stderr: '', exitCode: 0})
     })
 
     const tools = await checkToolStatus('linux')
@@ -139,11 +139,11 @@ describe('checkToolStatus() — Linux', () => {
   it('gcm misconfigured when credential.credentialStore != gpg', async () => {
     which.mockImplementation((cmd) => (cmd === 'git-credential-manager' ? '/usr/bin/git-credential-manager' : null))
     exec.mockImplementation((cmd, args) => {
-      if (cmd === 'git-credential-manager') return Promise.resolve({ stdout: '2.4.1', stderr: '', exitCode: 0 })
+      if (cmd === 'git-credential-manager') return Promise.resolve({stdout: '2.4.1', stderr: '', exitCode: 0})
       if (cmd === 'git' && args?.includes('credential.credentialStore')) {
-        return Promise.resolve({ stdout: 'plaintext', stderr: '', exitCode: 0 })
+        return Promise.resolve({stdout: 'plaintext', stderr: '', exitCode: 0})
       }
-      return Promise.resolve({ stdout: '', stderr: '', exitCode: 1 })
+      return Promise.resolve({stdout: '', stderr: '', exitCode: 1})
     })
 
     const tools = await checkToolStatus('linux')
@@ -179,7 +179,7 @@ describe('appendToShellProfile()', () => {
     await writeFile(profilePath, '# existing\n')
     await appendToShellProfile('export AWS_VAULT_BACKEND=pass')
 
-    const { readFile } = await import('node:fs/promises')
+    const {readFile} = await import('node:fs/promises')
     const contents = await readFile(profilePath, 'utf8')
     expect(contents).toContain('export AWS_VAULT_BACKEND=pass')
   })
@@ -189,7 +189,7 @@ describe('appendToShellProfile()', () => {
     await appendToShellProfile('export AWS_VAULT_BACKEND=pass')
     await appendToShellProfile('export AWS_VAULT_BACKEND=pass')
 
-    const { readFile } = await import('node:fs/promises')
+    const {readFile} = await import('node:fs/promises')
     const contents = await readFile(profilePath, 'utf8')
     const count = (contents.match(/export AWS_VAULT_BACKEND=pass/g) ?? []).length
     expect(count).toBe(1)
@@ -202,40 +202,38 @@ describe('appendToShellProfile()', () => {
 describe('deriveOverallStatus()', () => {
   it('returns success when all applicable tools are installed', () => {
     const tools = [
-      { id: 'aws-vault', displayName: 'aws-vault', status: 'installed', version: '6.6.2', hint: null },
-      { id: 'gcm', displayName: 'GCM', status: 'n/a', version: null, hint: null },
-      { id: 'osxkeychain', displayName: 'Keychain', status: 'installed', version: null, hint: null },
+      {id: 'aws-vault', displayName: 'aws-vault', status: 'installed', version: '6.6.2', hint: null},
+      {id: 'gcm', displayName: 'GCM', status: 'n/a', version: null, hint: null},
+      {id: 'osxkeychain', displayName: 'Keychain', status: 'installed', version: null, hint: null},
     ]
     expect(deriveOverallStatus(tools)).toBe('success')
   })
 
   it('returns partial when some tools are installed and some are not', () => {
     const tools = [
-      { id: 'aws-vault', displayName: 'aws-vault', status: 'installed', version: '6.6.2', hint: null },
-      { id: 'osxkeychain', displayName: 'Keychain', status: 'not-installed', version: null, hint: null },
+      {id: 'aws-vault', displayName: 'aws-vault', status: 'installed', version: '6.6.2', hint: null},
+      {id: 'osxkeychain', displayName: 'Keychain', status: 'not-installed', version: null, hint: null},
     ]
     expect(deriveOverallStatus(tools)).toBe('partial')
   })
 
   it('returns not-configured when no applicable tools are installed', () => {
     const tools = [
-      { id: 'aws-vault', displayName: 'aws-vault', status: 'not-installed', version: null, hint: null },
-      { id: 'osxkeychain', displayName: 'Keychain', status: 'not-installed', version: null, hint: null },
+      {id: 'aws-vault', displayName: 'aws-vault', status: 'not-installed', version: null, hint: null},
+      {id: 'osxkeychain', displayName: 'Keychain', status: 'not-installed', version: null, hint: null},
     ]
     expect(deriveOverallStatus(tools)).toBe('not-configured')
   })
 
   it('returns not-configured when all tools are n/a', () => {
-    const tools = [
-      { id: 'gcm', displayName: 'GCM', status: 'n/a', version: null, hint: null },
-    ]
+    const tools = [{id: 'gcm', displayName: 'GCM', status: 'n/a', version: null, hint: null}]
     expect(deriveOverallStatus(tools)).toBe('not-configured')
   })
 
   it('treats misconfigured as not-installed for partial calculation', () => {
     const tools = [
-      { id: 'aws-vault', displayName: 'aws-vault', status: 'misconfigured', version: null, hint: null },
-      { id: 'osxkeychain', displayName: 'Keychain', status: 'installed', version: null, hint: null },
+      {id: 'aws-vault', displayName: 'aws-vault', status: 'misconfigured', version: null, hint: null},
+      {id: 'osxkeychain', displayName: 'Keychain', status: 'installed', version: null, hint: null},
     ]
     expect(deriveOverallStatus(tools)).toBe('partial')
   })

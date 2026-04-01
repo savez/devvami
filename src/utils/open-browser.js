@@ -1,6 +1,6 @@
 import open from 'open'
-import { detectPlatform } from '../services/platform.js'
-import { exec } from '../services/shell.js'
+import {detectPlatform} from '../services/platform.js'
+import {exec} from '../services/shell.js'
 
 /**
  * Open a URL in the default browser, using the platform-appropriate command.
@@ -8,7 +8,7 @@ import { exec } from '../services/shell.js'
  * @returns {Promise<void>}
  */
 export async function openBrowser(url) {
-  const { platform, openCommand } = await detectPlatform()
+  const {platform, openCommand} = await detectPlatform()
 
   if (platform === 'macos') {
     await open(url)

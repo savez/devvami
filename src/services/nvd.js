@@ -1,13 +1,12 @@
-import { loadConfig } from './config.js'
-import { DvmiError } from '../utils/errors.js'
+import {loadConfig} from './config.js'
+import {DvmiError} from '../utils/errors.js'
 
 /** @import { CveSearchResult, CveDetail } from '../types.js' */
 
 const NVD_BASE_URL = 'https://services.nvd.nist.gov/rest/json/cves/2.0'
 
 /** NVD attribution required in all interactive output. */
-export const NVD_ATTRIBUTION =
-  'This product uses data from the NVD API but is not endorsed or certified by the NVD.'
+export const NVD_ATTRIBUTION = 'This product uses data from the NVD API but is not endorsed or certified by the NVD.'
 
 /**
  * Normalize a raw NVD severity string to the 4-tier canonical form.
@@ -31,11 +30,7 @@ export function normalizeSeverity(raw) {
  * @returns {{ score: number|null, severity: string, vector: string|null }}
  */
 function extractCvss(metrics) {
-  const sources = [
-    (metrics?.cvssMetricV31 ?? []),
-    (metrics?.cvssMetricV40 ?? []),
-    (metrics?.cvssMetricV2 ?? []),
-  ]
+  const sources = [metrics?.cvssMetricV31 ?? [], metrics?.cvssMetricV40 ?? [], metrics?.cvssMetricV2 ?? []]
 
   for (const list of sources) {
     if (Array.isArray(list) && list.length > 0) {
@@ -50,7 +45,7 @@ function extractCvss(metrics) {
     }
   }
 
-  return { score: null, severity: 'Unknown', vector: null }
+  return {score: null, severity: 'Unknown', vector: null}
 }
 
 /**
@@ -88,15 +83,12 @@ function buildParams(params) {
 async function nvdFetch(params, apiKey) {
   const url = `${NVD_BASE_URL}?${params.toString()}`
   /** @type {Record<string, string>} */
-  const headers = { Accept: 'application/json' }
+  const headers = {Accept: 'application/json'}
   if (apiKey) headers['apiKey'] = apiKey
 
-  const res = await fetch(url, { headers })
+  const res = await fetch(url, {headers})
   if (!res.ok) {
-    throw new DvmiError(
-      `NVD API returned HTTP ${res.status}`,
-      'Check your network connection or try again later.',
-    )
+    throw new DvmiError(`NVD API returned HTTP ${res.status}`, 'Check your network connection or try again later.')
   }
   return res.json()
 }
@@ -108,7 +100,7 @@ async function nvdFetch(params, apiKey) {
  */
 function parseCveSearchResult(raw) {
   const cve = raw.cve
-  const { score, severity } = extractCvss(cve.metrics ?? {})
+  const {score, severity} = extractCvss(cve.metrics ?? {})
   return {
     id: cve.id,
     description: getEnDescription(cve.descriptions),
@@ -127,7 +119,7 @@ function parseCveSearchResult(raw) {
  */
 function parseCveDetail(raw) {
   const cve = raw.cve
-  const { score, severity, vector } = extractCvss(cve.metrics ?? {})
+  const {score, severity, vector} = extractCvss(cve.metrics ?? {})
 
   // Weaknesses: flatten all CWE descriptions
   const weaknesses = (cve.weaknesses ?? []).flatMap((w) =>
@@ -149,10 +141,11 @@ function parseCveDetail(raw) {
           const product = parts[4] ?? 'unknown'
           const versionStart = m.versionStartIncluding ?? m.versionStartExcluding ?? ''
           const versionEnd = m.versionEndExcluding ?? m.versionEndIncluding ?? ''
-          const versions = versionStart && versionEnd
-            ? `${versionStart} to ${versionEnd}`
-            : versionStart || versionEnd || (parts[5] ?? '*')
-          return { vendor, product, versions }
+          const versions =
+            versionStart && versionEnd
+              ? `${versionStart} to ${versionEnd}`
+              : versionStart || versionEnd || (parts[5] ?? '*')
+          return {vendor, product, versions}
         }),
     ),
   )
@@ -188,7 +181,7 @@ function parseCveDetail(raw) {
  * @param {number} [options.limit=20] - Maximum results to return
  * @returns {Promise<{ results: CveSearchResult[], totalResults: number }>}
  */
-export async function searchCves({ keyword, days = 14, severity, limit = 20 }) {
+export async function searchCves({keyword, days = 14, severity, limit = 20}) {
   const config = await loadConfig()
   const apiKey = config.nvd?.apiKey
 
@@ -202,17 +195,17 @@ export async function searchCves({ keyword, days = 14, severity, limit = 20 }) {
   const trimmedKeyword = keyword?.trim()
 
   const params = buildParams({
-    ...(trimmedKeyword ? { keywordSearch: trimmedKeyword } : {}),
+    ...(trimmedKeyword ? {keywordSearch: trimmedKeyword} : {}),
     pubStartDate,
     pubEndDate,
     resultsPerPage: limit,
-    ...(severity ? { cvssV3Severity: severity.toUpperCase() } : {}),
+    ...(severity ? {cvssV3Severity: severity.toUpperCase()} : {}),
   })
 
   const data = /** @type {any} */ (await nvdFetch(params, apiKey))
 
   const results = (data.vulnerabilities ?? []).map(parseCveSearchResult)
-  return { results, totalResults: data.totalResults ?? results.length }
+  return {results, totalResults: data.totalResults ?? results.length}
 }
 
 /**
@@ -231,14 +224,11 @@ export async function getCveDetail(cveId) {
   const config = await loadConfig()
   const apiKey = config.nvd?.apiKey
 
-  const params = buildParams({ cveId: cveId.toUpperCase() })
+  const params = buildParams({cveId: cveId.toUpperCase()})
   const data = /** @type {any} */ (await nvdFetch(params, apiKey))
 
   if (!data.vulnerabilities || data.vulnerabilities.length === 0) {
-    throw new DvmiError(
-      `CVE not found: ${cveId}`,
-      'Verify the CVE ID is correct and exists in the NVD database.',
-    )
+    throw new DvmiError(`CVE not found: ${cveId}`, 'Verify the CVE ID is correct and exists in the NVD database.')
   }
 
   return parseCveDetail(data.vulnerabilities[0])

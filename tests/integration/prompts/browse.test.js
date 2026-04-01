@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { runCli, runCliWithMockGitHub, createMockServer, jsonResponse } from '../helpers.js'
+import {describe, it, expect, beforeAll, afterAll} from 'vitest'
+import {runCli, runCliWithMockGitHub, createMockServer, jsonResponse} from '../helpers.js'
 
 function toBase64(str) {
   return Buffer.from(str, 'utf8').toString('base64')
@@ -37,10 +37,10 @@ beforeAll(async () => {
     }
 
     if (req.method === 'GET' && path === '/user') {
-      return jsonResponse(res, { login: 'testdev', id: 1 })
+      return jsonResponse(res, {login: 'testdev', id: 1})
     }
 
-    return jsonResponse(res, { message: 'Not Found' }, 404)
+    return jsonResponse(res, {message: 'Not Found'}, 404)
   })
 
   // Mock skills.sh API
@@ -51,13 +51,13 @@ beforeAll(async () => {
         query: url.searchParams.get('q') ?? '',
         searchType: 'fuzzy',
         skills: [
-          { id: 'code-review', name: 'Code Review', description: 'Review code', installs: 1200 },
-          { id: 'sql-gen', name: 'SQL Generator', description: 'Generate SQL', installs: 800 },
+          {id: 'code-review', name: 'Code Review', description: 'Review code', installs: 1200},
+          {id: 'sql-gen', name: 'SQL Generator', description: 'Generate SQL', installs: 800},
         ],
         count: 2,
       })
     }
-    return jsonResponse(res, { message: 'Not Found' }, 404)
+    return jsonResponse(res, {message: 'Not Found'}, 404)
   })
 })
 
@@ -67,19 +67,19 @@ afterAll(async () => {
 
 describe('dvmi prompts browse', () => {
   it('--help exits 0 and shows usage', async () => {
-    const { stdout, exitCode } = await runCli(['prompts', 'browse', '--help'])
+    const {stdout, exitCode} = await runCli(['prompts', 'browse', '--help'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('USAGE')
     expect(stdout).toContain('prompts browse')
   })
 
   it('--help shows source argument', async () => {
-    const { stdout } = await runCli(['prompts', 'browse', '--help'])
+    const {stdout} = await runCli(['prompts', 'browse', '--help'])
     expect(stdout).toContain('SOURCE')
   })
 
   it('browse skills --json returns skills array', async () => {
-    const { stdout, exitCode } = await runCli(['prompts', 'browse', 'skills', '--query', 'review', '--json'], {
+    const {stdout, exitCode} = await runCli(['prompts', 'browse', 'skills', '--query', 'review', '--json'], {
       SKILLS_SH_BASE_URL: `http://127.0.0.1:${skillsMock.port}`,
     })
     expect(exitCode).toBe(0)
@@ -97,7 +97,7 @@ describe('dvmi prompts browse', () => {
   })
 
   it('browse skills without --query exits non-zero with actionable error', async () => {
-    const { stdout, stderr, exitCode } = await runCli(['prompts', 'browse', 'skills', '--json'], {
+    const {stdout, stderr, exitCode} = await runCli(['prompts', 'browse', 'skills', '--json'], {
       SKILLS_SH_BASE_URL: `http://127.0.0.1:${skillsMock.port}`,
     })
     expect(exitCode).not.toBe(0)
@@ -106,7 +106,7 @@ describe('dvmi prompts browse', () => {
   })
 
   it('browse awesome --json returns entries array', async () => {
-    const { stdout, exitCode } = await runCliWithMockGitHub(
+    const {stdout, exitCode} = await runCliWithMockGitHub(
       ['prompts', 'browse', 'awesome', '--category', 'agents', '--json'],
       githubMock.port,
     )
@@ -125,7 +125,7 @@ describe('dvmi prompts browse', () => {
   })
 
   it('exits non-zero with invalid source argument', async () => {
-    const { exitCode } = await runCli(['prompts', 'browse', 'invalid-source', '--json'])
+    const {exitCode} = await runCli(['prompts', 'browse', 'invalid-source', '--json'])
     expect(exitCode).not.toBe(0)
   })
 })

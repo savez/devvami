@@ -18,7 +18,7 @@ import yaml from 'js-yaml'
 export function parseFrontmatter(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)---\r?\n?([\s\S]*)$/)
   if (!match) {
-    return { frontmatter: {}, body: content }
+    return {frontmatter: {}, body: content}
   }
   const rawYaml = match[1]
   const body = match[2] ?? ''
@@ -28,9 +28,9 @@ export function parseFrontmatter(content) {
       parsed && typeof parsed === 'object' && !Array.isArray(parsed)
         ? /** @type {Record<string, unknown>} */ (parsed)
         : {}
-    return { frontmatter, body }
+    return {frontmatter, body}
   } catch {
-    return { frontmatter: {}, body: content }
+    return {frontmatter: {}, body: content}
   }
 }
 
@@ -47,6 +47,6 @@ export function serializeFrontmatter(frontmatter, body) {
   if (!frontmatter || Object.keys(frontmatter).length === 0) {
     return body
   }
-  const yamlStr = yaml.dump(frontmatter, { lineWidth: -1 }).trimEnd()
+  const yamlStr = yaml.dump(frontmatter, {lineWidth: -1}).trimEnd()
   return `---\n${yamlStr}\n---\n${body}`
 }

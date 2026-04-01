@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { runCli, runCliJson } from './helpers.js'
+import {describe, it, expect} from 'vitest'
+import {runCli, runCliJson} from './helpers.js'
 
 // Tests that call the real ClickUp API require a token in the keychain.
 // In CI there are no real credentials, so we skip those tests.
@@ -7,7 +7,7 @@ const isCI = Boolean(process.env.CI)
 
 describe('tasks assigned', () => {
   it.skipIf(isCI)('shows assigned tasks table with Lista and Cartella columns', async () => {
-    const { stdout, exitCode } = await runCli(['tasks', 'assigned'])
+    const {stdout, exitCode} = await runCli(['tasks', 'assigned'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('Your assigned tasks')
     expect(stdout).toContain('Lista')
@@ -29,7 +29,7 @@ describe('tasks assigned', () => {
   })
 
   it('--help shows command description', async () => {
-    const { stdout, exitCode } = await runCli(['tasks', 'assigned', '--help'])
+    const {stdout, exitCode} = await runCli(['tasks', 'assigned', '--help'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('assigned')
   })

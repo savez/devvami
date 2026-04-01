@@ -1,7 +1,7 @@
-import { createOctokit } from './github.js'
-import { exec } from './shell.js'
-import { isOpenApi, isAsyncApi } from '../formatters/openapi.js'
-import { load } from 'js-yaml'
+import {createOctokit} from './github.js'
+import {exec} from './shell.js'
+import {isOpenApi, isAsyncApi} from '../formatters/openapi.js'
+import {load} from 'js-yaml'
 
 /** @import { DocumentEntry, RepoDocsIndex, SearchMatch, DetectedRepo } from '../types.js' */
 
@@ -18,7 +18,7 @@ export async function detectCurrentRepo() {
   if (!match) {
     throw new Error('Could not detect GitHub repository from git remote. Use --repo to specify a repository.')
   }
-  return { owner: match[1], repo: match[2] }
+  return {owner: match[1], repo: match[2]}
 }
 
 /**
@@ -27,22 +27,22 @@ export async function detectCurrentRepo() {
  * @returns {DocumentEntry|null}
  */
 function classifyEntry(entry) {
-  const { size } = entry
+  const {size} = entry
   const path = entry.path
   if (size === 0) return null
   const name = path.split('/').pop() ?? path
 
   if (/^readme\.(md|rst|txt)$/i.test(path)) {
-    return { name, path, type: 'readme', size }
+    return {name, path, type: 'readme', size}
   }
   if (/(openapi|swagger)\.(ya?ml|json)$/i.test(path)) {
-    return { name, path, type: 'swagger', size }
+    return {name, path, type: 'swagger', size}
   }
   if (/asyncapi\.(ya?ml|json)$/i.test(path)) {
-    return { name, path, type: 'asyncapi', size }
+    return {name, path, type: 'asyncapi', size}
   }
   if (path.startsWith('docs/') && /\.(md|rst|txt)$/.test(path)) {
-    return { name, path, type: 'doc', size }
+    return {name, path, type: 'doc', size}
   }
   return null
 }
@@ -54,7 +54,7 @@ function classifyEntry(entry) {
  * @returns {number}
  */
 function sortEntries(a, b) {
-  const order = { readme: 0, swagger: 1, asyncapi: 2, doc: 3 }
+  const order = {readme: 0, swagger: 1, asyncapi: 2, doc: 3}
   const diff = order[a.type] - order[b.type]
   return diff !== 0 ? diff : a.path.localeCompare(b.path)
 }
@@ -69,18 +69,18 @@ export async function listDocs(owner, repo) {
   const octokit = await createOctokit()
 
   // 1. Get default branch
-  const { data: repoData } = await octokit.rest.repos.get({ owner, repo })
+  const {data: repoData} = await octokit.rest.repos.get({owner, repo})
   const defaultBranch = repoData.default_branch
 
   // 2. Get HEAD SHA
-  const { data: ref } = await octokit.rest.git.getRef({
+  const {data: ref} = await octokit.rest.git.getRef({
     owner,
     repo,
     ref: `heads/${defaultBranch}`,
   })
 
   // 3. Fetch full recursive tree
-  const { data: tree } = await octokit.rest.git.getTree({
+  const {data: tree} = await octokit.rest.git.getTree({
     owner,
     repo,
     tree_sha: ref.object.sha,
@@ -91,7 +91,7 @@ export async function listDocs(owner, repo) {
   const entries = []
   for (const e of tree.tree) {
     if (e.type !== 'blob') continue
-    const entry = classifyEntry({ path: e.path ?? '', size: e.size ?? 0 })
+    const entry = classifyEntry({path: e.path ?? '', size: e.size ?? 0})
     if (entry) entries.push(entry)
   }
   return entries.sort(sortEntries)
@@ -106,7 +106,7 @@ export async function listDocs(owner, repo) {
  */
 export async function readFile(owner, repo, path) {
   const octokit = await createOctokit()
-  const { data } = await octokit.rest.repos.getContent({ owner, repo, path })
+  const {data} = await octokit.rest.repos.getContent({owner, repo, path})
   if (Array.isArray(data) || data.type !== 'file') {
     throw new Error(`"${path}" is not a file.`)
   }
@@ -198,9 +198,7 @@ export function detectApiSpecType(path, content) {
   if (/asyncapi\.(ya?ml|json)$/i.test(path)) return 'asyncapi'
   // Try to detect from content
   try {
-    const doc = /^\s*\{/.test(content.trim())
-      ? JSON.parse(content)
-      : load(content)
+    const doc = /^\s*\{/.test(content.trim()) ? JSON.parse(content) : load(content)
     if (doc && typeof doc === 'object') {
       if (isOpenApi(/** @type {Record<string, unknown>} */ (doc))) return 'swagger'
       if (isAsyncApi(/** @type {Record<string, unknown>} */ (doc))) return 'asyncapi'
@@ -208,7 +206,8 @@ export function detectApiSpecType(path, content) {
   } catch (err) {
     // File content is not valid YAML/JSON — not an API spec, return null.
     // Log at debug level for troubleshooting without exposing parse errors to users.
-    if (process.env.DVMI_DEBUG) process.stderr.write(`[detectApiSpecType] parse failed: ${/** @type {Error} */ (err).message}\n`)
+    if (process.env.DVMI_DEBUG)
+      process.stderr.write(`[detectApiSpecType] parse failed: ${/** @type {Error} */ (err).message}\n`)
   }
   return null
 }

@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { runCli, runCliJson } from './helpers.js'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import {describe, it, expect} from 'vitest'
+import {runCli, runCliJson} from './helpers.js'
+import {mkdtemp, rm} from 'node:fs/promises'
+import {tmpdir} from 'node:os'
+import {join} from 'node:path'
 
 // Tests that call the real ClickUp API require a token in the keychain.
 // In CI there are no real credentials, so we skip those tests.
@@ -10,7 +10,7 @@ const isCI = Boolean(process.env.CI)
 
 describe('--json flag', () => {
   it('doctor --json returns valid JSON with checks array', async () => {
-    const { stdout, exitCode } = await runCli(['doctor', '--json'])
+    const {stdout, exitCode} = await runCli(['doctor', '--json'])
     expect(exitCode).toBe(0)
     const data = JSON.parse(stdout)
     expect(data).toHaveProperty('checks')
@@ -22,7 +22,7 @@ describe('--json flag', () => {
   })
 
   it('changelog --json returns sections object', async () => {
-    const { stdout, exitCode } = await runCli(['changelog', '--json'])
+    const {stdout, exitCode} = await runCli(['changelog', '--json'])
     // May fail if not in a git repo with tags, but should produce valid JSON or non-zero exit
     if (exitCode === 0) {
       const data = JSON.parse(stdout)
@@ -58,7 +58,7 @@ describe('--json flag', () => {
   })
 
   it('vuln search --json returns valid JSON shape or non-zero exit in offline env', async () => {
-    const { stdout, stderr, exitCode } = await runCli(['vuln', 'search', 'openssl', '--json'])
+    const {stdout, stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--json'])
     if (exitCode === 0) {
       const data = JSON.parse(stdout)
       expect(data).toHaveProperty('keyword', 'openssl')
@@ -70,7 +70,7 @@ describe('--json flag', () => {
   })
 
   it('vuln detail --json returns valid JSON shape or non-zero exit in offline env', async () => {
-    const { stdout, stderr, exitCode } = await runCli(['vuln', 'detail', 'CVE-2021-44228', '--json'])
+    const {stdout, stderr, exitCode} = await runCli(['vuln', 'detail', 'CVE-2021-44228', '--json'])
     if (exitCode === 0) {
       const data = JSON.parse(stdout)
       expect(data).toHaveProperty('id', 'CVE-2021-44228')
@@ -84,7 +84,7 @@ describe('--json flag', () => {
   it('vuln scan --json returns valid JSON shape in empty dir', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'dvmi-json-scan-'))
     try {
-      const { stdout, exitCode } = await runCli(['vuln', 'scan', '--json'], {
+      const {stdout, exitCode} = await runCli(['vuln', 'scan', '--json'], {
         DVMI_SCAN_DIR: tmpDir,
       })
       if (exitCode === 0) {
@@ -95,7 +95,7 @@ describe('--json flag', () => {
         expect(data).toHaveProperty('errors')
       }
     } finally {
-      await rm(tmpDir, { recursive: true, force: true })
+      await rm(tmpDir, {recursive: true, force: true})
     }
   })
 })

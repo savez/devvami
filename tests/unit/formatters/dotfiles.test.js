@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import {describe, it, expect} from 'vitest'
 import {
   formatDotfilesSetup,
   formatDotfilesSummary,
@@ -12,17 +12,17 @@ import {
 // ---------------------------------------------------------------------------
 describe('formatDotfilesSummary()', () => {
   it('formats counts correctly', () => {
-    const result = formatDotfilesSummary({ total: 12, encrypted: 3, plaintext: 9 })
+    const result = formatDotfilesSummary({total: 12, encrypted: 3, plaintext: 9})
     expect(result).toBe('12 total: 9 plaintext, 3 encrypted')
   })
 
   it('handles zero counts', () => {
-    const result = formatDotfilesSummary({ total: 0, encrypted: 0, plaintext: 0 })
+    const result = formatDotfilesSummary({total: 0, encrypted: 0, plaintext: 0})
     expect(result).toBe('0 total: 0 plaintext, 0 encrypted')
   })
 
   it('handles all encrypted', () => {
-    const result = formatDotfilesSummary({ total: 5, encrypted: 5, plaintext: 0 })
+    const result = formatDotfilesSummary({total: 5, encrypted: 5, plaintext: 0})
     expect(result).toBe('5 total: 0 plaintext, 5 encrypted')
   })
 })
@@ -112,10 +112,20 @@ describe('formatDotfilesStatus()', () => {
       repo: 'git@github.com:user/dotfiles.git',
       sourceDir: '/Users/dev/.local/share/chezmoi',
       files: [
-        { path: '/Users/dev/.zshrc', sourcePath: '/Users/dev/.local/share/chezmoi/dot_zshrc', encrypted: false, type: 'file' },
-        { path: '/Users/dev/.ssh/id_ed25519', sourcePath: '/Users/dev/.local/share/chezmoi/encrypted_id_ed25519.age', encrypted: true, type: 'file' },
+        {
+          path: '/Users/dev/.zshrc',
+          sourcePath: '/Users/dev/.local/share/chezmoi/dot_zshrc',
+          encrypted: false,
+          type: 'file',
+        },
+        {
+          path: '/Users/dev/.ssh/id_ed25519',
+          sourcePath: '/Users/dev/.local/share/chezmoi/encrypted_id_ed25519.age',
+          encrypted: true,
+          type: 'file',
+        },
       ],
-      summary: { total: 2, encrypted: 1, plaintext: 1 },
+      summary: {total: 2, encrypted: 1, plaintext: 1},
     })
     expect(result).toContain('macos')
     expect(result).toContain('/Users/dev/.local/share/chezmoi')
@@ -133,7 +143,7 @@ describe('formatDotfilesStatus()', () => {
       repo: null,
       sourceDir: null,
       files: [],
-      summary: { total: 0, encrypted: 0, plaintext: 0 },
+      summary: {total: 0, encrypted: 0, plaintext: 0},
     })
     expect(result).toContain('dvmi dotfiles setup')
   })
@@ -147,7 +157,7 @@ describe('formatDotfilesStatus()', () => {
       repo: null,
       sourceDir: '/Users/dev/.local/share/chezmoi',
       files: [],
-      summary: { total: 0, encrypted: 0, plaintext: 0 },
+      summary: {total: 0, encrypted: 0, plaintext: 0},
     })
     expect(result).toContain('dvmi dotfiles add')
   })
@@ -160,10 +170,8 @@ describe('formatDotfilesStatus()', () => {
       encryptionConfigured: true,
       repo: null,
       sourceDir: null,
-      files: [
-        { path: '/Users/dev/.ssh/id_ed25519', sourcePath: '', encrypted: true, type: 'file' },
-      ],
-      summary: { total: 1, encrypted: 1, plaintext: 0 },
+      files: [{path: '/Users/dev/.ssh/id_ed25519', sourcePath: '', encrypted: true, type: 'file'}],
+      summary: {total: 1, encrypted: 1, plaintext: 0},
     })
     expect(result).toContain('encrypted')
   })
@@ -177,7 +185,7 @@ describe('formatDotfilesStatus()', () => {
       repo: null,
       sourceDir: null,
       files: [],
-      summary: { total: 0, encrypted: 0, plaintext: 0 },
+      summary: {total: 0, encrypted: 0, plaintext: 0},
     })
     expect(result).toContain('not configured')
   })
@@ -191,7 +199,7 @@ describe('formatDotfilesStatus()', () => {
       repo: null,
       sourceDir: null,
       files: [],
-      summary: { total: 0, encrypted: 0, plaintext: 0 },
+      summary: {total: 0, encrypted: 0, plaintext: 0},
     })
     expect(result).toContain('not configured')
   })
@@ -204,8 +212,8 @@ describe('formatDotfilesAdd()', () => {
   it('shows added files with encryption status', () => {
     const result = formatDotfilesAdd({
       added: [
-        { path: '~/.zshrc', encrypted: false },
-        { path: '~/.ssh/id_ed25519', encrypted: true },
+        {path: '~/.zshrc', encrypted: false},
+        {path: '~/.ssh/id_ed25519', encrypted: true},
       ],
       skipped: [],
       rejected: [],
@@ -219,7 +227,7 @@ describe('formatDotfilesAdd()', () => {
   it('shows skipped files with reason', () => {
     const result = formatDotfilesAdd({
       added: [],
-      skipped: [{ path: '~/.bashrc', reason: 'File not found' }],
+      skipped: [{path: '~/.bashrc', reason: 'File not found'}],
       rejected: [],
     })
     expect(result).toContain('~/.bashrc')
@@ -231,7 +239,7 @@ describe('formatDotfilesAdd()', () => {
     const result = formatDotfilesAdd({
       added: [],
       skipped: [],
-      rejected: [{ path: '/mnt/c/Users/dev/.gitconfig', reason: 'Windows filesystem paths not supported on WSL2' }],
+      rejected: [{path: '/mnt/c/Users/dev/.gitconfig', reason: 'Windows filesystem paths not supported on WSL2'}],
     })
     expect(result).toContain('/mnt/c/Users/dev/.gitconfig')
     expect(result).toContain('Windows filesystem paths not supported on WSL2')
@@ -239,7 +247,7 @@ describe('formatDotfilesAdd()', () => {
   })
 
   it('shows no files processed message when all empty', () => {
-    const result = formatDotfilesAdd({ added: [], skipped: [], rejected: [] })
+    const result = formatDotfilesAdd({added: [], skipped: [], rejected: []})
     expect(result).toContain('No files processed')
   })
 })

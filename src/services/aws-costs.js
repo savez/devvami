@@ -1,4 +1,4 @@
-import { CostExplorerClient, GetCostAndUsageCommand } from '@aws-sdk/client-cost-explorer'
+import {CostExplorerClient, GetCostAndUsageCommand} from '@aws-sdk/client-cost-explorer'
 
 /** @import { AWSCostEntry, CostGroupMode, CostTrendSeries } from '../types.js' */
 
@@ -14,18 +14,18 @@ function getPeriodDates(period) {
   if (period === 'last-month') {
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const end = new Date(now.getFullYear(), now.getMonth(), 1)
-    return { start: fmt(start), end: fmt(end) }
+    return {start: fmt(start), end: fmt(end)}
   }
   if (period === 'last-week') {
     const end = new Date(now)
     end.setDate(now.getDate() - now.getDay())
     const start = new Date(end)
     start.setDate(end.getDate() - 7)
-    return { start: fmt(start), end: fmt(end) }
+    return {start: fmt(start), end: fmt(end)}
   }
   // mtd
   const start = new Date(now.getFullYear(), now.getMonth(), 1)
-  return { start: fmt(start), end: fmt(now) }
+  return {start: fmt(start), end: fmt(now)}
 }
 
 /**
@@ -36,7 +36,7 @@ export function getTwoMonthPeriod() {
   const now = new Date()
   const fmt = (d) => d.toISOString().split('T')[0]
   const start = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-  return { start: fmt(start), end: fmt(now) }
+  return {start: fmt(start), end: fmt(now)}
 }
 
 /**
@@ -62,15 +62,15 @@ function stripTagPrefix(rawKey) {
  */
 function buildGroupBy(groupBy, tagKey) {
   if (groupBy === 'service') {
-    return [{ Type: 'DIMENSION', Key: 'SERVICE' }]
+    return [{Type: 'DIMENSION', Key: 'SERVICE'}]
   }
   if (groupBy === 'tag') {
-    return [{ Type: 'TAG', Key: tagKey ?? '' }]
+    return [{Type: 'TAG', Key: tagKey ?? ''}]
   }
   // both
   return [
-    { Type: 'DIMENSION', Key: 'SERVICE' },
-    { Type: 'TAG', Key: tagKey ?? '' },
+    {Type: 'DIMENSION', Key: 'SERVICE'},
+    {Type: 'TAG', Key: tagKey ?? ''},
   ]
 }
 
@@ -85,22 +85,22 @@ function buildGroupBy(groupBy, tagKey) {
  */
 export async function getServiceCosts(serviceName, tags, period = 'last-month', groupBy = 'service', tagKey) {
   // Cost Explorer always uses us-east-1
-  const client = new CostExplorerClient({ region: 'us-east-1' })
-  const { start, end } = getPeriodDates(period)
+  const client = new CostExplorerClient({region: 'us-east-1'})
+  const {start, end} = getPeriodDates(period)
 
   // Build tag filter from project tags
   const tagEntries = Object.entries(tags)
   const filter =
     tagEntries.length === 1
-      ? { Tags: { Key: tagEntries[0][0], Values: [tagEntries[0][1]] } }
+      ? {Tags: {Key: tagEntries[0][0], Values: [tagEntries[0][1]]}}
       : {
           And: tagEntries.map(([k, v]) => ({
-            Tags: { Key: k, Values: [v] },
+            Tags: {Key: k, Values: [v]},
           })),
         }
 
   const command = new GetCostAndUsageCommand({
-    TimePeriod: { Start: start, End: end },
+    TimePeriod: {Start: start, End: end},
     Granularity: 'MONTHLY',
     Metrics: ['UnblendedCost'],
     Filter: filter,
@@ -120,7 +120,7 @@ export async function getServiceCosts(serviceName, tags, period = 'last-month', 
           serviceName: groupBy === 'tag' ? stripTagPrefix(keys[0] ?? '') : (keys[0] ?? 'Unknown'),
           amount,
           unit: group.Metrics?.UnblendedCost?.Unit ?? 'USD',
-          period: { start, end },
+          period: {start, end},
         }
         if (groupBy === 'both') {
           entry.tagValue = stripTagPrefix(keys[1] ?? '')
@@ -132,7 +132,7 @@ export async function getServiceCosts(serviceName, tags, period = 'last-month', 
     }
   }
 
-  return { entries, period: { start, end } }
+  return {entries, period: {start, end}}
 }
 
 /**
@@ -143,8 +143,8 @@ export async function getServiceCosts(serviceName, tags, period = 'last-month', 
  * @returns {Promise<CostTrendSeries[]>}
  */
 export async function getTrendCosts(groupBy = 'service', tagKey) {
-  const client = new CostExplorerClient({ region: 'us-east-1' })
-  const { start, end } = getTwoMonthPeriod()
+  const client = new CostExplorerClient({region: 'us-east-1'})
+  const {start, end} = getTwoMonthPeriod()
 
   /** @type {Map<string, Map<string, number>>} seriesName → date → amount */
   const seriesMap = new Map()
@@ -152,11 +152,11 @@ export async function getTrendCosts(groupBy = 'service', tagKey) {
   let nextPageToken = undefined
   do {
     const command = new GetCostAndUsageCommand({
-      TimePeriod: { Start: start, End: end },
+      TimePeriod: {Start: start, End: end},
       Granularity: 'DAILY',
       Metrics: ['UnblendedCost'],
       GroupBy: buildGroupBy(groupBy, tagKey),
-      ...(nextPageToken ? { NextPageToken: nextPageToken } : {}),
+      ...(nextPageToken ? {NextPageToken: nextPageToken} : {}),
     })
 
     const result = await client.send(command)
@@ -194,9 +194,9 @@ export async function getTrendCosts(groupBy = 'service', tagKey) {
   for (const [name, dateMap] of seriesMap) {
     const points = Array.from(dateMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, amount]) => ({ date, amount }))
+      .map(([date, amount]) => ({date, amount}))
     if (points.some((p) => p.amount > 0)) {
-      series.push({ name, points })
+      series.push({name, points})
     }
   }
 

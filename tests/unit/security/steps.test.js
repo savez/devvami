@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { buildSteps } from '../../../src/services/security.js'
+import {describe, it, expect} from 'vitest'
+import {buildSteps} from '../../../src/services/security.js'
 
 /** @type {import('../../../src/types.js').PlatformInfo} */
-const MACOS = { platform: 'macos', openCommand: 'open', credentialHelper: 'osxkeychain' }
+const MACOS = {platform: 'macos', openCommand: 'open', credentialHelper: 'osxkeychain'}
 /** @type {import('../../../src/types.js').PlatformInfo} */
-const LINUX = { platform: 'linux', openCommand: 'xdg-open', credentialHelper: 'store' }
+const LINUX = {platform: 'linux', openCommand: 'xdg-open', credentialHelper: 'store'}
 /** @type {import('../../../src/types.js').PlatformInfo} */
-const WSL2 = { platform: 'wsl2', openCommand: 'wslview', credentialHelper: 'manager' }
+const WSL2 = {platform: 'wsl2', openCommand: 'wslview', credentialHelper: 'manager'}
 
 describe('buildSteps()', () => {
   // ---------------------------------------------------------------------------
@@ -196,7 +196,7 @@ describe('buildSteps()', () => {
   describe('context.gpgId', () => {
     it('init-pass step run returns skipped when gpgId is provided and pass ls succeeds', async () => {
       // We pass gpgId but can't easily mock pass ls, so just verify step id exists
-      const steps = buildSteps(LINUX, 'aws', { gpgId: 'ABCDEF1234567890' })
+      const steps = buildSteps(LINUX, 'aws', {gpgId: 'ABCDEF1234567890'})
       const initPass = steps.find((s) => s.id === 'init-pass')
       expect(initPass).toBeDefined()
     })

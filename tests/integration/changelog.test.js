@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { runCli } from './helpers.js'
+import {describe, it, expect} from 'vitest'
+import {runCli} from './helpers.js'
 
 describe('dvmi changelog', () => {
   it('--help exits 0', async () => {
-    const { stdout, exitCode } = await runCli(['changelog', '--help'])
+    const {stdout, exitCode} = await runCli(['changelog', '--help'])
     expect(exitCode).toBe(0)
     expect(stdout).toContain('USAGE')
     expect(stdout).toContain('--from')
@@ -11,7 +11,7 @@ describe('dvmi changelog', () => {
   })
 
   it('--json returns sections object', async () => {
-    const { stdout, exitCode } = await runCli(['changelog', '--json'])
+    const {stdout, exitCode} = await runCli(['changelog', '--json'])
     // Works in any git repo
     expect(exitCode).toBe(0)
     const data = JSON.parse(stdout)

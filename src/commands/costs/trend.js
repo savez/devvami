@@ -1,10 +1,10 @@
-import { Command, Flags } from '@oclif/core'
-import { input } from '@inquirer/prompts'
+import {Command, Flags} from '@oclif/core'
+import {input} from '@inquirer/prompts'
 import ora from 'ora'
-import { getTrendCosts, getTwoMonthPeriod } from '../../services/aws-costs.js'
-import { loadConfig } from '../../services/config.js'
-import { barChart, lineChart } from '../../formatters/charts.js'
-import { DvmiError } from '../../utils/errors.js'
+import {getTrendCosts, getTwoMonthPeriod} from '../../services/aws-costs.js'
+import {loadConfig} from '../../services/config.js'
+import {barChart, lineChart} from '../../formatters/charts.js'
+import {DvmiError} from '../../utils/errors.js'
 import {
   awsVaultPrefix,
   isAwsVaultSession,
@@ -42,18 +42,14 @@ export default class CostsTrend extends Command {
   }
 
   async run() {
-    const { flags } = await this.parse(CostsTrend)
+    const {flags} = await this.parse(CostsTrend)
     const isJson = flags.json
     const isInteractive = !isJson && process.stdout.isTTY && process.env.CI !== 'true'
     const groupBy = /** @type {'service'|'tag'|'both'} */ (flags['group-by'])
 
     const config = await loadConfig()
 
-    if (
-      isInteractive &&
-      !isAwsVaultSession() &&
-      process.env.DVMI_AWS_VAULT_REEXEC !== '1'
-    ) {
+    if (isInteractive && !isAwsVaultSession() && process.env.DVMI_AWS_VAULT_REEXEC !== '1') {
       const profile = await input({
         message: 'AWS profile (aws-vault):',
         default: config.awsProfile || process.env.AWS_VAULT || 'default',
@@ -83,10 +79,7 @@ export default class CostsTrend extends Command {
     const tagKey = flags['tag-key'] ?? configTagKey
 
     if ((groupBy === 'tag' || groupBy === 'both') && !tagKey) {
-      throw new DvmiError(
-        'No tag key available.',
-        'Pass --tag-key or configure projectTags in dvmi config.',
-      )
+      throw new DvmiError('No tag key available.', 'Pass --tag-key or configure projectTags in dvmi config.')
     }
 
     const spinner = isJson ? null : ora('Fetching cost trend data...').start()
@@ -95,13 +88,13 @@ export default class CostsTrend extends Command {
       const trendSeries = await getTrendCosts(groupBy, tagKey)
       spinner?.stop()
 
-      const { start, end } = getTwoMonthPeriod()
+      const {start, end} = getTwoMonthPeriod()
 
       if (isJson) {
         return {
           groupBy,
           tagKey: tagKey ?? null,
-          period: { start, end },
+          period: {start, end},
           series: trendSeries,
         }
       }
@@ -113,9 +106,7 @@ export default class CostsTrend extends Command {
 
       // Convert CostTrendSeries[] → ChartSeries[]
       // All series must share the same label (date) axis — use the union of all dates
-      const allDates = Array.from(
-        new Set(trendSeries.flatMap((s) => s.points.map((p) => p.date))),
-      ).sort()
+      const allDates = Array.from(new Set(trendSeries.flatMap((s) => s.points.map((p) => p.date)))).sort()
 
       /** @type {import('../../formatters/charts.js').ChartSeries[]} */
       const chartSeries = trendSeries.map((s) => {
@@ -128,9 +119,7 @@ export default class CostsTrend extends Command {
       })
 
       const title = `AWS Cost Trend — last 2 months  (${start} → ${end})`
-      const rendered = flags.line
-        ? lineChart(chartSeries, { title })
-        : barChart(chartSeries, { title })
+      const rendered = flags.line ? lineChart(chartSeries, {title}) : barChart(chartSeries, {title})
 
       this.log(rendered)
     } catch (err) {

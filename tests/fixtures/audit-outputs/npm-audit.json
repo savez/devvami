@@ -14,14 +14,14 @@
           "url": "https://github.com/advisories/GHSA-p6mc-m468-83gw",
           "severity": "critical",
           "cwe": ["CWE-1321"],
-          "cvss": { "score": 9.8, "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" },
+          "cvss": {"score": 9.8, "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
           "range": "<4.17.21"
         }
       ],
       "effects": [],
       "range": "<4.17.21",
       "nodes": ["node_modules/lodash"],
-      "fixAvailable": { "name": "lodash", "version": "4.17.21", "isSemVerMajor": false }
+      "fixAvailable": {"name": "lodash", "version": "4.17.21", "isSemVerMajor": false}
     },
     "minimist": {
       "name": "minimist",
@@ -36,7 +36,7 @@
           "url": "https://github.com/advisories/GHSA-xvch-5gv4-984h",
           "severity": "high",
           "cwe": ["CWE-1321"],
-          "cvss": { "score": 7.3, "vectorString": null },
+          "cvss": {"score": 7.3, "vectorString": null},
           "range": ">=1.2.2 <1.2.6"
         }
       ],
@@ -55,6 +55,6 @@
       "critical": 1,
       "total": 2
     },
-    "dependencies": { "prod": 50, "dev": 20, "optional": 0, "peer": 0, "peerOptional": 0, "total": 70 }
+    "dependencies": {"prod": 50, "dev": 20, "optional": 0, "peer": 0, "peerOptional": 0, "total": 70}
   }
 }

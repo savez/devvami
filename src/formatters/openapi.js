@@ -1,4 +1,4 @@
-import { load } from 'js-yaml'
+import {load} from 'js-yaml'
 
 /** @import { APIEndpoint, AsyncChannel } from '../types.js' */
 
@@ -45,7 +45,7 @@ export function isAsyncApi(doc) {
 export function parseOpenApi(content) {
   const doc = parseYamlOrJson(content)
   if (!doc || !isOpenApi(doc)) {
-    return { endpoints: [], error: 'Not a valid OpenAPI/Swagger document' }
+    return {endpoints: [], error: 'Not a valid OpenAPI/Swagger document'}
   }
 
   /** @type {APIEndpoint[]} */
@@ -58,9 +58,7 @@ export function parseOpenApi(content) {
       if (!['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method)) continue
       const operation = /** @type {Record<string, unknown>} */ (op)
       const rawParams = /** @type {Array<Record<string, unknown>>} */ (operation.parameters ?? [])
-      const parameters = rawParams
-        .map((p) => (p.required ? `${p.name}*` : String(p.name)))
-        .join(', ')
+      const parameters = rawParams.map((p) => (p.required ? `${p.name}*` : String(p.name))).join(', ')
       endpoints.push({
         method: method.toUpperCase(),
         path,
@@ -70,7 +68,7 @@ export function parseOpenApi(content) {
     }
   }
 
-  return { endpoints, error: null }
+  return {endpoints, error: null}
 }
 
 /**
@@ -81,7 +79,7 @@ export function parseOpenApi(content) {
 export function parseAsyncApi(content) {
   const doc = parseYamlOrJson(content)
   if (!doc || !isAsyncApi(doc)) {
-    return { channels: [], error: 'Not a valid AsyncAPI document' }
+    return {channels: [], error: 'Not a valid AsyncAPI document'}
   }
 
   /** @type {AsyncChannel[]} */
@@ -98,7 +96,7 @@ export function parseAsyncApi(content) {
         return String(ch.$ref ?? '').includes(channelName) || String(ch ?? '') === channelName
       })
       if (matchingOps.length === 0) {
-        channels.push({ channel: channelName, operation: '—', summary: '', message: '—' })
+        channels.push({channel: channelName, operation: '—', summary: '', message: '—'})
       }
       for (const op of matchingOps) {
         const msgTitle = resolveMessageTitle(op.messages)
@@ -129,7 +127,7 @@ export function parseAsyncApi(content) {
     }
   }
 
-  return { channels, error: null }
+  return {channels, error: null}
 }
 
 /**

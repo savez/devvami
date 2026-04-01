@@ -51,9 +51,7 @@ export function renderTable(rows, columns) {
   })
 
   // Header row
-  const header = columns
-    .map((col, i) => chalk.bold.white(col.header.padEnd(widths[i])))
-    .join('  ')
+  const header = columns.map((col, i) => chalk.bold.white(col.header.padEnd(widths[i]))).join('  ')
 
   // Divider
   const divider = chalk.dim(widths.map((w) => '─'.repeat(w)).join('  '))

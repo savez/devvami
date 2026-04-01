@@ -1,8 +1,8 @@
-import { homedir } from 'node:os'
-import { join } from 'node:path'
-import { readFile, appendFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
-import { which, exec, execOrThrow } from './shell.js'
+import {homedir} from 'node:os'
+import {join} from 'node:path'
+import {readFile, appendFile} from 'node:fs/promises'
+import {existsSync} from 'node:fs'
+import {which, exec, execOrThrow} from './shell.js'
 
 /** @import { Platform, PlatformInfo, SecurityTool, SecurityToolStatus, SetupStep, StepResult, GpgKey } from '../types.js' */
 
@@ -74,14 +74,20 @@ export async function checkToolStatus(platform) {
 
   for (const tool of TOOL_DEFINITIONS) {
     if (!tool.platforms.includes(platform)) {
-      results.push({ id: tool.id, displayName: tool.displayName, status: 'n/a', version: null, hint: null })
+      results.push({id: tool.id, displayName: tool.displayName, status: 'n/a', version: null, hint: null})
       continue
     }
 
     if (tool.id === 'aws-vault') {
       const path = await which('aws-vault')
       if (!path) {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'not-installed', version: null, hint: 'Install aws-vault' })
+        results.push({
+          id: tool.id,
+          displayName: tool.displayName,
+          status: 'not-installed',
+          version: null,
+          hint: 'Install aws-vault',
+        })
         continue
       }
       const versionResult = await exec('aws-vault', ['--version'])
@@ -90,30 +96,60 @@ export async function checkToolStatus(platform) {
       if (platform !== 'macos') {
         const backend = process.env.AWS_VAULT_BACKEND
         if (backend !== 'pass') {
-          results.push({ id: tool.id, displayName: tool.displayName, status: 'misconfigured', version: version || null, hint: 'Add export AWS_VAULT_BACKEND=pass to your shell profile' })
+          results.push({
+            id: tool.id,
+            displayName: tool.displayName,
+            status: 'misconfigured',
+            version: version || null,
+            hint: 'Add export AWS_VAULT_BACKEND=pass to your shell profile',
+          })
           continue
         }
       }
-      results.push({ id: tool.id, displayName: tool.displayName, status: 'installed', version: version || null, hint: null })
+      results.push({
+        id: tool.id,
+        displayName: tool.displayName,
+        status: 'installed',
+        version: version || null,
+        hint: null,
+      })
       continue
     }
 
     if (tool.id === 'gpg') {
       const path = await which('gpg')
       if (!path) {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'not-installed', version: null, hint: 'Install gnupg via your package manager' })
+        results.push({
+          id: tool.id,
+          displayName: tool.displayName,
+          status: 'not-installed',
+          version: null,
+          hint: 'Install gnupg via your package manager',
+        })
         continue
       }
       const versionResult = await exec('gpg', ['--version'])
       const match = versionResult.stdout.match(/gpg \(GnuPG\)\s+([\d.]+)/)
-      results.push({ id: tool.id, displayName: tool.displayName, status: 'installed', version: match ? match[1] : null, hint: null })
+      results.push({
+        id: tool.id,
+        displayName: tool.displayName,
+        status: 'installed',
+        version: match ? match[1] : null,
+        hint: null,
+      })
       continue
     }
 
     if (tool.id === 'pass') {
       const path = await which('pass')
       if (!path) {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'not-installed', version: null, hint: 'Install pass via your package manager' })
+        results.push({
+          id: tool.id,
+          displayName: tool.displayName,
+          status: 'not-installed',
+          version: null,
+          hint: 'Install pass via your package manager',
+        })
         continue
       }
       const versionResult = await exec('pass', ['--version'])
@@ -121,19 +157,37 @@ export async function checkToolStatus(platform) {
       // Check if pass is initialized
       const lsResult = await exec('pass', ['ls'])
       if (lsResult.exitCode !== 0) {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'misconfigured', version: match ? match[1] : null, hint: 'Initialize pass with: pass init <gpg-key-id>' })
+        results.push({
+          id: tool.id,
+          displayName: tool.displayName,
+          status: 'misconfigured',
+          version: match ? match[1] : null,
+          hint: 'Initialize pass with: pass init <gpg-key-id>',
+        })
         continue
       }
-      results.push({ id: tool.id, displayName: tool.displayName, status: 'installed', version: match ? match[1] : null, hint: null })
+      results.push({
+        id: tool.id,
+        displayName: tool.displayName,
+        status: 'installed',
+        version: match ? match[1] : null,
+        hint: null,
+      })
       continue
     }
 
     if (tool.id === 'osxkeychain') {
       const result = await exec('git', ['config', '--global', 'credential.helper'])
       if (result.stdout === 'osxkeychain') {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'installed', version: null, hint: null })
+        results.push({id: tool.id, displayName: tool.displayName, status: 'installed', version: null, hint: null})
       } else {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'not-installed', version: null, hint: 'Run: git config --global credential.helper osxkeychain' })
+        results.push({
+          id: tool.id,
+          displayName: tool.displayName,
+          status: 'not-installed',
+          version: null,
+          hint: 'Run: git config --global credential.helper osxkeychain',
+        })
       }
       continue
     }
@@ -141,17 +195,29 @@ export async function checkToolStatus(platform) {
     if (tool.id === 'gcm') {
       const path = await which('git-credential-manager')
       if (!path) {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'not-installed', version: null, hint: 'Install Git Credential Manager' })
+        results.push({
+          id: tool.id,
+          displayName: tool.displayName,
+          status: 'not-installed',
+          version: null,
+          hint: 'Install Git Credential Manager',
+        })
         continue
       }
       const versionResult = await exec('git-credential-manager', ['--version'])
       const version = versionResult.stdout.trim() || null
       const storeResult = await exec('git', ['config', '--global', 'credential.credentialStore'])
       if (storeResult.stdout !== 'gpg') {
-        results.push({ id: tool.id, displayName: tool.displayName, status: 'misconfigured', version, hint: 'Run: git config --global credential.credentialStore gpg' })
+        results.push({
+          id: tool.id,
+          displayName: tool.displayName,
+          status: 'misconfigured',
+          version,
+          hint: 'Run: git config --global credential.credentialStore gpg',
+        })
         continue
       }
-      results.push({ id: tool.id, displayName: tool.displayName, status: 'installed', version, hint: null })
+      results.push({id: tool.id, displayName: tool.displayName, status: 'installed', version, hint: null})
       continue
     }
   }
@@ -267,7 +333,7 @@ export function deriveOverallStatus(tools) {
  * @returns {SetupStep[]}
  */
 export function buildSteps(platformInfo, selection, context = {}) {
-  const { platform } = platformInfo
+  const {platform} = platformInfo
   const includeAws = selection === 'aws' || selection === 'both'
   const includeGit = selection === 'git' || selection === 'both'
 
@@ -291,7 +357,7 @@ export function buildSteps(platformInfo, selection, context = {}) {
               hintUrl: 'https://brew.sh',
             }
           }
-          return { status: 'success', message: 'Homebrew is available' }
+          return {status: 'success', message: 'Homebrew is available'}
         },
       })
 
@@ -303,10 +369,10 @@ export function buildSteps(platformInfo, selection, context = {}) {
         requiresConfirmation: true,
         run: async () => {
           const existing = await which('aws-vault')
-          if (existing) return { status: 'skipped', message: 'aws-vault already installed' }
+          if (existing) return {status: 'skipped', message: 'aws-vault already installed'}
           try {
             await execOrThrow('brew', ['install', 'aws-vault'])
-            return { status: 'success', message: 'aws-vault installed via Homebrew' }
+            return {status: 'success', message: 'aws-vault installed via Homebrew'}
           } catch {
             return {
               status: 'failed',
@@ -326,10 +392,10 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           const result = await exec('aws-vault', ['--version'])
           if (result.exitCode !== 0) {
-            return { status: 'failed', hint: 'aws-vault not found in PATH after install' }
+            return {status: 'failed', hint: 'aws-vault not found in PATH after install'}
           }
           const version = (result.stdout || result.stderr).trim()
-          return { status: 'success', message: `aws-vault ${version}` }
+          return {status: 'success', message: `aws-vault ${version}`}
         },
       })
     }
@@ -344,9 +410,9 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           try {
             await execOrThrow('git', ['config', '--global', 'credential.helper', 'osxkeychain'])
-            return { status: 'success', message: 'Git credential helper set to osxkeychain' }
+            return {status: 'success', message: 'Git credential helper set to osxkeychain'}
           } catch {
-            return { status: 'failed', hint: 'Run manually: git config --global credential.helper osxkeychain' }
+            return {status: 'failed', hint: 'Run manually: git config --global credential.helper osxkeychain'}
           }
         },
       })
@@ -360,9 +426,9 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           const result = await exec('git', ['config', '--global', 'credential.helper'])
           if (result.stdout !== 'osxkeychain') {
-            return { status: 'failed', hint: 'credential.helper is not set to osxkeychain' }
+            return {status: 'failed', hint: 'credential.helper is not set to osxkeychain'}
           }
-          return { status: 'success', message: 'osxkeychain is configured' }
+          return {status: 'success', message: 'osxkeychain is configured'}
         },
       })
     }
@@ -378,11 +444,11 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           const path = await which('gpg')
           if (!path) {
-            return { status: 'failed', hint: 'GPG not found — will be installed in the next step' }
+            return {status: 'failed', hint: 'GPG not found — will be installed in the next step'}
           }
           const result = await exec('gpg', ['--version'])
           const match = result.stdout.match(/gpg \(GnuPG\)\s+([\d.]+)/)
-          return { status: 'success', message: `GPG ${match ? match[1] : 'found'}` }
+          return {status: 'success', message: `GPG ${match ? match[1] : 'found'}`}
         },
       })
 
@@ -395,12 +461,12 @@ export function buildSteps(platformInfo, selection, context = {}) {
         skippable: true,
         run: async () => {
           const path = await which('gpg')
-          if (path) return { status: 'skipped', message: 'GPG already installed' }
+          if (path) return {status: 'skipped', message: 'GPG already installed'}
           try {
             await execOrThrow('sudo', ['apt-get', 'install', '-y', 'gnupg'])
-            return { status: 'success', message: 'GPG installed' }
+            return {status: 'success', message: 'GPG installed'}
           } catch {
-            return { status: 'failed', hint: 'Run manually: sudo apt-get install -y gnupg' }
+            return {status: 'failed', hint: 'Run manually: sudo apt-get install -y gnupg'}
           }
         },
       })
@@ -414,7 +480,7 @@ export function buildSteps(platformInfo, selection, context = {}) {
         gpgInteractive: true,
         run: async () => {
           const gpgId = context.gpgId
-          if (gpgId) return { status: 'skipped', message: `Using existing GPG key ${gpgId}` }
+          if (gpgId) return {status: 'skipped', message: `Using existing GPG key ${gpgId}`}
           // When gpgInteractive=true, the command layer stops the spinner and spawns
           // gpg --full-generate-key with stdio:inherit so the user sets a strong passphrase.
           // We never generate a key with an empty passphrase — that would leave the private
@@ -436,12 +502,12 @@ export function buildSteps(platformInfo, selection, context = {}) {
         requiresConfirmation: true,
         run: async () => {
           const path = await which('pass')
-          if (path) return { status: 'skipped', message: 'pass already installed' }
+          if (path) return {status: 'skipped', message: 'pass already installed'}
           try {
             await execOrThrow('sudo', ['apt-get', 'install', '-y', 'pass'])
-            return { status: 'success', message: 'pass installed' }
+            return {status: 'success', message: 'pass installed'}
           } catch {
-            return { status: 'failed', hint: 'Run manually: sudo apt-get install -y pass' }
+            return {status: 'failed', hint: 'Run manually: sudo apt-get install -y pass'}
           }
         },
       })
@@ -456,17 +522,17 @@ export function buildSteps(platformInfo, selection, context = {}) {
           // Skip if pass is already initialized
           const lsResult = await exec('pass', ['ls'])
           if (lsResult.exitCode === 0) {
-            return { status: 'skipped', message: 'pass store already initialized' }
+            return {status: 'skipped', message: 'pass store already initialized'}
           }
           const gpgId = context.gpgId
           if (!gpgId) {
-            return { status: 'failed', hint: 'No GPG key ID available — complete the create-gpg-key step first' }
+            return {status: 'failed', hint: 'No GPG key ID available — complete the create-gpg-key step first'}
           }
           try {
             await execOrThrow('pass', ['init', gpgId])
-            return { status: 'success', message: `pass initialized with key ${gpgId}` }
+            return {status: 'success', message: `pass initialized with key ${gpgId}`}
           } catch {
-            return { status: 'failed', hint: `Run manually: pass init ${gpgId}` }
+            return {status: 'failed', hint: `Run manually: pass init ${gpgId}`}
           }
         },
       })
@@ -479,12 +545,16 @@ export function buildSteps(platformInfo, selection, context = {}) {
         requiresConfirmation: true,
         run: async () => {
           const existing = await which('aws-vault')
-          if (existing) return { status: 'skipped', message: 'aws-vault already installed' }
+          if (existing) return {status: 'skipped', message: 'aws-vault already installed'}
           const arch = process.arch === 'arm64' ? 'arm64' : 'amd64'
           const url = `https://github.com/99designs/aws-vault/releases/latest/download/aws-vault-linux-${arch}`
           try {
-            await execOrThrow('sudo', ['sh', '-c', `curl -sSL '${url}' -o /usr/local/bin/aws-vault && chmod +x /usr/local/bin/aws-vault`])
-            return { status: 'success', message: 'aws-vault installed to /usr/local/bin/aws-vault' }
+            await execOrThrow('sudo', [
+              'sh',
+              '-c',
+              `curl -sSL '${url}' -o /usr/local/bin/aws-vault && chmod +x /usr/local/bin/aws-vault`,
+            ])
+            return {status: 'success', message: 'aws-vault installed to /usr/local/bin/aws-vault'}
           } catch {
             return {
               status: 'failed',
@@ -505,9 +575,9 @@ export function buildSteps(platformInfo, selection, context = {}) {
           try {
             await appendToShellProfile('export AWS_VAULT_BACKEND=pass')
             await appendToShellProfile('export GPG_TTY=$(tty)')
-            return { status: 'success', message: 'AWS_VAULT_BACKEND=pass and GPG_TTY added to shell profile' }
+            return {status: 'success', message: 'AWS_VAULT_BACKEND=pass and GPG_TTY added to shell profile'}
           } catch {
-            return { status: 'failed', hint: 'Add manually to ~/.bashrc or ~/.zshrc: export AWS_VAULT_BACKEND=pass' }
+            return {status: 'failed', hint: 'Add manually to ~/.bashrc or ~/.zshrc: export AWS_VAULT_BACKEND=pass'}
           }
         },
       })
@@ -521,10 +591,10 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           const result = await exec('aws-vault', ['--version'])
           if (result.exitCode !== 0) {
-            return { status: 'failed', hint: 'aws-vault not found in PATH after install' }
+            return {status: 'failed', hint: 'aws-vault not found in PATH after install'}
           }
           const version = (result.stdout || result.stderr).trim()
-          return { status: 'success', message: `aws-vault ${version}` }
+          return {status: 'success', message: `aws-vault ${version}`}
         },
       })
     }
@@ -541,9 +611,9 @@ export function buildSteps(platformInfo, selection, context = {}) {
           run: async () => {
             const bridgePath = '/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager.exe'
             if (existsSync(bridgePath)) {
-              return { status: 'success', message: 'Windows GCM bridge found — using Windows Credential Manager' }
+              return {status: 'success', message: 'Windows GCM bridge found — using Windows Credential Manager'}
             }
-            return { status: 'skipped', message: 'Windows GCM not found — will install native Linux GCM' }
+            return {status: 'skipped', message: 'Windows GCM not found — will install native Linux GCM'}
           },
         })
       }
@@ -556,21 +626,25 @@ export function buildSteps(platformInfo, selection, context = {}) {
         requiresConfirmation: true,
         run: async () => {
           const existing = await which('git-credential-manager')
-          if (existing) return { status: 'skipped', message: 'Git Credential Manager already installed' }
+          if (existing) return {status: 'skipped', message: 'Git Credential Manager already installed'}
           try {
-            const latestResult = await exec('sh', ['-c', "curl -sSL https://api.github.com/repos/git-ecosystem/git-credential-manager/releases/latest | grep 'browser_download_url.*gcm.*linux.*amd64.*deb' | head -1 | cut -d '\"' -f 4"])
+            const latestResult = await exec('sh', [
+              '-c',
+              "curl -sSL https://api.github.com/repos/git-ecosystem/git-credential-manager/releases/latest | grep 'browser_download_url.*gcm.*linux.*amd64.*deb' | head -1 | cut -d '\"' -f 4",
+            ])
             const debUrl = latestResult.stdout.trim()
             if (!debUrl) throw new Error('Could not find GCM deb package URL')
             // Security: validate debUrl is a legitimate GitHub release asset URL before using it
             // This prevents command injection if the GitHub API response were tampered with (MITM / supply-chain)
-            const SAFE_DEB_URL = /^https:\/\/github\.com\/git-ecosystem\/git-credential-manager\/releases\/download\/[a-zA-Z0-9._\-/]+\.deb$/
+            const SAFE_DEB_URL =
+              /^https:\/\/github\.com\/git-ecosystem\/git-credential-manager\/releases\/download\/[a-zA-Z0-9._\-/]+\.deb$/
             if (!SAFE_DEB_URL.test(debUrl)) {
               throw new Error(`Unexpected GCM package URL format: "${debUrl}"`)
             }
             // Use array args — no shell interpolation of the URL
             await execOrThrow('curl', ['-sSL', debUrl, '-o', '/tmp/gcm.deb'])
             await execOrThrow('sudo', ['dpkg', '-i', '/tmp/gcm.deb'])
-            return { status: 'success', message: 'Git Credential Manager installed' }
+            return {status: 'success', message: 'Git Credential Manager installed'}
           } catch {
             return {
               status: 'failed',
@@ -590,9 +664,9 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           try {
             await execOrThrow('git-credential-manager', ['configure'])
-            return { status: 'success', message: 'Git Credential Manager configured' }
+            return {status: 'success', message: 'Git Credential Manager configured'}
           } catch {
-            return { status: 'failed', hint: 'Run manually: git-credential-manager configure' }
+            return {status: 'failed', hint: 'Run manually: git-credential-manager configure'}
           }
         },
       })
@@ -606,9 +680,9 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           try {
             await execOrThrow('git', ['config', '--global', 'credential.credentialStore', 'gpg'])
-            return { status: 'success', message: 'GCM credential store set to gpg' }
+            return {status: 'success', message: 'GCM credential store set to gpg'}
           } catch {
-            return { status: 'failed', hint: 'Run manually: git config --global credential.credentialStore gpg' }
+            return {status: 'failed', hint: 'Run manually: git config --global credential.credentialStore gpg'}
           }
         },
       })
@@ -622,9 +696,9 @@ export function buildSteps(platformInfo, selection, context = {}) {
         run: async () => {
           const result = await exec('git-credential-manager', ['--version'])
           if (result.exitCode !== 0) {
-            return { status: 'failed', hint: 'git-credential-manager not found in PATH' }
+            return {status: 'failed', hint: 'git-credential-manager not found in PATH'}
           }
-          return { status: 'success', message: `GCM ${result.stdout.trim()}` }
+          return {status: 'success', message: `GCM ${result.stdout.trim()}`}
         },
       })
     }

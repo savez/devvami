@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { http, HttpResponse } from 'msw'
-import { server } from '../../setup.js'
+import {describe, it, expect, vi, beforeEach} from 'vitest'
+import {http, HttpResponse} from 'msw'
+import {server} from '../../setup.js'
 
 vi.mock('../../../src/services/shell.js', () => ({
   exec: vi.fn(),
@@ -23,7 +23,7 @@ const EMPTY_MD = `# Awesome Copilot Skills\n\nNo entries yet.\n`
 
 describe('parseMarkdownTable', () => {
   it('parses table rows into AwesomeEntry[]', async () => {
-    const { parseMarkdownTable } = await import('../../../src/services/awesome-copilot.js')
+    const {parseMarkdownTable} = await import('../../../src/services/awesome-copilot.js')
     const entries = parseMarkdownTable(AGENTS_MD, 'agents')
 
     expect(entries).toHaveLength(3)
@@ -35,7 +35,7 @@ describe('parseMarkdownTable', () => {
   })
 
   it('strips markdown badges from name cell', async () => {
-    const { parseMarkdownTable } = await import('../../../src/services/awesome-copilot.js')
+    const {parseMarkdownTable} = await import('../../../src/services/awesome-copilot.js')
     const entries = parseMarkdownTable(AGENTS_MD, 'agents')
 
     const badge = entries.find((e) => e.name === 'Badge Agent')
@@ -45,7 +45,7 @@ describe('parseMarkdownTable', () => {
   })
 
   it('returns empty array for file with no table rows', async () => {
-    const { parseMarkdownTable } = await import('../../../src/services/awesome-copilot.js')
+    const {parseMarkdownTable} = await import('../../../src/services/awesome-copilot.js')
     const entries = parseMarkdownTable(EMPTY_MD, 'skills')
     expect(entries).toHaveLength(0)
   })
@@ -54,24 +54,22 @@ describe('parseMarkdownTable', () => {
 describe('fetchAwesomeEntries', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
-    const { exec } = await import('../../../src/services/shell.js')
-    vi.mocked(exec).mockResolvedValue({ stdout: 'fake-gh-token', stderr: '', exitCode: 0 })
+    const {exec} = await import('../../../src/services/shell.js')
+    vi.mocked(exec).mockResolvedValue({stdout: 'fake-gh-token', stderr: '', exitCode: 0})
   })
 
   it('fetches and parses agents category', async () => {
     server.use(
-      http.get(
-        'https://api.github.com/repos/github/awesome-copilot/contents/:path*',
-        () =>
-          HttpResponse.json({
-            type: 'file',
-            encoding: 'base64',
-            content: toBase64(AGENTS_MD),
-          }),
+      http.get('https://api.github.com/repos/github/awesome-copilot/contents/:path*', () =>
+        HttpResponse.json({
+          type: 'file',
+          encoding: 'base64',
+          content: toBase64(AGENTS_MD),
+        }),
       ),
     )
 
-    const { fetchAwesomeEntries } = await import('../../../src/services/awesome-copilot.js')
+    const {fetchAwesomeEntries} = await import('../../../src/services/awesome-copilot.js')
     const entries = await fetchAwesomeEntries('agents')
 
     expect(entries.length).toBeGreaterThan(0)
@@ -80,8 +78,8 @@ describe('fetchAwesomeEntries', () => {
   })
 
   it('throws DvmiError for unknown category', async () => {
-    const { fetchAwesomeEntries } = await import('../../../src/services/awesome-copilot.js')
-    const { DvmiError } = await import('../../../src/utils/errors.js')
+    const {fetchAwesomeEntries} = await import('../../../src/services/awesome-copilot.js')
+    const {DvmiError} = await import('../../../src/utils/errors.js')
 
     await expect(fetchAwesomeEntries('unknown-cat')).rejects.toThrow(DvmiError)
     await expect(fetchAwesomeEntries('unknown-cat')).rejects.toThrow(/unknown/i)
@@ -89,14 +87,13 @@ describe('fetchAwesomeEntries', () => {
 
   it('throws DvmiError when category file returns 404', async () => {
     server.use(
-      http.get(
-        'https://api.github.com/repos/github/awesome-copilot/contents/:path*',
-        () => HttpResponse.json({ message: 'Not Found' }, { status: 404 }),
+      http.get('https://api.github.com/repos/github/awesome-copilot/contents/:path*', () =>
+        HttpResponse.json({message: 'Not Found'}, {status: 404}),
       ),
     )
 
-    const { fetchAwesomeEntries } = await import('../../../src/services/awesome-copilot.js')
-    const { DvmiError } = await import('../../../src/utils/errors.js')
+    const {fetchAwesomeEntries} = await import('../../../src/services/awesome-copilot.js')
+    const {DvmiError} = await import('../../../src/utils/errors.js')
 
     await expect(fetchAwesomeEntries('agents')).rejects.toThrow(DvmiError)
   })
