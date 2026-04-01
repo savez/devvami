@@ -32,6 +32,12 @@ Devvami gives you a unified CLI to manage your entire development workflow:
 | 📖 **Docs** | Search and read repository documentation |
 | 🔍 **Search** | Search code across repositories |
 | 🩺 **Health Check** | Diagnose your development environment |
+| 🗂️ **Dotfiles** | Manage dotfiles with chezmoi and age encryption |
+| 🤖 **AI Config** | Sync AI tool configurations across environments |
+| 💬 **Prompts** | Browse, download, and run AI prompts locally |
+| 🛡️ **Vulnerabilities** | Scan and search CVEs in your dependencies |
+| 📋 **Logs** | Browse and query CloudWatch log groups |
+| 🔐 **Security** | Set up credential protection tools (aws-vault, GPG) |
 
 All from your terminal. No context switching.
 
@@ -136,6 +142,51 @@ dvmi docs search     # Search docs
 dvmi docs projects   # List documented projects
 ```
 
+### Dotfiles
+
+```bash
+dvmi dotfiles setup    # Configure chezmoi with age encryption
+dvmi dotfiles add      # Add files to chezmoi management (auto-encrypts sensitive files)
+dvmi dotfiles status   # Show managed files, encryption state, and sync health
+dvmi dotfiles sync     # Sync dotfiles with remote repository (push/pull)
+```
+
+### Prompts
+
+```bash
+dvmi prompts list              # List prompts from your personal repository
+dvmi prompts browse            # Browse prompts from skills.sh or awesome-copilot
+dvmi prompts download          # Download a prompt to .prompts/
+dvmi prompts run               # Execute a local prompt with a configured AI tool
+dvmi prompts install-speckit   # Install spec-kit and run specify init
+```
+
+### Vulnerabilities
+
+```bash
+dvmi vuln scan              # Scan current directory for known vulnerabilities
+dvmi vuln search            # Search for recent CVEs by keyword
+dvmi vuln detail <CVE-ID>   # View full details for a specific CVE
+```
+
+### Logs
+
+```bash
+dvmi logs   # Browse and query CloudWatch log groups interactively
+```
+
+### Security
+
+```bash
+dvmi security setup   # Interactive wizard to set up credential protection tools
+```
+
+### AI Config
+
+```bash
+dvmi sync-config-ai   # Manage AI tool configurations across environments via TUI
+```
+
 ### Other
 
 ```bash
@@ -143,6 +194,7 @@ dvmi auth login      # Login to GitHub/AWS
 dvmi search          # Search code across repos
 dvmi changelog       # Generate changelog from commits
 dvmi open            # Open resources in browser
+dvmi welcome         # Show the dvmi mission dashboard
 ```
 
 ---
