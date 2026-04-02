@@ -8,7 +8,7 @@ import {DvmiError} from '../utils/errors.js'
 import {exec} from './shell.js'
 import {loadConfig} from './config.js'
 
-/** @import { AIConfigStore, CategoryEntry, CategoryType, EnvironmentId, MCPParams, CommandParams, SkillParams, AgentParams } from '../types.js' */
+/** @import { AIConfigStore, CategoryEntry, CategoryType, EnvironmentId, MCPParams, CommandParams, RuleParams, SkillParams, AgentParams } from '../types.js' */
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Path resolution
@@ -26,11 +26,16 @@ export const AI_CONFIG_PATH = join(CONFIG_DIR, 'ai-config.json')
 
 /** @type {Record<EnvironmentId, CategoryType[]>} */
 const COMPATIBILITY = {
-  'vscode-copilot': ['mcp', 'command', 'skill', 'agent'],
-  'claude-code': ['mcp', 'command', 'skill', 'agent'],
-  opencode: ['mcp', 'command', 'skill', 'agent'],
-  'gemini-cli': ['mcp', 'command'],
-  'copilot-cli': ['mcp', 'command', 'skill', 'agent'],
+  'vscode-copilot': ['mcp', 'command', 'rule', 'skill', 'agent'],
+  'claude-code': ['mcp', 'command', 'rule', 'skill', 'agent'],
+  opencode: ['mcp', 'command', 'rule', 'skill', 'agent'],
+  'gemini-cli': ['mcp', 'command', 'rule'],
+  'copilot-cli': ['mcp', 'command', 'rule', 'skill', 'agent'],
+  cursor: ['mcp', 'command', 'rule', 'skill'],
+  windsurf: ['mcp', 'command', 'rule'],
+  'continue-dev': ['mcp', 'command', 'rule', 'agent'],
+  zed: ['mcp', 'rule'],
+  'amazon-q': ['mcp', 'rule', 'agent'],
 }
 
 /** All known environment IDs. */
@@ -45,7 +50,20 @@ const UNSAFE_CHARS = /[/\\:*?"<>|]/
 
 /** @returns {AIConfigStore} */
 function defaultStore() {
-  return {version: 1, entries: []}
+  return {version: 2, entries: []}
+}
+
+/**
+ * Migrate an AI config store to the current schema version.
+ * v1 → v2 is a no-op data migration; it only bumps the version field.
+ * @param {AIConfigStore} store
+ * @returns {AIConfigStore}
+ */
+function migrateStore(store) {
+  if (store.version === 1) {
+    return {...store, version: 2}
+  }
+  return store
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -93,6 +111,20 @@ function validateEnvironments(environments, type) {
   }
 }
 
+/**
+ * Assert that rule params contain a non-empty string `content` field.
+ * @param {RuleParams} params
+ * @returns {void}
+ */
+function validateRuleParams(params) {
+  if (!params || typeof params.content !== 'string' || params.content.trim() === '') {
+    throw new DvmiError(
+      'Rule entry requires a non-empty "content" string',
+      'Provide the rule content, e.g. { content: "Always use TypeScript" }',
+    )
+  }
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Core I/O
 // ──────────────────────────────────────────────────────────────────────────────
@@ -108,10 +140,7 @@ export async function loadAIConfig(configPath = process.env.DVMI_AI_CONFIG_PATH 
   try {
     const raw = await readFile(configPath, 'utf8')
     const parsed = JSON.parse(raw)
-    return {
-      version: parsed.version ?? 1,
-      entries: Array.isArray(parsed.entries) ? parsed.entries : [],
-    }
+    return migrateStore({version: parsed.version ?? 1, entries: Array.isArray(parsed.entries) ? parsed.entries : []})
   } catch {
     return defaultStore()
   }
@@ -139,7 +168,7 @@ export async function saveAIConfig(store, configPath = process.env.DVMI_AI_CONFI
 
 /**
  * Add a new entry to the AI config store.
- * @param {{ name: string, type: CategoryType, environments: EnvironmentId[], params: MCPParams|CommandParams|SkillParams|AgentParams }} entryData
+ * @param {{ name: string, type: CategoryType, environments: EnvironmentId[], params: MCPParams|CommandParams|RuleParams|SkillParams|AgentParams }} entryData
  * @param {string} [configPath]
  * @returns {Promise<CategoryEntry>}
  */
@@ -148,6 +177,7 @@ export async function addEntry(entryData, configPath = process.env.DVMI_AI_CONFI
 
   validateName(name)
   validateEnvironments(environments, type)
+  if (type === 'rule') validateRuleParams(/** @type {RuleParams} */ (params))
 
   const store = await loadAIConfig(configPath)
 

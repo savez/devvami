@@ -9,17 +9,36 @@ describe('dvmi sync-config-ai', () => {
     expect(stdout.toLowerCase()).toMatch(/ai|config|sync|environment/)
   })
 
-  // T047: --json exits 0 and outputs valid JSON with environments and categories
-  it('--json exits 0 and outputs valid JSON with environments and categories keys', async () => {
+  // T023: --json exits 0 and outputs complete structured JSON per cli-schema.md
+  it('--json exits 0 and outputs valid JSON with environments, categories (5 types), and nativeEntries', async () => {
     const result = await runCliJson(['sync-config-ai'])
+    // Top-level keys
     expect(result).toHaveProperty('environments')
     expect(result).toHaveProperty('categories')
+    expect(result).toHaveProperty('nativeEntries')
+    // Environments is an array
     expect(Array.isArray(result.environments)).toBe(true)
+    // Categories has all 5 types (including rule)
     expect(result.categories).toHaveProperty('mcp')
     expect(result.categories).toHaveProperty('command')
+    expect(result.categories).toHaveProperty('rule')
     expect(result.categories).toHaveProperty('skill')
     expect(result.categories).toHaveProperty('agent')
-    expect(Array.isArray(result.categories.mcp)).toBe(true)
-    expect(Array.isArray(result.categories.command)).toBe(true)
+    for (const type of ['mcp', 'command', 'rule', 'skill', 'agent']) {
+      expect(Array.isArray(result.categories[type])).toBe(true)
+      // Each managed entry has a drifted boolean
+      for (const entry of result.categories[type]) {
+        expect(typeof entry.drifted).toBe('boolean')
+      }
+    }
+    // nativeEntries has all 5 types
+    expect(result.nativeEntries).toHaveProperty('mcp')
+    expect(result.nativeEntries).toHaveProperty('command')
+    expect(result.nativeEntries).toHaveProperty('rule')
+    expect(result.nativeEntries).toHaveProperty('skill')
+    expect(result.nativeEntries).toHaveProperty('agent')
+    for (const type of ['mcp', 'command', 'rule', 'skill', 'agent']) {
+      expect(Array.isArray(result.nativeEntries[type])).toBe(true)
+    }
   })
 })

@@ -959,6 +959,70 @@ export function getSkillFormFields(entry = null, compatibleEnvs = []) {
  * @param {import('../../types.js').DetectedEnvironment[]} [compatibleEnvs] - Environments compatible with this category type
  * @returns {Field[]}
  */
+/**
+ * Return form fields for creating or editing a Rule entry.
+ *
+ * Fields: name (text), environments (multiselect), description (text, optional), content (editor).
+ *
+ * @param {import('../../types.js').CategoryEntry|null} [entry] - Existing entry to pre-fill from, or null to create
+ * @param {import('../../types.js').DetectedEnvironment[]} [compatibleEnvs] - Environments compatible with this category type
+ * @returns {Field[]}
+ */
+export function getRuleFormFields(entry = null, compatibleEnvs = []) {
+  /** @type {import('../../types.js').RuleParams|null} */
+  const p = entry ? /** @type {import('../../types.js').RuleParams} */ (entry.params) : null
+  const contentStr = p?.content ?? ''
+  const contentLines = contentStr.length > 0 ? contentStr.split('\n') : ['']
+
+  return [
+    /** @type {TextField} */ ({
+      type: 'text',
+      label: 'Name',
+      key: 'name',
+      value: entry ? entry.name : '',
+      cursor: entry ? entry.name.length : 0,
+      required: true,
+      placeholder: 'my-rule',
+    }),
+    /** @type {MultiSelectField} */ ({
+      type: 'multiselect',
+      label: 'Environments',
+      key: 'environments',
+      options: compatibleEnvs.map((env) => ({id: env.id, label: env.name})),
+      selected: new Set(entry ? entry.environments : []),
+      focusedOptionIndex: 0,
+      required: true,
+    }),
+    /** @type {TextField} */ ({
+      type: 'text',
+      label: 'Description',
+      key: 'description',
+      value: p?.description ?? '',
+      cursor: (p?.description ?? '').length,
+      required: false,
+      placeholder: 'Optional description',
+    }),
+    /** @type {MiniEditorField} */ ({
+      type: 'editor',
+      label: 'Content',
+      key: 'content',
+      lines: contentLines,
+      cursorLine: 0,
+      cursorCol: 0,
+      required: true,
+    }),
+  ]
+}
+
+/**
+ * Return form fields for creating or editing an Agent entry.
+ *
+ * Fields: name (text), environments (multiselect), description (text, optional), instructions (editor).
+ *
+ * @param {import('../../types.js').CategoryEntry|null} [entry] - Existing entry to pre-fill from, or null to create
+ * @param {import('../../types.js').DetectedEnvironment[]} [compatibleEnvs] - Environments compatible with this category type
+ * @returns {Field[]}
+ */
 export function getAgentFormFields(entry = null, compatibleEnvs = []) {
   /** @type {import('../../types.js').AgentParams|null} */
   const p = entry ? /** @type {import('../../types.js').AgentParams} */ (entry.params) : null

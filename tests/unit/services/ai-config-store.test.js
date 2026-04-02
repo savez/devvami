@@ -63,7 +63,7 @@ afterEach(async () => {
 describe('loadAIConfig', () => {
   it('returns defaults when file does not exist', async () => {
     const store = await loadAIConfig(tmpPath)
-    expect(store).toEqual({version: 1, entries: []})
+    expect(store).toEqual({version: 2, entries: []})
   })
 
   it('returns parsed content from an existing valid file', async () => {
@@ -87,7 +87,7 @@ describe('loadAIConfig', () => {
     await writeFile(tmpPath, JSON.stringify(data), 'utf8')
 
     const store = await loadAIConfig(tmpPath)
-    expect(store.version).toBe(1)
+    expect(store.version).toBe(2)
     expect(store.entries).toHaveLength(1)
     expect(store.entries[0].name).toBe('existing-mcp')
   })
@@ -149,6 +149,63 @@ describe('addEntry', () => {
     const entry = await addEntry(compatible, tmpPath)
     expect(entry.id).toBeTruthy()
     expect(entry.environments).toContain('gemini-cli')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// rule type CRUD
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('rule type CRUD', () => {
+  it('creates a rule entry with type: rule and correct params', async () => {
+    const ruleData = {
+      name: 'test-rule',
+      type: /** @type {import('../../../src/types.js').CategoryType} */ ('rule'),
+      environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
+      params: {content: 'do stuff', description: 'test rule'},
+    }
+
+    const entry = await addEntry(ruleData, tmpPath)
+
+    expect(entry.type).toBe('rule')
+    expect(entry.name).toBe('test-rule')
+    expect(entry.params).toMatchObject({content: 'do stuff', description: 'test rule'})
+    expect(entry.active).toBe(true)
+    expect(entry.id).toBeTruthy()
+  })
+
+  it('updates a rule entry', async () => {
+    const ruleData = {
+      name: 'rule-to-update',
+      type: /** @type {import('../../../src/types.js').CategoryType} */ ('rule'),
+      environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
+      params: {content: 'original content'},
+    }
+
+    const created = await addEntry(ruleData, tmpPath)
+    await new Promise((r) => setTimeout(r, 5))
+
+    const updated = await updateEntry(created.id, {params: {content: 'updated content'}}, tmpPath)
+
+    expect(updated.id).toBe(created.id)
+    expect(updated.type).toBe('rule')
+    expect(updated.params).toMatchObject({content: 'updated content'})
+    expect(new Date(updated.updatedAt).getTime()).toBeGreaterThan(new Date(created.updatedAt).getTime())
+  })
+
+  it('deletes a rule entry', async () => {
+    const ruleData = {
+      name: 'rule-to-delete',
+      type: /** @type {import('../../../src/types.js').CategoryType} */ ('rule'),
+      environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
+      params: {content: 'delete me'},
+    }
+
+    const created = await addEntry(ruleData, tmpPath)
+    await deleteEntry(created.id, tmpPath)
+
+    const store = await loadAIConfig(tmpPath)
+    expect(store.entries.find((e) => e.id === created.id)).toBeUndefined()
   })
 })
 
