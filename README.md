@@ -193,6 +193,8 @@ The TUI shows 6 tabs — **Environments** (read-only detection) + one tab per ca
 - **Native** — items already in each tool's config that dvmi doesn't manage yet (press `i` to import)
 - **Managed** — entries you've added via dvmi; synced across all target environments automatically
 
+MCP server forms adapt to the selected transport type: **stdio** shows Command and Args fields, **sse/streamable-http** shows a URL field, and irrelevant fields are hidden automatically. Environment variables (e.g. API keys) can be set via a dedicated editor in `KEY=VALUE` format. Args are entered one per line for proper support of arguments containing spaces. Transport-specific validation ensures stdio entries have a command and SSE/streamable-http entries have a URL before saving.
+
 Supports 10 AI environments: VS Code Copilot, Claude Code, OpenCode, Gemini CLI, GitHub Copilot CLI, Cursor, Windsurf, Continue.dev, Zed, Amazon Q.
 
 Key bindings: `n` create · `Enter` edit · `d` toggle active · `Del` delete · `r` reveal env vars · `i` import native · `Tab` switch section · `q` exit

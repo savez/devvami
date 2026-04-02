@@ -255,14 +255,19 @@ describe('deployMCPEntry', () => {
     expect(json.mcpServers).toHaveProperty('claude-mcp')
   })
 
-  it('handles opencode: writes to opencode.json with "mcpServers" key', async () => {
+  it('handles opencode: writes to opencode.json with "mcp" key in OpenCode format', async () => {
     const entry = makeMCPEntry({name: 'oc-mcp', environments: ['opencode']})
 
     await deployMCPEntry(entry, 'opencode', cwd)
 
     const json = await readJson(join(cwd, 'opencode.json'))
-    expect(json).toHaveProperty('mcpServers')
-    expect(json.mcpServers).toHaveProperty('oc-mcp')
+    expect(json).toHaveProperty('mcp')
+    expect(json.mcp).toHaveProperty('oc-mcp')
+    // OpenCode format: command is array, environment instead of env, type is local/remote
+    const server = json.mcp['oc-mcp']
+    expect(server).toHaveProperty('enabled', true)
+    expect(server).toHaveProperty('type', 'local')
+    expect(Array.isArray(server.command)).toBe(true)
   })
 
   it('handles gemini-cli: writes to ~/.gemini/settings.json with "mcpServers" key', async () => {
@@ -384,6 +389,96 @@ describe('deployMCPEntry', () => {
     const json = await readJson(filePath)
     expect(json).toHaveProperty('mcpServers')
     expect(json.mcpServers).toHaveProperty('amazonq-mcp')
+  })
+
+  it('omits type field for stdio transport (environments infer it from command)', async () => {
+    const entry = makeMCPEntry({
+      name: 'stdio-no-type',
+      environments: ['claude-code'],
+      params: {transport: 'stdio', command: 'npx', args: ['-y', 'test-pkg']},
+    })
+
+    await deployMCPEntry(entry, 'claude-code', cwd)
+
+    const json = await readJson(join(cwd, '.mcp.json'))
+    const server = json.mcpServers['stdio-no-type']
+    expect(server).toHaveProperty('command', 'npx')
+    expect(server).not.toHaveProperty('type')
+  })
+
+  it('includes type field for sse transport', async () => {
+    const entry = makeMCPEntry({
+      name: 'sse-server',
+      environments: ['claude-code'],
+      params: {transport: 'sse', url: 'https://mcp.example.com/sse'},
+    })
+
+    await deployMCPEntry(entry, 'claude-code', cwd)
+
+    const json = await readJson(join(cwd, '.mcp.json'))
+    const server = json.mcpServers['sse-server']
+    expect(server).toHaveProperty('type', 'sse')
+    expect(server).toHaveProperty('url', 'https://mcp.example.com/sse')
+  })
+
+  it('includes type field for streamable-http transport', async () => {
+    const entry = makeMCPEntry({
+      name: 'http-server',
+      environments: ['claude-code'],
+      params: {transport: 'streamable-http', url: 'https://mcp.example.com/http'},
+    })
+
+    await deployMCPEntry(entry, 'claude-code', cwd)
+
+    const json = await readJson(join(cwd, '.mcp.json'))
+    const server = json.mcpServers['http-server']
+    expect(server).toHaveProperty('type', 'streamable-http')
+    expect(server).toHaveProperty('url', 'https://mcp.example.com/http')
+  })
+
+  it('deploys env vars to the server object', async () => {
+    const entry = makeMCPEntry({
+      name: 'env-server',
+      environments: ['claude-code'],
+      params: {transport: 'stdio', command: 'npx', args: [], env: {API_KEY: 'abc123', SECRET: 'xyz'}},
+    })
+
+    await deployMCPEntry(entry, 'claude-code', cwd)
+
+    const json = await readJson(join(cwd, '.mcp.json'))
+    const server = json.mcpServers['env-server']
+    expect(server.env).toEqual({API_KEY: 'abc123', SECRET: 'xyz'})
+  })
+
+  it('normalizes legacy string args into array', async () => {
+    const entry = makeMCPEntry({
+      name: 'legacy-args',
+      environments: ['claude-code'],
+      params: {transport: 'stdio', command: 'npx', args: 'mcp-proxy\n--transport=sse\nhttp://localhost:8123'},
+    })
+
+    await deployMCPEntry(entry, 'claude-code', cwd)
+
+    const json = await readJson(join(cwd, '.mcp.json'))
+    const server = json.mcpServers['legacy-args']
+    expect(Array.isArray(server.args)).toBe(true)
+    expect(server.args).toEqual(['mcp-proxy', '--transport=sse', 'http://localhost:8123'])
+  })
+
+  it('normalizes legacy string env into object', async () => {
+    const entry = makeMCPEntry({
+      name: 'legacy-env',
+      environments: ['claude-code'],
+      params: {transport: 'stdio', command: 'npx', env: 'API_KEY=abc123\nSECRET=xyz'},
+    })
+
+    await deployMCPEntry(entry, 'claude-code', cwd)
+
+    const json = await readJson(join(cwd, '.mcp.json'))
+    const server = json.mcpServers['legacy-env']
+    expect(typeof server.env).toBe('object')
+    expect(Array.isArray(server.env)).toBe(false)
+    expect(server.env).toEqual({API_KEY: 'abc123', SECRET: 'xyz'})
   })
 
   it('is a no-op when entry type is not mcp', async () => {

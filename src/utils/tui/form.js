@@ -20,6 +20,7 @@ import chalk from 'chalk'
  * @property {boolean} required
  * @property {string} placeholder
  * @property {string} [key] - Optional override key for extractValues output
+ * @property {boolean} [hidden] - When true, field is skipped in rendering, navigation, validation, and extraction
  */
 
 /**
@@ -30,6 +31,7 @@ import chalk from 'chalk'
  * @property {number} selectedIndex
  * @property {boolean} required
  * @property {string} [key]
+ * @property {boolean} [hidden]
  */
 
 /**
@@ -45,6 +47,7 @@ import chalk from 'chalk'
  * @property {number} focusedOptionIndex
  * @property {boolean} required
  * @property {string} [key]
+ * @property {boolean} [hidden]
  */
 
 /**
@@ -56,6 +59,7 @@ import chalk from 'chalk'
  * @property {number} cursorCol
  * @property {boolean} required
  * @property {string} [key]
+ * @property {boolean} [hidden]
  */
 
 /**
@@ -69,6 +73,7 @@ import chalk from 'chalk'
  * @property {string} title
  * @property {'editing'|'submitted'|'cancelled'} status
  * @property {string|null} errorMessage
+ * @property {((state: FormState) => string|null)|null} [customValidator] - Optional transport-specific validator
  */
 
 /**
@@ -95,6 +100,25 @@ import chalk from 'chalk'
 function fieldKey(field) {
   if (field.key) return field.key
   return field.label.toLowerCase().replace(/\s+/g, '_')
+}
+
+/**
+ * Find the next visible (non-hidden) field index in a given direction.
+ * Wraps around the array. Returns current index if all fields are hidden.
+ * @param {Field[]} fields
+ * @param {number} current - Current focused index
+ * @param {1|-1} direction - 1 for forward, -1 for backward
+ * @returns {number}
+ */
+function nextVisibleIndex(fields, current, direction) {
+  const len = fields.length
+  let next = (current + direction + len) % len
+  let checked = 0
+  while (fields[next]?.hidden && checked < len) {
+    next = (next + direction + len) % len
+    checked++
+  }
+  return next
 }
 
 /**
@@ -263,6 +287,7 @@ export function buildFormScreen(formState, viewportHeight, termCols) {
 
   for (let i = 0; i < formState.fields.length; i++) {
     const field = formState.fields[i]
+    if (field.hidden) continue
     const isFocused = i === formState.focusedFieldIndex
 
     // Header line
@@ -311,6 +336,7 @@ export function extractValues(formState) {
   const result = {}
 
   for (const field of formState.fields) {
+    if (field.hidden) continue
     const key = fieldKey(field)
 
     if (field.type === 'text') {
@@ -339,6 +365,7 @@ export function extractValues(formState) {
  */
 function validateForm(formState) {
   for (const field of formState.fields) {
+    if (field.hidden) continue
     if (!field.required) continue
 
     if (field.type === 'text' && field.value.trim() === '') {
@@ -636,20 +663,20 @@ export function handleFormKeypress(formState, key) {
     return attemptSubmit(formState)
   }
 
-  // ── Tab: next field ───────────────────────────────────────────────────────
+  // ── Tab: next field (skip hidden) ──────────────────────────────────────────
   if (key.name === 'tab' && !key.shift) {
     return {
       ...formState,
-      focusedFieldIndex: (focusedFieldIndex + 1) % fields.length,
+      focusedFieldIndex: nextVisibleIndex(fields, focusedFieldIndex, 1),
       errorMessage: null,
     }
   }
 
-  // ── Shift+Tab: previous field ─────────────────────────────────────────────
+  // ── Shift+Tab: previous field (skip hidden) ──────────────────────────────
   if (key.name === 'tab' && key.shift) {
     return {
       ...formState,
-      focusedFieldIndex: (focusedFieldIndex - 1 + fields.length) % fields.length,
+      focusedFieldIndex: nextVisibleIndex(fields, focusedFieldIndex, -1),
       errorMessage: null,
     }
   }
@@ -680,9 +707,15 @@ export function handleFormKeypress(formState, key) {
   if (focusedField.type === 'selector') {
     const updated = handleSelectorFieldKey(focusedField, key)
     if (updated === focusedField) return formState
+    let newFields = replaceAt(fields, focusedFieldIndex, updated)
+    // Dynamic visibility: when transport selector changes, toggle field visibility
+    if (fieldKey(focusedField) === 'transport') {
+      const newTransport = updated.options[updated.selectedIndex]
+      newFields = updateMCPFieldVisibility(newFields, newTransport)
+    }
     return {
       ...formState,
-      fields: replaceAt(fields, focusedFieldIndex, updated),
+      fields: newFields,
     }
   }
 
@@ -691,7 +724,7 @@ export function handleFormKeypress(formState, key) {
     if ('advanceField' in result) {
       return {
         ...formState,
-        focusedFieldIndex: Math.min(focusedFieldIndex + 1, lastFieldIndex),
+        focusedFieldIndex: nextVisibleIndex(fields, focusedFieldIndex, 1),
       }
     }
     if (result === focusedField) return formState
@@ -704,11 +737,10 @@ export function handleFormKeypress(formState, key) {
   if (focusedField.type === 'editor') {
     const result = handleEditorFieldKey(focusedField, key)
     if ('advanceField' in result) {
-      // Esc in editor cancels the form only if we treat it as a field-level escape.
-      // Per spec, Esc in editor moves to next field.
+      // Esc in editor moves to next field (skip hidden)
       return {
         ...formState,
-        focusedFieldIndex: Math.min(focusedFieldIndex + 1, lastFieldIndex),
+        focusedFieldIndex: nextVisibleIndex(fields, focusedFieldIndex, 1),
       }
     }
     if (result === focusedField) return formState
@@ -733,6 +765,13 @@ function attemptSubmit(formState) {
     return {
       ...formState,
       errorMessage: `"${invalidLabel}" is required.`,
+    }
+  }
+  // Run custom validator (e.g. MCP transport-specific checks)
+  if (formState.customValidator) {
+    const customError = formState.customValidator(formState)
+    if (customError !== null) {
+      return {...formState, errorMessage: customError}
     }
   }
   return {
@@ -760,8 +799,11 @@ function replaceAt(arr, index, value) {
 /**
  * Return form fields for creating or editing an MCP entry.
  *
- * Fields: name (text), environments (multiselect), transport (selector), command (text),
- * args (text), url (text), description (text, optional).
+ * Fields: name (text), environments (multiselect), transport (selector),
+ * command (text, stdio only), args (editor, stdio only), url (text, remote only),
+ * env vars (editor), description (text, optional).
+ *
+ * Fields are dynamically shown/hidden based on the selected transport.
  *
  * @param {import('../../types.js').CategoryEntry|null} [entry] - Existing entry to pre-fill from, or null to create
  * @param {import('../../types.js').DetectedEnvironment[]} [compatibleEnvs] - Environments compatible with this category type
@@ -773,8 +815,10 @@ export function getMCPFormFields(entry = null, compatibleEnvs = []) {
 
   const transportOptions = ['stdio', 'sse', 'streamable-http']
   const transportIndex = p ? Math.max(0, transportOptions.indexOf(p.transport)) : 0
+  const transport = transportOptions[transportIndex]
 
-  return [
+  /** @type {Field[]} */
+  const fields = [
     /** @type {TextField} */ ({
       type: 'text',
       label: 'Name',
@@ -810,14 +854,14 @@ export function getMCPFormFields(entry = null, compatibleEnvs = []) {
       required: false,
       placeholder: 'npx my-mcp-server',
     }),
-    /** @type {TextField} */ ({
-      type: 'text',
+    /** @type {MiniEditorField} */ ({
+      type: 'editor',
       label: 'Args',
       key: 'args',
-      value: p?.args ? p.args.join(' ') : '',
-      cursor: p?.args ? p.args.join(' ').length : 0,
+      lines: p?.args?.length > 0 ? [...p.args] : [''],
+      cursorLine: 0,
+      cursorCol: 0,
       required: false,
-      placeholder: '--port 3000 --verbose',
     }),
     /** @type {TextField} */ ({
       type: 'text',
@@ -827,6 +871,15 @@ export function getMCPFormFields(entry = null, compatibleEnvs = []) {
       cursor: (p?.url ?? '').length,
       required: false,
       placeholder: 'https://mcp.example.com',
+    }),
+    /** @type {MiniEditorField} */ ({
+      type: 'editor',
+      label: 'Env Vars',
+      key: 'env',
+      lines: p?.env ? Object.entries(p.env).map(([k, v]) => `${k}=${v}`) : [''],
+      cursorLine: 0,
+      cursorCol: 0,
+      required: false,
     }),
     /** @type {TextField} */ ({
       type: 'text',
@@ -838,6 +891,67 @@ export function getMCPFormFields(entry = null, compatibleEnvs = []) {
       placeholder: 'Optional description',
     }),
   ]
+
+  return updateMCPFieldVisibility(fields, transport)
+}
+
+/**
+ * Toggle visibility of MCP-specific fields based on the selected transport.
+ * - stdio: show Command + Args, hide URL
+ * - sse/streamable-http: show URL, hide Command + Args
+ * - Env Vars and Description are always visible
+ *
+ * @param {Field[]} fields
+ * @param {string} transport
+ * @returns {Field[]}
+ */
+export function updateMCPFieldVisibility(fields, transport) {
+  const isStdio = transport === 'stdio'
+  return fields.map((f) => {
+    const key = f.key || f.label.toLowerCase().replace(/\s+/g, '_')
+    if (key === 'command' || key === 'args') {
+      return {...f, hidden: !isStdio}
+    }
+    if (key === 'url') {
+      return {...f, hidden: isStdio}
+    }
+    return f
+  })
+}
+
+/**
+ * MCP-specific form validator. Checks that:
+ * - stdio transport has a non-empty command
+ * - sse/streamable-http transport has a non-empty URL
+ * - Env var lines (if any) follow KEY=VALUE format
+ *
+ * @param {FormState} formState
+ * @returns {string|null} Error message or null if valid
+ */
+export function validateMCPForm(formState) {
+  const values = extractValues(formState)
+  const transport = values.transport
+
+  if (transport === 'stdio') {
+    if (!values.command || /** @type {string} */ (values.command).trim() === '') {
+      return 'Command is required for stdio transport'
+    }
+  } else if (transport === 'sse' || transport === 'streamable-http') {
+    if (!values.url || /** @type {string} */ (values.url).trim() === '') {
+      return 'URL is required for sse/streamable-http transport'
+    }
+  }
+
+  if (values.env && typeof values.env === 'string') {
+    const lines = /** @type {string} */ (values.env).split('\n').filter((l) => l.trim() !== '')
+    for (const line of lines) {
+      if (!line.includes('=')) {
+        return `Invalid env var format: "${line}" (expected KEY=VALUE)`
+      }
+    }
+  }
+
+  return null
 }
 
 /**

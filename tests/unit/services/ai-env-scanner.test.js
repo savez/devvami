@@ -437,10 +437,11 @@ describe('scanEnvironments — 10 environments', () => {
     expect(result.some((e) => e.id === 'amazon-q')).toBe(true)
   })
 
-  it('ENVIRONMENTS array contains all 10 environments', () => {
+  it('ENVIRONMENTS array contains all 11 environments', () => {
     const ids = ENVIRONMENTS.map((e) => e.id)
     expect(ids).toContain('vscode-copilot')
     expect(ids).toContain('claude-code')
+    expect(ids).toContain('claude-desktop')
     expect(ids).toContain('opencode')
     expect(ids).toContain('gemini-cli')
     expect(ids).toContain('copilot-cli')
@@ -449,7 +450,7 @@ describe('scanEnvironments — 10 environments', () => {
     expect(ids).toContain('continue-dev')
     expect(ids).toContain('zed')
     expect(ids).toContain('amazon-q')
-    expect(ids).toHaveLength(10)
+    expect(ids).toHaveLength(11)
   })
 
   it('cursor supportedCategories includes rule but not agent', () => {

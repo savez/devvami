@@ -59,16 +59,17 @@ export function formatEnvironmentsTable(detectedEnvs, termCols = 120) {
       : chalk.green(padCell(statusText, COL_STATUS))
     const scopeStr = padCell(env.scope ?? 'project', COL_SCOPE)
 
-    const mcpStr = padCell(String(env.nativeCounts?.mcp ?? 0), COL_COUNT)
-    const cmdStr = padCell(String(env.nativeCounts?.command ?? 0), COL_COUNT)
+    const total = (/** @type {string} */ type) => (env.counts?.[type] ?? 0) + (env.nativeCounts?.[type] ?? 0)
+    const mcpStr = padCell(String(total('mcp')), COL_COUNT)
+    const cmdStr = padCell(String(total('command')), COL_COUNT)
     const ruleStr = env.supportedCategories.includes('rule')
-      ? padCell(String(env.nativeCounts?.rule ?? 0), COL_COUNT)
+      ? padCell(String(total('rule')), COL_COUNT)
       : padCell('—', COL_COUNT)
     const skillStr = env.supportedCategories.includes('skill')
-      ? padCell(String(env.nativeCounts?.skill ?? 0), COL_COUNT)
+      ? padCell(String(total('skill')), COL_COUNT)
       : padCell('—', COL_COUNT)
     const agentStr = env.supportedCategories.includes('agent')
-      ? padCell(String(env.nativeCounts?.agent ?? 0), COL_COUNT)
+      ? padCell(String(total('agent')), COL_COUNT)
       : padCell('—', COL_COUNT)
 
     lines.push([padCell(env.name, COL_ENV), statusStr, scopeStr, mcpStr, cmdStr, ruleStr, skillStr, agentStr].join('  '))
@@ -81,6 +82,7 @@ export function formatEnvironmentsTable(detectedEnvs, termCols = 120) {
 const ENV_SHORT_NAMES = {
   'vscode-copilot': 'VSCode',
   'claude-code': 'Claude',
+  'claude-desktop': 'Desktop',
   opencode: 'OpenCode',
   'gemini-cli': 'Gemini',
   'copilot-cli': 'Copilot',

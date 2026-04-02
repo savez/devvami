@@ -341,7 +341,7 @@
  */
 
 /**
- * @typedef {'vscode-copilot'|'claude-code'|'opencode'|'gemini-cli'|'copilot-cli'|'cursor'|'windsurf'|'continue-dev'|'zed'|'amazon-q'} EnvironmentId
+ * @typedef {'vscode-copilot'|'claude-code'|'claude-desktop'|'opencode'|'gemini-cli'|'copilot-cli'|'cursor'|'windsurf'|'continue-dev'|'zed'|'amazon-q'} EnvironmentId
  */
 
 /**
