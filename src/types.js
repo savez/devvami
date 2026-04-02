@@ -337,11 +337,11 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * @typedef {'mcp'|'command'|'skill'|'agent'} CategoryType
+ * @typedef {'mcp'|'command'|'rule'|'skill'|'agent'} CategoryType
  */
 
 /**
- * @typedef {'vscode-copilot'|'claude-code'|'opencode'|'gemini-cli'|'copilot-cli'} EnvironmentId
+ * @typedef {'vscode-copilot'|'claude-code'|'opencode'|'gemini-cli'|'copilot-cli'|'cursor'|'windsurf'|'continue-dev'|'zed'|'amazon-q'} EnvironmentId
  */
 
 /**
@@ -357,6 +357,12 @@
  * @typedef {Object} CommandParams
  * @property {string} content - Prompt/command text content (multi-line)
  * @property {string} [description] - Short description of the command
+ */
+
+/**
+ * @typedef {Object} RuleParams
+ * @property {string} content - Rules/instructions content (multi-line Markdown)
+ * @property {string} [description] - Short description of the rule
  */
 
 /**
@@ -378,7 +384,7 @@
  * @property {CategoryType} type - Category type
  * @property {boolean} active - true = deployed to environments, false = removed but kept in store
  * @property {EnvironmentId[]} environments - Target environments for deployment
- * @property {MCPParams|CommandParams|SkillParams|AgentParams} params - Type-specific parameters
+ * @property {MCPParams|CommandParams|RuleParams|SkillParams|AgentParams} params - Type-specific parameters
  * @property {string} createdAt - ISO 8601 timestamp
  * @property {string} updatedAt - ISO 8601 timestamp
  */
@@ -400,8 +406,31 @@
  * @typedef {Object} CategoryCounts
  * @property {number} mcp
  * @property {number} command
+ * @property {number} rule
  * @property {number} skill
  * @property {number} agent
+ */
+
+/**
+ * @typedef {Object} NativeEntry
+ * Runtime only — not persisted. Represents an item found in an environment's config
+ * file that is NOT managed by dvmi.
+ * @property {string} name - Entry name (extracted from config key or filename)
+ * @property {CategoryType} type - Category type
+ * @property {EnvironmentId} environmentId - Source environment
+ * @property {'project'|'global'} level - Whether from project-level or global-level config
+ * @property {string} sourcePath - Absolute path to the source config file
+ * @property {object} params - Normalized parameters (same structure as managed entry params)
+ */
+
+/**
+ * @typedef {Object} DriftInfo
+ * Runtime only — not persisted. Describes a managed entry whose deployed state
+ * diverges from dvmi's stored expected state.
+ * @property {string} entryId - ID of the managed CategoryEntry that drifted
+ * @property {EnvironmentId} environmentId - Environment where drift was detected
+ * @property {object} expected - What dvmi expects (from store)
+ * @property {object} actual - What was found in the file
  */
 
 /**
@@ -414,6 +443,9 @@
  * @property {string[]} unreadable - Paths that exist but failed to parse
  * @property {CategoryType[]} supportedCategories - Category types this environment supports
  * @property {CategoryCounts} counts - Per-category item counts from dvmi-managed entries
+ * @property {CategoryCounts} nativeCounts - Per-category native item counts (items in config files)
+ * @property {NativeEntry[]} nativeEntries - All native entries found for this environment
+ * @property {DriftInfo[]} driftedEntries - Managed entries that have drifted from expected state
  * @property {'project'|'global'|'both'} scope - Where detection occurred
  */
 

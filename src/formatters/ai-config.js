@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-/** @import { DetectedEnvironment, CategoryEntry } from '../types.js' */
+/** @import { DetectedEnvironment, CategoryEntry, NativeEntry } from '../types.js' */
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Internal helpers
@@ -41,11 +41,12 @@ export function formatEnvironmentsTable(detectedEnvs, termCols = 120) {
     chalk.bold.white(padCell('Scope', COL_SCOPE)),
     chalk.bold.white(padCell('MCPs', COL_COUNT)),
     chalk.bold.white(padCell('Commands', COL_COUNT)),
+    chalk.bold.white(padCell('Rules', COL_COUNT)),
     chalk.bold.white(padCell('Skills', COL_COUNT)),
     chalk.bold.white(padCell('Agents', COL_COUNT)),
   ]
 
-  const dividerWidth = COL_ENV + COL_STATUS + COL_SCOPE + COL_COUNT * 4 + 6 * 2
+  const dividerWidth = COL_ENV + COL_STATUS + COL_SCOPE + COL_COUNT * 5 + 7 * 2
   const lines = []
   lines.push(headerParts.join('  '))
   lines.push(chalk.dim('─'.repeat(Math.min(termCols, dividerWidth))))
@@ -58,24 +59,23 @@ export function formatEnvironmentsTable(detectedEnvs, termCols = 120) {
       : chalk.green(padCell(statusText, COL_STATUS))
     const scopeStr = padCell(env.scope ?? 'project', COL_SCOPE)
 
-    const mcpStr = padCell(String(env.counts.mcp), COL_COUNT)
-    const cmdStr = padCell(String(env.counts.command), COL_COUNT)
+    const mcpStr = padCell(String(env.nativeCounts?.mcp ?? 0), COL_COUNT)
+    const cmdStr = padCell(String(env.nativeCounts?.command ?? 0), COL_COUNT)
+    const ruleStr = env.supportedCategories.includes('rule')
+      ? padCell(String(env.nativeCounts?.rule ?? 0), COL_COUNT)
+      : padCell('—', COL_COUNT)
     const skillStr = env.supportedCategories.includes('skill')
-      ? padCell(String(env.counts.skill), COL_COUNT)
+      ? padCell(String(env.nativeCounts?.skill ?? 0), COL_COUNT)
       : padCell('—', COL_COUNT)
     const agentStr = env.supportedCategories.includes('agent')
-      ? padCell(String(env.counts.agent), COL_COUNT)
+      ? padCell(String(env.nativeCounts?.agent ?? 0), COL_COUNT)
       : padCell('—', COL_COUNT)
 
-    lines.push([padCell(env.name, COL_ENV), statusStr, scopeStr, mcpStr, cmdStr, skillStr, agentStr].join('  '))
+    lines.push([padCell(env.name, COL_ENV), statusStr, scopeStr, mcpStr, cmdStr, ruleStr, skillStr, agentStr].join('  '))
   }
 
   return lines
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Categories table formatter
-// ──────────────────────────────────────────────────────────────────────────────
 
 /** @type {Record<string, string>} */
 const ENV_SHORT_NAMES = {
@@ -84,7 +84,91 @@ const ENV_SHORT_NAMES = {
   opencode: 'OpenCode',
   'gemini-cli': 'Gemini',
   'copilot-cli': 'Copilot',
+  cursor: 'Cursor',
+  windsurf: 'Windsurf',
+  'continue-dev': 'Continue',
+  zed: 'Zed',
+  'amazon-q': 'Amazon Q',
 }
+
+/**
+ * Mask an environment variable value for display.
+ * Shows first 6 characters followed by ***.
+ * @param {string} value
+ * @returns {string}
+ */
+export function maskEnvVarValue(value) {
+  if (!value || value.length <= 6) return '***'
+  return value.slice(0, 6) + '***'
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Native entries table formatter
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Format native entries as a table for display in a category tab's Native section.
+ * @param {NativeEntry[]} entries
+ * @param {number} [termCols]
+ * @returns {string[]}
+ */
+export function formatNativeEntriesTable(entries, termCols = 120) {
+  const COL_NAME = 24
+  const COL_ENV = 16
+  const COL_LEVEL = 8
+  const COL_CONFIG = 36
+
+  const headerParts = [
+    chalk.bold.white(padCell('Name', COL_NAME)),
+    chalk.bold.white(padCell('Environment', COL_ENV)),
+    chalk.bold.white(padCell('Level', COL_LEVEL)),
+    chalk.bold.white(padCell('Config', COL_CONFIG)),
+  ]
+
+  const dividerWidth = COL_NAME + COL_ENV + COL_LEVEL + COL_CONFIG + 3 * 2
+  const lines = []
+  lines.push(headerParts.join('  '))
+  lines.push(chalk.dim('─'.repeat(Math.min(termCols, dividerWidth))))
+
+  for (const entry of entries) {
+    const envShort = ENV_SHORT_NAMES[entry.environmentId] ?? entry.environmentId
+    const levelStr = padCell(entry.level, COL_LEVEL)
+
+    // Build config summary
+    const params = /** @type {any} */ (entry.params ?? {})
+    let configSummary = ''
+    if (entry.type === 'mcp') {
+      if (params.command) {
+        const args = Array.isArray(params.args) ? params.args.slice(0, 2).join(' ') : ''
+        configSummary = [params.command, args].filter(Boolean).join(' ')
+      } else if (params.url) {
+        configSummary = params.url
+      }
+      // Mask env vars
+      if (params.env && Object.keys(params.env).length > 0) {
+        const maskedVars = Object.keys(params.env)
+          .map((k) => `${k}=${maskEnvVarValue(params.env[k])}`)
+          .join(', ')
+        configSummary = configSummary ? `${configSummary} [${maskedVars}]` : maskedVars
+      }
+    } else {
+      configSummary = params.description ?? params.content?.slice(0, 30) ?? ''
+    }
+
+    lines.push([
+      padCell(entry.name, COL_NAME),
+      padCell(envShort, COL_ENV),
+      levelStr,
+      padCell(configSummary, COL_CONFIG),
+    ].join('  '))
+  }
+
+  return lines
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Categories table formatter
+// ──────────────────────────────────────────────────────────────────────────────
 
 /**
  * Format a list of category entries as a table string for display in the TUI.
@@ -113,7 +197,9 @@ export function formatCategoriesTable(entries, termCols = 120) {
 
   for (const entry of entries) {
     const statusStr = entry.active
-      ? chalk.green(padCell('Active', COL_STATUS))
+      ? (/** @type {any} */ (entry)).drifted
+        ? chalk.yellow(padCell('⚠ Drifted', COL_STATUS))
+        : chalk.green(padCell('Active', COL_STATUS))
       : chalk.dim(padCell('Inactive', COL_STATUS))
 
     const envNames = entry.environments.map((id) => ENV_SHORT_NAMES[id] ?? id).join(', ')
