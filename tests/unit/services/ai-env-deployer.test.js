@@ -1,9 +1,10 @@
 import {describe, it, expect, beforeEach, afterEach} from 'vitest'
 import {join} from 'node:path'
-import {tmpdir} from 'node:os'
+import {tmpdir, homedir} from 'node:os'
 import {readFile, mkdir, writeFile, rm} from 'node:fs/promises'
 import {existsSync} from 'node:fs'
 import {randomUUID} from 'node:crypto'
+import yaml from 'js-yaml'
 
 import {
   deployMCPEntry,
@@ -76,6 +77,63 @@ function makeCommandEntry(overrides = {}) {
 }
 
 /**
+ * Build a minimal CategoryEntry for skill type.
+ * @param {Partial<import('../../../src/types.js').CategoryEntry>} [overrides]
+ * @returns {import('../../../src/types.js').CategoryEntry}
+ */
+function makeSkillEntry(overrides = {}) {
+  return {
+    id: randomUUID(),
+    name: 'my-skill',
+    type: /** @type {import('../../../src/types.js').CategoryType} */ ('skill'),
+    active: true,
+    environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
+    params: {content: '# My Skill\nSkill content here.', description: 'A test skill'},
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+/**
+ * Build a minimal CategoryEntry for agent type.
+ * @param {Partial<import('../../../src/types.js').CategoryEntry>} [overrides]
+ * @returns {import('../../../src/types.js').CategoryEntry}
+ */
+function makeAgentEntry(overrides = {}) {
+  return {
+    id: randomUUID(),
+    name: 'my-agent',
+    type: /** @type {import('../../../src/types.js').CategoryType} */ ('agent'),
+    active: true,
+    environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
+    params: {instructions: 'Agent instructions here.', description: 'A test agent'},
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+/**
+ * Build a minimal CategoryEntry for rule type.
+ * @param {Partial<import('../../../src/types.js').CategoryEntry>} [overrides]
+ * @returns {import('../../../src/types.js').CategoryEntry}
+ */
+function makeRuleEntry(overrides = {}) {
+  return {
+    id: randomUUID(),
+    name: 'my-rule',
+    type: /** @type {import('../../../src/types.js').CategoryType} */ ('rule'),
+    active: true,
+    environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
+    params: {content: 'Rule content here.', description: 'A test rule'},
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+/**
  * Build a minimal DetectedEnvironment stub.
  * @param {import('../../../src/types.js').EnvironmentId} id
  * @param {string[]} [unreadable]
@@ -92,6 +150,30 @@ function makeDetected(id, unreadable = []) {
     supportedCategories: ['mcp', 'command', 'skill', 'agent'],
     counts: {mcp: 0, command: 0, skill: 0, agent: 0},
     scope: 'project',
+  }
+}
+
+/**
+ * Save, run fn, then restore a file at the given path.
+ * Useful for tests that write to real homedir paths.
+ * @param {string} filePath
+ * @param {() => Promise<void>} fn
+ * @returns {Promise<void>}
+ */
+async function withRestoredFile(filePath, fn) {
+  const hadExistingFile = existsSync(filePath)
+  let originalContent = null
+  if (hadExistingFile) {
+    originalContent = await readFile(filePath, 'utf8')
+  }
+  try {
+    await fn()
+  } finally {
+    if (hadExistingFile && originalContent !== null) {
+      await writeFile(filePath, originalContent, 'utf8')
+    } else if (existsSync(filePath)) {
+      await rm(filePath, {force: true})
+    }
   }
 }
 
@@ -184,19 +266,9 @@ describe('deployMCPEntry', () => {
   })
 
   it('handles gemini-cli: writes to ~/.gemini/settings.json with "mcpServers" key', async () => {
-    // We cannot write to real homedir in tests; we verify the path structure by
-    // pre-creating the directory under a unique path then checking the written file
-    const {homedir} = await import('node:os')
     const geminiSettingsPath = join(homedir(), '.gemini', 'settings.json')
 
-    // Read current state (may not exist) so we can restore it
-    const hadExistingFile = existsSync(geminiSettingsPath)
-    let originalContent = null
-    if (hadExistingFile) {
-      originalContent = await readFile(geminiSettingsPath, 'utf8')
-    }
-
-    try {
+    await withRestoredFile(geminiSettingsPath, async () => {
       const entry = makeMCPEntry({name: 'gemini-mcp', environments: ['gemini-cli']})
       await deployMCPEntry(entry, 'gemini-cli', cwd)
 
@@ -204,27 +276,13 @@ describe('deployMCPEntry', () => {
       const json = await readJson(geminiSettingsPath)
       expect(json).toHaveProperty('mcpServers')
       expect(json.mcpServers).toHaveProperty('gemini-mcp')
-    } finally {
-      // Restore previous state
-      if (hadExistingFile && originalContent !== null) {
-        await writeFile(geminiSettingsPath, originalContent, 'utf8')
-      } else if (existsSync(geminiSettingsPath)) {
-        await rm(geminiSettingsPath, {force: true})
-      }
-    }
+    })
   })
 
   it('handles copilot-cli: writes to ~/.copilot/mcp-config.json with "mcpServers" key', async () => {
-    const {homedir} = await import('node:os')
     const copilotMcpPath = join(homedir(), '.copilot', 'mcp-config.json')
 
-    const hadExistingFile = existsSync(copilotMcpPath)
-    let originalContent = null
-    if (hadExistingFile) {
-      originalContent = await readFile(copilotMcpPath, 'utf8')
-    }
-
-    try {
+    await withRestoredFile(copilotMcpPath, async () => {
       const entry = makeMCPEntry({name: 'copilot-mcp', environments: ['copilot-cli']})
       await deployMCPEntry(entry, 'copilot-cli', cwd)
 
@@ -232,13 +290,100 @@ describe('deployMCPEntry', () => {
       const json = await readJson(copilotMcpPath)
       expect(json).toHaveProperty('mcpServers')
       expect(json.mcpServers).toHaveProperty('copilot-mcp')
-    } finally {
-      if (hadExistingFile && originalContent !== null) {
-        await writeFile(copilotMcpPath, originalContent, 'utf8')
-      } else if (existsSync(copilotMcpPath)) {
-        await rm(copilotMcpPath, {force: true})
-      }
-    }
+    })
+  })
+
+  it('handles cursor: writes to .cursor/mcp.json with "mcpServers" key', async () => {
+    const entry = makeMCPEntry({name: 'cursor-mcp', environments: ['cursor']})
+
+    await deployMCPEntry(entry, 'cursor', cwd)
+
+    const filePath = join(cwd, '.cursor', 'mcp.json')
+    expect(existsSync(filePath)).toBe(true)
+
+    const json = await readJson(filePath)
+    expect(json).toHaveProperty('mcpServers')
+    expect(json.mcpServers).toHaveProperty('cursor-mcp')
+    expect(json.mcpServers['cursor-mcp']).toMatchObject({command: 'npx'})
+  })
+
+  it('handles windsurf: writes to ~/.codeium/windsurf/mcp_config.json with "mcpServers" key', async () => {
+    const windsurfMcpPath = join(homedir(), '.codeium', 'windsurf', 'mcp_config.json')
+
+    await withRestoredFile(windsurfMcpPath, async () => {
+      const entry = makeMCPEntry({name: 'windsurf-mcp', environments: ['windsurf']})
+      await deployMCPEntry(entry, 'windsurf', cwd)
+
+      expect(existsSync(windsurfMcpPath)).toBe(true)
+      const json = await readJson(windsurfMcpPath)
+      expect(json).toHaveProperty('mcpServers')
+      expect(json.mcpServers).toHaveProperty('windsurf-mcp')
+    })
+  })
+
+  it('handles continue-dev: writes YAML to ~/.continue/config.yaml with "mcpServers" key', async () => {
+    const continuePath = join(homedir(), '.continue', 'config.yaml')
+
+    await withRestoredFile(continuePath, async () => {
+      const entry = makeMCPEntry({name: 'continue-mcp', environments: ['continue-dev']})
+      await deployMCPEntry(entry, 'continue-dev', cwd)
+
+      expect(existsSync(continuePath)).toBe(true)
+      const raw = await readFile(continuePath, 'utf8')
+      // Must be YAML, not JSON
+      expect(raw).not.toMatch(/^\s*\{/)
+      const parsed = /** @type {any} */ (yaml.load(raw))
+      expect(parsed).toHaveProperty('mcpServers')
+      expect(parsed.mcpServers).toHaveProperty('continue-mcp')
+      expect(parsed.mcpServers['continue-mcp']).toMatchObject({command: 'npx'})
+    })
+  })
+
+  it('handles continue-dev: merges into existing YAML without clobbering other entries', async () => {
+    const continuePath = join(homedir(), '.continue', 'config.yaml')
+
+    await withRestoredFile(continuePath, async () => {
+      // Pre-populate with an existing entry
+      const existing = {mcpServers: {'existing-server': {command: 'node', args: []}}}
+      await mkdir(join(homedir(), '.continue'), {recursive: true})
+      await writeFile(continuePath, yaml.dump(existing), 'utf8')
+
+      const entry = makeMCPEntry({name: 'new-continue-mcp', environments: ['continue-dev']})
+      await deployMCPEntry(entry, 'continue-dev', cwd)
+
+      const raw = await readFile(continuePath, 'utf8')
+      const parsed = /** @type {any} */ (yaml.load(raw))
+      expect(parsed.mcpServers).toHaveProperty('existing-server')
+      expect(parsed.mcpServers).toHaveProperty('new-continue-mcp')
+    })
+  })
+
+  it('handles zed: writes to ~/.config/zed/settings.json with "context_servers" key', async () => {
+    const zedSettingsPath = join(homedir(), '.config', 'zed', 'settings.json')
+
+    await withRestoredFile(zedSettingsPath, async () => {
+      const entry = makeMCPEntry({name: 'zed-mcp', environments: ['zed']})
+      await deployMCPEntry(entry, 'zed', cwd)
+
+      expect(existsSync(zedSettingsPath)).toBe(true)
+      const json = await readJson(zedSettingsPath)
+      expect(json).toHaveProperty('context_servers')
+      expect(json).not.toHaveProperty('mcpServers')
+      expect(/** @type {any} */ (json.context_servers)).toHaveProperty('zed-mcp')
+    })
+  })
+
+  it('handles amazon-q: writes to .amazonq/mcp.json with "mcpServers" key', async () => {
+    const entry = makeMCPEntry({name: 'amazonq-mcp', environments: ['amazon-q']})
+
+    await deployMCPEntry(entry, 'amazon-q', cwd)
+
+    const filePath = join(cwd, '.amazonq', 'mcp.json')
+    expect(existsSync(filePath)).toBe(true)
+
+    const json = await readJson(filePath)
+    expect(json).toHaveProperty('mcpServers')
+    expect(json.mcpServers).toHaveProperty('amazonq-mcp')
   })
 
   it('is a no-op when entry type is not mcp', async () => {
@@ -297,6 +442,65 @@ describe('undeployMCPEntry', () => {
     await expect(undeployMCPEntry('nonexistent', 'claude-code', cwd)).resolves.toBeUndefined()
     expect(existsSync(join(cwd, '.mcp.json'))).toBe(false)
   })
+
+  it('removes an entry from cursor .cursor/mcp.json while preserving others', async () => {
+    const filePath = join(cwd, '.cursor', 'mcp.json')
+    await mkdir(join(cwd, '.cursor'), {recursive: true})
+    const initial = {
+      mcpServers: {
+        'server-keep': {command: 'node', args: []},
+        'server-remove': {command: 'npx', args: []},
+      },
+    }
+    await writeFile(filePath, JSON.stringify(initial), 'utf8')
+
+    await undeployMCPEntry('server-remove', 'cursor', cwd)
+
+    const json = await readJson(filePath)
+    expect(json.mcpServers).not.toHaveProperty('server-remove')
+    expect(json.mcpServers).toHaveProperty('server-keep')
+  })
+
+  it('removes an entry from continue-dev YAML while preserving others', async () => {
+    const continuePath = join(homedir(), '.continue', 'config.yaml')
+
+    await withRestoredFile(continuePath, async () => {
+      const initial = {
+        mcpServers: {
+          'server-keep': {command: 'node', args: []},
+          'server-remove': {command: 'npx', args: []},
+        },
+      }
+      await mkdir(join(homedir(), '.continue'), {recursive: true})
+      await writeFile(continuePath, yaml.dump(initial), 'utf8')
+
+      await undeployMCPEntry('server-remove', 'continue-dev', cwd)
+
+      const raw = await readFile(continuePath, 'utf8')
+      const parsed = /** @type {any} */ (yaml.load(raw))
+      expect(parsed.mcpServers).not.toHaveProperty('server-remove')
+      expect(parsed.mcpServers).toHaveProperty('server-keep')
+      // Should still be valid YAML, not JSON
+      expect(raw).not.toMatch(/^\s*\{/)
+    })
+  })
+
+  it('removes an entry from amazon-q .amazonq/mcp.json', async () => {
+    const filePath = join(cwd, '.amazonq', 'mcp.json')
+    await mkdir(join(cwd, '.amazonq'), {recursive: true})
+    const initial = {
+      mcpServers: {
+        'aq-server': {command: 'node', args: []},
+      },
+    }
+    await writeFile(filePath, JSON.stringify(initial), 'utf8')
+
+    await undeployMCPEntry('aq-server', 'amazon-q', cwd)
+
+    const json = await readJson(filePath)
+    expect(json.mcpServers).not.toHaveProperty('aq-server')
+    expect(json).toHaveProperty('mcpServers')
+  })
 })
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -326,32 +530,18 @@ describe('deployFileEntry', () => {
       params: {content: 'Summarise the current file.', description: 'Summarise'},
     })
 
-    // Use a real temp dir for the gemini path; we capture the expected path and
-    // clean it up afterwards.
-    const {homedir} = await import('node:os')
     const tomlPath = join(homedir(), '.gemini', 'commands', 'summarise.toml')
 
-    const hadExistingFile = existsSync(tomlPath)
-    let originalContent = null
-    if (hadExistingFile) {
-      originalContent = await readFile(tomlPath, 'utf8')
-    }
-
-    try {
+    await withRestoredFile(tomlPath, async () => {
       await deployFileEntry(entry, 'gemini-cli', cwd)
 
       expect(existsSync(tomlPath)).toBe(true)
       const raw = await readFile(tomlPath, 'utf8')
       expect(raw).toContain('description = "Summarise"')
       expect(raw).toContain('[prompt]')
+      expect(raw).toContain('text = """')
       expect(raw).toContain('Summarise the current file.')
-    } finally {
-      if (hadExistingFile && originalContent !== null) {
-        await writeFile(tomlPath, originalContent, 'utf8')
-      } else if (existsSync(tomlPath)) {
-        await rm(tomlPath, {force: true})
-      }
-    }
+    })
   })
 
   it('creates nested directory structure {name}/SKILL.md for vscode-copilot skills', async () => {
@@ -422,6 +612,125 @@ describe('deployFileEntry', () => {
     expect(content).toBe('Review code for quality and security.')
   })
 
+  it('creates an .mdc file with YAML frontmatter for a cursor rule', async () => {
+    const entry = makeRuleEntry({
+      name: 'no-console',
+      environments: ['cursor'],
+      params: {content: 'Never use console.log in production code.', description: 'No console logs'},
+    })
+
+    await deployFileEntry(entry, 'cursor', cwd)
+
+    const filePath = join(cwd, '.cursor', 'rules', 'no-console.mdc')
+    expect(existsSync(filePath)).toBe(true)
+
+    const raw = await readFile(filePath, 'utf8')
+    // Must have YAML frontmatter
+    expect(raw).toMatch(/^---\n/)
+    expect(raw).toContain('description: No console logs')
+    expect(raw).toContain('globs:')
+    expect(raw).toContain('alwaysApply: false')
+    expect(raw).toContain('---')
+    // Must contain the rule content after the frontmatter
+    expect(raw).toContain('Never use console.log in production code.')
+  })
+
+  it('creates a .md file at .claude/rules/<name>.md for a claude-code rule', async () => {
+    const entry = makeRuleEntry({
+      name: 'style-guide',
+      environments: ['claude-code'],
+      params: {content: 'Follow the project style guide.', description: 'Style guide'},
+    })
+
+    await deployFileEntry(entry, 'claude-code', cwd)
+
+    const filePath = join(cwd, '.claude', 'rules', 'style-guide.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    const content = await readFile(filePath, 'utf8')
+    expect(content).toBe('Follow the project style guide.')
+  })
+
+  it('creates a .md file at .continue/rules/<name>.md for a continue-dev rule', async () => {
+    const entry = makeRuleEntry({
+      name: 'best-practices',
+      environments: ['continue-dev'],
+      params: {content: 'Always write tests.', description: 'Best practices'},
+    })
+
+    await deployFileEntry(entry, 'continue-dev', cwd)
+
+    const filePath = join(cwd, '.continue', 'rules', 'best-practices.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    const content = await readFile(filePath, 'utf8')
+    expect(content).toBe('Always write tests.')
+  })
+
+  it('creates a .md file for a claude-code skill', async () => {
+    const entry = makeSkillEntry({
+      name: 'refactor-skill',
+      environments: ['claude-code'],
+      params: {content: '# Refactor Skill\nRefactor code.', description: 'Refactor'},
+    })
+
+    await deployFileEntry(entry, 'claude-code', cwd)
+
+    const filePath = join(cwd, '.claude', 'skills', 'refactor-skill.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    const content = await readFile(filePath, 'utf8')
+    expect(content).toBe('# Refactor Skill\nRefactor code.')
+  })
+
+  it('creates a .md file for a cursor skill', async () => {
+    const entry = makeSkillEntry({
+      name: 'debug-skill',
+      environments: ['cursor'],
+      params: {content: 'Debugging skill content.', description: 'Debug'},
+    })
+
+    await deployFileEntry(entry, 'cursor', cwd)
+
+    const filePath = join(cwd, '.cursor', 'skills', 'debug-skill.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    const content = await readFile(filePath, 'utf8')
+    expect(content).toBe('Debugging skill content.')
+  })
+
+  it('creates a .md file for an opencode agent', async () => {
+    const entry = makeAgentEntry({
+      name: 'test-agent',
+      environments: ['opencode'],
+      params: {content: 'OpenCode agent instructions.', description: 'Test agent'},
+    })
+
+    await deployFileEntry(entry, 'opencode', cwd)
+
+    const filePath = join(cwd, '.opencode', 'agents', 'test-agent.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    const content = await readFile(filePath, 'utf8')
+    expect(content).toBe('OpenCode agent instructions.')
+  })
+
+  it('creates parent directories as needed when they do not exist', async () => {
+    const entry = makeCommandEntry({
+      name: 'deep-cmd',
+      environments: ['claude-code'],
+      params: {content: 'Deep command content.'},
+    })
+
+    // The .claude/commands directory does not exist yet
+    expect(existsSync(join(cwd, '.claude'))).toBe(false)
+
+    await deployFileEntry(entry, 'claude-code', cwd)
+
+    const filePath = join(cwd, '.claude', 'commands', 'deep-cmd.md')
+    expect(existsSync(filePath)).toBe(true)
+  })
+
   it('is a no-op when entry is null', async () => {
     await expect(deployFileEntry(null, 'claude-code', cwd)).resolves.toBeUndefined()
   })
@@ -453,6 +762,71 @@ describe('undeployFileEntry', () => {
 
   it('is a no-op when the file does not exist', async () => {
     await expect(undeployFileEntry('nonexistent', 'command', 'claude-code', cwd)).resolves.toBeUndefined()
+  })
+
+  it('removes a deployed skill file for claude-code', async () => {
+    const entry = makeSkillEntry({name: 'skill-to-remove', environments: ['claude-code']})
+    await deployFileEntry(entry, 'claude-code', cwd)
+
+    const filePath = join(cwd, '.claude', 'skills', 'skill-to-remove.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    await undeployFileEntry('skill-to-remove', 'skill', 'claude-code', cwd)
+
+    expect(existsSync(filePath)).toBe(false)
+  })
+
+  it('removes a deployed agent file for opencode', async () => {
+    const entry = makeAgentEntry({
+      name: 'agent-to-remove',
+      environments: ['opencode'],
+      params: {content: 'Agent content.'},
+    })
+    await deployFileEntry(entry, 'opencode', cwd)
+
+    const filePath = join(cwd, '.opencode', 'agents', 'agent-to-remove.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    await undeployFileEntry('agent-to-remove', 'agent', 'opencode', cwd)
+
+    expect(existsSync(filePath)).toBe(false)
+  })
+
+  it('removes a deployed cursor .mdc rule file', async () => {
+    const entry = makeRuleEntry({
+      name: 'rule-to-remove',
+      environments: ['cursor'],
+      params: {content: 'Rule content.', description: 'Test'},
+    })
+    await deployFileEntry(entry, 'cursor', cwd)
+
+    const filePath = join(cwd, '.cursor', 'rules', 'rule-to-remove.mdc')
+    expect(existsSync(filePath)).toBe(true)
+
+    await undeployFileEntry('rule-to-remove', 'rule', 'cursor', cwd)
+
+    expect(existsSync(filePath)).toBe(false)
+  })
+
+  it('removes a deployed claude-code rule file', async () => {
+    const entry = makeRuleEntry({
+      name: 'rule-claude',
+      environments: ['claude-code'],
+      params: {content: 'Claude rule.', description: 'Test'},
+    })
+    await deployFileEntry(entry, 'claude-code', cwd)
+
+    const filePath = join(cwd, '.claude', 'rules', 'rule-claude.md')
+    expect(existsSync(filePath)).toBe(true)
+
+    await undeployFileEntry('rule-claude', 'rule', 'claude-code', cwd)
+
+    expect(existsSync(filePath)).toBe(false)
+  })
+
+  it('is a no-op when type is mcp', async () => {
+    await expect(undeployFileEntry('some-mcp', 'mcp', 'claude-code', cwd)).resolves.toBeUndefined()
+    expect(existsSync(join(cwd, '.mcp.json'))).toBe(false)
   })
 })
 

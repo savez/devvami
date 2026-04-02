@@ -2,16 +2,20 @@ import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest'
 
 vi.mock('node:fs')
 
-import {existsSync, readFileSync} from 'node:fs'
+import {existsSync, readFileSync, readdirSync} from 'node:fs'
 import {
   scanEnvironments,
   getCompatibleEnvironments,
   computeCategoryCounts,
+  parseNativeEntries,
+  getSharedPathGroups,
+  ENVIRONMENTS,
 } from '../../../src/services/ai-env-scanner.js'
 
 const CWD = '/fake/project'
 
 beforeEach(() => {
+  vi.mocked(readdirSync).mockReturnValue([])
   // Default: nothing exists
   vi.mocked(existsSync).mockReturnValue(false)
   vi.mocked(readFileSync).mockReturnValue('{}')
@@ -126,11 +130,11 @@ describe('scanEnvironments', () => {
 
     const byId = Object.fromEntries(result.map((e) => [e.id, e]))
 
-    expect(byId['vscode-copilot']?.supportedCategories).toEqual(['mcp', 'command', 'skill', 'agent'])
-    expect(byId['claude-code']?.supportedCategories).toEqual(['mcp', 'command', 'skill', 'agent'])
-    expect(byId['opencode']?.supportedCategories).toEqual(['mcp', 'command', 'skill', 'agent'])
-    expect(byId['gemini-cli']?.supportedCategories).toEqual(['mcp', 'command'])
-    expect(byId['copilot-cli']?.supportedCategories).toEqual(['mcp', 'command', 'skill', 'agent'])
+    expect(byId['vscode-copilot']?.supportedCategories).toEqual(['mcp', 'command', 'rule', 'skill', 'agent'])
+    expect(byId['claude-code']?.supportedCategories).toEqual(['mcp', 'command', 'rule', 'skill', 'agent'])
+    expect(byId['opencode']?.supportedCategories).toEqual(['mcp', 'command', 'rule', 'skill', 'agent'])
+    expect(byId['gemini-cli']?.supportedCategories).toEqual(['mcp', 'command', 'rule'])
+    expect(byId['copilot-cli']?.supportedCategories).toEqual(['mcp', 'command', 'rule', 'skill', 'agent'])
   })
 
   it('non-JSON paths are always readable when they exist', () => {
@@ -149,7 +153,7 @@ describe('scanEnvironments', () => {
 
     const result = scanEnvironments(CWD)
 
-    expect(result[0].counts).toEqual({mcp: 0, command: 0, skill: 0, agent: 0})
+    expect(result[0].counts).toEqual({mcp: 0, command: 0, rule: 0, skill: 0, agent: 0})
   })
 })
 
@@ -294,7 +298,7 @@ describe('computeCategoryCounts', () => {
 
     const counts = computeCategoryCounts('claude-code', entries)
 
-    expect(counts).toEqual({mcp: 1, command: 1, skill: 0, agent: 1})
+    expect(counts).toEqual({mcp: 1, command: 1, rule: 0, skill: 0, agent: 1})
   })
 
   it('excludes inactive entries', () => {
@@ -345,13 +349,13 @@ describe('computeCategoryCounts', () => {
 
     const counts = computeCategoryCounts('claude-code', entries)
 
-    expect(counts).toEqual({mcp: 0, command: 0, skill: 0, agent: 0})
+    expect(counts).toEqual({mcp: 0, command: 0, rule: 0, skill: 0, agent: 0})
   })
 
   it('returns all zeros when entries array is empty', () => {
     const counts = computeCategoryCounts('claude-code', [])
 
-    expect(counts).toEqual({mcp: 0, command: 0, skill: 0, agent: 0})
+    expect(counts).toEqual({mcp: 0, command: 0, rule: 0, skill: 0, agent: 0})
   })
 
   it('counts entries correctly when env appears in a multi-env list', () => {
@@ -383,5 +387,196 @@ describe('computeCategoryCounts', () => {
 
     expect(counts.skill).toBe(2)
     expect(counts.mcp).toBe(0)
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 10 environments detection (T011)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('scanEnvironments — 10 environments', () => {
+  it('detects cursor via .cursor/mcp.json', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.cursor/mcp.json'))
+    vi.mocked(readFileSync).mockReturnValue('{"mcpServers":{}}')
+
+    const result = scanEnvironments(CWD)
+
+    expect(result.some((e) => e.id === 'cursor')).toBe(true)
+  })
+
+  it('detects windsurf via .windsurf/rules directory', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.windsurf/rules'))
+
+    const result = scanEnvironments(CWD)
+
+    expect(result.some((e) => e.id === 'windsurf')).toBe(true)
+  })
+
+  it('detects continue-dev via .continue/config.yaml', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.continue/config.yaml'))
+
+    const result = scanEnvironments(CWD)
+
+    expect(result.some((e) => e.id === 'continue-dev')).toBe(true)
+  })
+
+  it('detects zed via .rules', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.rules'))
+
+    const result = scanEnvironments(CWD)
+
+    expect(result.some((e) => e.id === 'zed')).toBe(true)
+  })
+
+  it('detects amazon-q via .amazonq/mcp.json', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.amazonq/mcp.json'))
+    vi.mocked(readFileSync).mockReturnValue('{"mcpServers":{}}')
+
+    const result = scanEnvironments(CWD)
+
+    expect(result.some((e) => e.id === 'amazon-q')).toBe(true)
+  })
+
+  it('ENVIRONMENTS array contains all 10 environments', () => {
+    const ids = ENVIRONMENTS.map((e) => e.id)
+    expect(ids).toContain('vscode-copilot')
+    expect(ids).toContain('claude-code')
+    expect(ids).toContain('opencode')
+    expect(ids).toContain('gemini-cli')
+    expect(ids).toContain('copilot-cli')
+    expect(ids).toContain('cursor')
+    expect(ids).toContain('windsurf')
+    expect(ids).toContain('continue-dev')
+    expect(ids).toContain('zed')
+    expect(ids).toContain('amazon-q')
+    expect(ids).toHaveLength(10)
+  })
+
+  it('cursor supportedCategories includes rule but not agent', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.cursor/mcp.json'))
+    vi.mocked(readFileSync).mockReturnValue('{"mcpServers":{}}')
+
+    const result = scanEnvironments(CWD)
+    const cursor = result.find((e) => e.id === 'cursor')
+
+    expect(cursor?.supportedCategories).toContain('rule')
+    expect(cursor?.supportedCategories).not.toContain('agent')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// parseNativeEntries (T011)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('parseNativeEntries', () => {
+  const claudeCodeDef = ENVIRONMENTS.find((e) => e.id === 'claude-code')
+
+  it('returns MCP entries from .mcp.json', () => {
+    const mcpJson = JSON.stringify({mcpServers: {'my-server': {command: 'npx', args: ['-y', 'server'], type: 'stdio'}}})
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.mcp.json'))
+    vi.mocked(readFileSync).mockReturnValue(mcpJson)
+
+    const result = parseNativeEntries(claudeCodeDef, CWD, [])
+
+    expect(result).toHaveLength(1)
+    expect(result[0].name).toBe('my-server')
+    expect(result[0].type).toBe('mcp')
+    expect(result[0].environmentId).toBe('claude-code')
+    expect(result[0].level).toBe('project')
+    expect(result[0].params.command).toBe('npx')
+  })
+
+  it('excludes managed entries matched by name+type', () => {
+    const mcpJson = JSON.stringify({mcpServers: {'managed-server': {command: 'node'}, 'native-server': {command: 'npx'}}})
+    vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('.mcp.json'))
+    vi.mocked(readFileSync).mockReturnValue(mcpJson)
+
+    const managedEntries = [
+      {
+        id: '1',
+        name: 'managed-server',
+        type: 'mcp',
+        active: true,
+        environments: ['claude-code'],
+        params: {transport: 'stdio', command: 'node'},
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    ]
+
+    const result = parseNativeEntries(claudeCodeDef, CWD, managedEntries)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].name).toBe('native-server')
+  })
+
+  it('returns file-based rule entries from .claude/rules/ directory', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).includes('.claude/rules'))
+    vi.mocked(readdirSync).mockImplementation((p) => {
+      if (String(p).endsWith('.claude/rules')) {
+        return /** @type {any} */ ([{name: 'my-rule.md', isFile: () => true, isDirectory: () => false}])
+      }
+      return []
+    })
+
+    const result = parseNativeEntries(claudeCodeDef, CWD, [])
+    const rules = result.filter((e) => e.type === 'rule')
+
+    expect(rules.length).toBeGreaterThanOrEqual(1)
+    expect(rules.some((r) => r.name === 'my-rule')).toBe(true)
+  })
+
+  it('returns empty array when no config files exist', () => {
+    vi.mocked(existsSync).mockReturnValue(false)
+
+    const result = parseNativeEntries(claudeCodeDef, CWD, [])
+
+    expect(result).toHaveLength(0)
+  })
+
+  it('returns entries from command directory', () => {
+    vi.mocked(existsSync).mockImplementation((p) => String(p).includes('.claude/commands'))
+    vi.mocked(readdirSync).mockImplementation((p) => {
+      if (String(p).endsWith('.claude/commands')) {
+        return /** @type {any} */ ([
+          {name: 'refactor.md', isFile: () => true, isDirectory: () => false},
+          {name: 'review.md', isFile: () => true, isDirectory: () => false},
+        ])
+      }
+      return []
+    })
+
+    const result = parseNativeEntries(claudeCodeDef, CWD, [])
+    const cmds = result.filter((e) => e.type === 'command')
+
+    expect(cmds).toHaveLength(2)
+    expect(cmds.map((c) => c.name)).toContain('refactor')
+    expect(cmds.map((c) => c.name)).toContain('review')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// getSharedPathGroups (T011)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('getSharedPathGroups', () => {
+  it('returns mcp group for claude-code and copilot-cli', () => {
+    const groups = getSharedPathGroups('mcp')
+    expect(groups.some((g) => g.includes('claude-code') && g.includes('copilot-cli'))).toBe(true)
+  })
+
+  it('returns command group for vscode-copilot and copilot-cli', () => {
+    const groups = getSharedPathGroups('command')
+    expect(groups.some((g) => g.includes('vscode-copilot') && g.includes('copilot-cli'))).toBe(true)
+  })
+
+  it('returns empty array for skill', () => {
+    const groups = getSharedPathGroups('skill')
+    expect(groups).toHaveLength(0)
+  })
+
+  it('returns group for agent (vscode-copilot and copilot-cli share .github/agents/)', () => {
+    const groups = getSharedPathGroups('agent')
+    expect(groups.some((g) => g.includes('vscode-copilot') && g.includes('copilot-cli'))).toBe(true)
   })
 })

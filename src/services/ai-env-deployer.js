@@ -9,6 +9,7 @@ import {readFile, writeFile, mkdir, rm} from 'node:fs/promises'
 import {existsSync} from 'node:fs'
 import {join, dirname} from 'node:path'
 import {homedir} from 'node:os'
+import yaml from 'js-yaml'
 
 /** @import { CategoryEntry, CategoryType, EnvironmentId, DetectedEnvironment } from '../types.js' */
 
@@ -20,7 +21,7 @@ import {homedir} from 'node:os'
  * For each environment, the target JSON file path (relative to cwd or absolute)
  * and the root key that holds the MCP server map.
  *
- * @type {Record<EnvironmentId, { resolvePath: (cwd: string) => string, mcpKey: string }>}
+ * @type {Record<EnvironmentId, { resolvePath: (cwd: string) => string, mcpKey: string, isYaml?: boolean }>}
  */
 const MCP_TARGETS = {
   'vscode-copilot': {
@@ -43,6 +44,27 @@ const MCP_TARGETS = {
     resolvePath: (_cwd) => join(homedir(), '.copilot', 'mcp-config.json'),
     mcpKey: 'mcpServers',
   },
+  cursor: {
+    resolvePath: (cwd) => join(cwd, '.cursor', 'mcp.json'),
+    mcpKey: 'mcpServers',
+  },
+  windsurf: {
+    resolvePath: (_cwd) => join(homedir(), '.codeium', 'windsurf', 'mcp_config.json'),
+    mcpKey: 'mcpServers',
+  },
+  'continue-dev': {
+    resolvePath: (_cwd) => join(homedir(), '.continue', 'config.yaml'),
+    mcpKey: 'mcpServers',
+    isYaml: true,
+  },
+  zed: {
+    resolvePath: (_cwd) => join(homedir(), '.config', 'zed', 'settings.json'),
+    mcpKey: 'context_servers',
+  },
+  'amazon-q': {
+    resolvePath: (cwd) => join(cwd, '.amazonq', 'mcp.json'),
+    mcpKey: 'mcpServers',
+  },
 }
 
 /**
@@ -62,6 +84,8 @@ function resolveFilePath(name, type, envId, cwd) {
       return resolveSkillPath(name, envId, cwd)
     case 'agent':
       return resolveAgentPath(name, envId, cwd)
+    case 'rule':
+      return resolveRulePath(name, envId, cwd)
     default:
       throw new Error(`Unsupported file entry type: ${type}`)
   }
@@ -86,6 +110,12 @@ function resolveCommandPath(name, envId, cwd) {
     case 'copilot-cli':
       // shared path with vscode-copilot for commands
       return join(cwd, '.github', 'prompts', `${name}.prompt.md`)
+    case 'cursor':
+      return join(cwd, '.cursor', 'commands', `${name}.md`)
+    case 'windsurf':
+      return join(cwd, '.windsurf', 'workflows', `${name}.md`)
+    case 'continue-dev':
+      return join(cwd, '.continue', 'prompts', `${name}.md`)
     default:
       throw new Error(`Unknown environment for command: ${envId}`)
   }
@@ -108,6 +138,8 @@ function resolveSkillPath(name, envId, cwd) {
       return join(cwd, '.opencode', 'skills', `${name}.md`)
     case 'copilot-cli':
       return join(homedir(), '.copilot', 'skills', `${name}.md`)
+    case 'cursor':
+      return join(cwd, '.cursor', 'skills', `${name}.md`)
     default:
       throw new Error(`Environment "${envId}" does not support skill entries`)
   }
@@ -129,8 +161,45 @@ function resolveAgentPath(name, envId, cwd) {
       return join(cwd, '.opencode', 'agents', `${name}.md`)
     case 'copilot-cli':
       return join(homedir(), '.copilot', 'agents', `${name}.md`)
+    case 'continue-dev':
+      return join(cwd, '.continue', 'agents', `${name}.md`)
+    case 'amazon-q':
+      return join(homedir(), '.aws', 'amazonq', 'cli-agents', `${name}.json`)
     default:
       throw new Error(`Environment "${envId}" does not support agent entries`)
+  }
+}
+
+/**
+ * @param {string} name
+ * @param {EnvironmentId} envId
+ * @param {string} cwd
+ * @returns {string}
+ */
+function resolveRulePath(name, envId, cwd) {
+  switch (envId) {
+    case 'vscode-copilot':
+      return join(cwd, '.github', 'instructions', `${name}.md`)
+    case 'claude-code':
+      return join(cwd, '.claude', 'rules', `${name}.md`)
+    case 'opencode':
+      return join(cwd, 'AGENTS.md')
+    case 'gemini-cli':
+      return join(cwd, 'GEMINI.md')
+    case 'copilot-cli':
+      return join(cwd, '.github', 'copilot-instructions.md')
+    case 'cursor':
+      return join(cwd, '.cursor', 'rules', `${name}.mdc`)
+    case 'windsurf':
+      return join(cwd, '.windsurf', 'rules', `${name}.md`)
+    case 'continue-dev':
+      return join(cwd, '.continue', 'rules', `${name}.md`)
+    case 'zed':
+      return join(cwd, '.rules')
+    case 'amazon-q':
+      return join(cwd, '.amazonq', 'rules', `${name}.md`)
+    default:
+      throw new Error(`Environment "${envId}" does not support rule entries`)
   }
 }
 
@@ -155,6 +224,23 @@ function renderGeminiToml(description, content) {
 text = """
 ${safeContent}
 """
+`
+}
+
+/**
+ * Render a Cursor rule as MDC (Markdown with YAML frontmatter).
+ * @param {string} name - Rule name (used as identifier)
+ * @param {string} description - Short description
+ * @param {string} content - Rule content
+ * @returns {string}
+ */
+function renderCursorMDC(name, description, content) {
+  return `---
+description: ${description || name}
+globs:
+alwaysApply: false
+---
+${content}
 `
 }
 
@@ -189,6 +275,32 @@ async function writeJson(filePath, data) {
     await mkdir(dir, {recursive: true})
   }
   await writeFile(filePath, JSON.stringify(data, null, 2), 'utf8')
+}
+
+/**
+ * Read a YAML file from disk. Returns an empty object when the file is missing.
+ * Throws if the file exists but cannot be parsed.
+ * @param {string} filePath
+ * @returns {Promise<Record<string, unknown>>}
+ */
+async function readYamlOrEmpty(filePath) {
+  if (!existsSync(filePath)) return {}
+  const raw = await readFile(filePath, 'utf8')
+  return /** @type {Record<string, unknown>} */ (yaml.load(raw) ?? {})
+}
+
+/**
+ * Write a value to disk as YAML, creating parent directories as needed.
+ * @param {string} filePath
+ * @param {unknown} data
+ * @returns {Promise<void>}
+ */
+async function writeYaml(filePath, data) {
+  const dir = dirname(filePath)
+  if (!existsSync(dir)) {
+    await mkdir(dir, {recursive: true})
+  }
+  await writeFile(filePath, yaml.dump(data, {lineWidth: -1}), 'utf8')
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -241,7 +353,7 @@ export async function deployMCPEntry(entry, envId, cwd) {
   if (!target) return
 
   const filePath = target.resolvePath(cwd)
-  const json = await readJsonOrEmpty(filePath)
+  const json = target.isYaml ? await readYamlOrEmpty(filePath) : await readJsonOrEmpty(filePath)
 
   if (!json[target.mcpKey] || typeof json[target.mcpKey] !== 'object') {
     json[target.mcpKey] = {}
@@ -251,7 +363,11 @@ export async function deployMCPEntry(entry, envId, cwd) {
   const mcpKey = /** @type {any} */ (json[target.mcpKey])
   mcpKey[entry.name] = buildMCPServerObject(/** @type {import('../types.js').MCPParams} */ (entry.params))
 
-  await writeJson(filePath, json)
+  if (target.isYaml) {
+    await writeYaml(filePath, json)
+  } else {
+    await writeJson(filePath, json)
+  }
 }
 
 /**
@@ -272,13 +388,17 @@ export async function undeployMCPEntry(entryName, envId, cwd) {
   const filePath = target.resolvePath(cwd)
   if (!existsSync(filePath)) return
 
-  const json = await readJsonOrEmpty(filePath)
+  const json = target.isYaml ? await readYamlOrEmpty(filePath) : await readJsonOrEmpty(filePath)
 
   if (json[target.mcpKey] && typeof json[target.mcpKey] === 'object') {
     delete (/** @type {any} */ (json[target.mcpKey])[entryName])
   }
 
-  await writeJson(filePath, json)
+  if (target.isYaml) {
+    await writeYaml(filePath, json)
+  } else {
+    await writeJson(filePath, json)
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -316,6 +436,14 @@ export async function deployFileEntry(entry, envId, cwd) {
   }
 
   const params = /** @type {any} */ (entry.params)
+
+  // Cursor rules use MDC format (Markdown with YAML frontmatter)
+  if (envId === 'cursor' && entry.type === 'rule') {
+    const description = params.description ?? ''
+    const content = params.content ?? ''
+    await writeFile(filePath, renderCursorMDC(entry.name, description, content), 'utf8')
+    return
+  }
 
   // Gemini CLI commands use TOML format
   if (envId === 'gemini-cli' && entry.type === 'command') {

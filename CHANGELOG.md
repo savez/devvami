@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-04-02
+
+### Added
+
+- **sync-config-ai:** 5 new AI environments — Cursor, Windsurf, Continue.dev, Zed, Amazon Q (10 total)
+- **sync-config-ai:** Rules category (5th type) with MDC format for Cursor, markdown for others
+- **sync-config-ai:** Native entries — read-only section showing unmanaged items already in each environment's config
+- **sync-config-ai:** Drift detection — ⚠ indicator on managed entries that diverged from file state; Enter opens resolution view with re-deploy / accept-changes actions
+- **sync-config-ai:** Env var masking — MCP env vars masked by default (`first6chars***`); press `r` to reveal
+- **sync-config-ai:** Import to sync — press `i` on a native entry to bring it into dvmi management
+- **sync-config-ai:** Tab key switches between Native and Managed sections within each category tab
+- **sync-config-ai:** Chezmoi auto-sync after every create / edit / delete / activate / deactivate
+- **sync-config-ai:** Schema v2 for `ai-config.json` with automatic v1 → v2 migration
+
+### Changed
+
+- **sync-config-ai:** `--json` output now includes `nativeEntries` (grouped by type), `rule` category, and `drifted` boolean per entry
+- **sync-config-ai:** Format translation extended — YAML merge for Continue.dev, TOML templates for Gemini CLI commands, MDC (YAML frontmatter + content) for Cursor rules
+
 ## [1.5.0] - 2026-04-01
 
 ### Added
