@@ -184,8 +184,18 @@ dvmi security setup   # Interactive wizard to set up credential protection tools
 ### AI Config
 
 ```bash
-dvmi sync-config-ai   # Manage AI tool configurations across environments via TUI
+dvmi sync-config-ai         # Manage AI tool configurations across environments via TUI
+dvmi sync-config-ai --json  # Output current state as structured JSON (CI / scripting)
 ```
+
+The TUI shows 6 tabs — **Environments** (read-only detection) + one tab per category (**MCPs**, **Commands**, **Rules**, **Skills**, **Agents**). Each category tab has two sections:
+
+- **Native** — items already in each tool's config that dvmi doesn't manage yet (press `i` to import)
+- **Managed** — entries you've added via dvmi; synced across all target environments automatically
+
+Supports 10 AI environments: VS Code Copilot, Claude Code, OpenCode, Gemini CLI, GitHub Copilot CLI, Cursor, Windsurf, Continue.dev, Zed, Amazon Q.
+
+Key bindings: `n` create · `Enter` edit · `d` toggle active · `Del` delete · `r` reveal env vars · `i` import native · `Tab` switch section · `q` exit
 
 ### Other
 
