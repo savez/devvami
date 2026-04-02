@@ -17,7 +17,49 @@ import {formatEnvironmentsTable, formatCategoriesTable, formatNativeEntriesTable
 import {startTabTUI} from '../../utils/tui/tab-tui.js'
 import {DvmiError} from '../../utils/errors.js'
 
-/** @import { DetectedEnvironment, CategoryEntry } from '../../types.js' */
+/** @import { DetectedEnvironment, CategoryEntry, MCPParams } from '../../types.js' */
+
+/**
+ * Extract only MCPParams-relevant fields from raw form values.
+ * Parses args (editor newline-joined) into string[] and env vars (KEY=VALUE lines) into Record.
+ * @param {Record<string, unknown>} values - Raw form output from extractValues
+ * @returns {MCPParams}
+ */
+function buildMCPParams(values) {
+  /** @type {MCPParams} */
+  const params = {transport: /** @type {'stdio'|'sse'|'streamable-http'} */ (values.transport)}
+
+  if (params.transport === 'stdio') {
+    if (values.command) params.command = /** @type {string} */ (values.command)
+    // Args: editor field → newline-joined string → split into array
+    if (values.args && typeof values.args === 'string') {
+      const arr = /** @type {string} */ (values.args).split('\n').map((a) => a.trim()).filter(Boolean)
+      if (arr.length > 0) params.args = arr
+    } else if (Array.isArray(values.args) && values.args.length > 0) {
+      params.args = values.args
+    }
+  } else {
+    if (values.url) params.url = /** @type {string} */ (values.url)
+  }
+
+  // Env vars: editor field → newline-joined KEY=VALUE string → parse into Record.
+  // Env vars apply to ALL transports (e.g. API keys for remote servers too).
+  if (values.env && typeof values.env === 'string') {
+    /** @type {Record<string, string>} */
+    const envObj = {}
+    for (const line of /** @type {string} */ (values.env).split('\n')) {
+      const t = line.trim()
+      if (!t) continue
+      const eq = t.indexOf('=')
+      if (eq > 0) envObj[t.slice(0, eq)] = t.slice(eq + 1)
+    }
+    if (Object.keys(envObj).length > 0) params.env = envObj
+  } else if (values.env && typeof values.env === 'object' && !Array.isArray(values.env)) {
+    params.env = /** @type {Record<string, string>} */ (values.env)
+  }
+
+  return params
+}
 
 export default class SyncConfigAi extends Command {
   static description = 'Manage AI coding tool configurations across environments via TUI'
@@ -155,16 +197,19 @@ export default class SyncConfigAi extends Command {
         const currentStore = await loadAIConfig()
 
         if (action.type === 'create') {
+          const isMCP = action.tabKey === 'mcp'
           const created = await addEntry({
             name: action.values.name,
             type: action.tabKey || 'mcp',
             environments: action.values.environments || [],
-            params: action.values,
+            params: isMCP ? buildMCPParams(action.values) : action.values,
           })
           await deployEntry(created, detectedEnvs, process.cwd())
           await syncAIConfigToChezmoi()
         } else if (action.type === 'edit') {
-          const updated = await updateEntry(action.id, {params: action.values})
+          const entry = currentStore.entries.find((e) => e.id === action.id)
+          const isMCP = entry?.type === 'mcp'
+          const updated = await updateEntry(action.id, {params: isMCP ? buildMCPParams(action.values) : action.values})
           await deployEntry(updated, detectedEnvs, process.cwd())
           await syncAIConfigToChezmoi()
         } else if (action.type === 'delete') {

@@ -63,6 +63,15 @@ export const ENVIRONMENTS = Object.freeze([
     supportedCategories: /** @type {CategoryType[]} */ (['mcp', 'command', 'rule', 'skill', 'agent']),
   },
   {
+    id: /** @type {EnvironmentId} */ ('claude-desktop'),
+    name: 'Claude Desktop',
+    projectPaths: [],
+    globalPaths: [
+      {path: '~/Library/Application Support/Claude/claude_desktop_config.json', isJson: true},
+    ],
+    supportedCategories: /** @type {CategoryType[]} */ (['mcp']),
+  },
+  {
     id: /** @type {EnvironmentId} */ ('opencode'),
     name: 'OpenCode',
     projectPaths: [
@@ -451,6 +460,55 @@ function parseMCPsFromYaml(filePath, envId, level, managedSet) {
 }
 
 /**
+ * Parse MCP entries from an OpenCode config file.
+ * OpenCode uses a different format: key is `mcp`, command is an array,
+ * env vars in `environment`, type is `local`/`remote`.
+ * @param {string} filePath
+ * @param {EnvironmentId} envId
+ * @param {'project'|'global'} level
+ * @param {Set<string>} managedSet
+ * @returns {NativeEntry[]}
+ */
+function parseMCPsFromOpenCode(filePath, envId, level, managedSet) {
+  if (!existsSync(filePath)) return []
+  try {
+    const raw = readFileSync(filePath, 'utf8')
+    const json = JSON.parse(raw)
+    const section = json.mcp
+    if (!section || typeof section !== 'object') return []
+
+    /** @type {NativeEntry[]} */
+    const entries = []
+    for (const [name, server] of Object.entries(section)) {
+      if (managedSet.has(managedKey(name, 'mcp'))) continue
+      const s = /** @type {any} */ (server)
+      // OpenCode format: command is an array, environment instead of env, type is local/remote
+      const cmdArr = Array.isArray(s.command) ? s.command : []
+      const transport = s.type === 'remote' ? 'streamable-http' : 'stdio'
+      /** @type {NativeEntry} */
+      const entry = {
+        name,
+        type: 'mcp',
+        environmentId: envId,
+        level,
+        sourcePath: filePath,
+        params: {
+          transport,
+          ...(cmdArr.length > 0 ? {command: cmdArr[0]} : {}),
+          ...(cmdArr.length > 1 ? {args: cmdArr.slice(1)} : {}),
+          ...(s.environment !== undefined ? {env: s.environment} : {}),
+          ...(s.url !== undefined ? {url: s.url} : {}),
+        },
+      }
+      entries.push(entry)
+    }
+    return entries
+  } catch {
+    return []
+  }
+}
+
+/**
  * Parse file-based entries (commands, rules, skills, agents) from a directory.
  * Each file in the directory becomes one native entry.
  * @param {string} dirPath - Absolute path to the directory
@@ -538,9 +596,12 @@ export function parseNativeEntries(envDef, cwd, managedEntries) {
       result.push(...parseMCPsFromJson(join(cwd, '.mcp.json'), 'mcpServers', id, 'project', managedSet))
       result.push(...parseMCPsFromJson(join(home, '.claude.json'), 'mcpServers', id, 'global', managedSet))
       break
+    case 'claude-desktop':
+      result.push(...parseMCPsFromJson(join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'), 'mcpServers', id, 'global', managedSet))
+      break
     case 'opencode':
-      result.push(...parseMCPsFromJson(join(cwd, 'opencode.json'), 'mcpServers', id, 'project', managedSet))
-      result.push(...parseMCPsFromJson(join(home, '.config', 'opencode', 'opencode.json'), 'mcpServers', id, 'global', managedSet))
+      result.push(...parseMCPsFromOpenCode(join(cwd, 'opencode.json'), id, 'project', managedSet))
+      result.push(...parseMCPsFromOpenCode(join(home, '.config', 'opencode', 'opencode.json'), id, 'global', managedSet))
       break
     case 'gemini-cli':
       result.push(...parseMCPsFromJson(join(home, '.gemini', 'settings.json'), 'mcpServers', id, 'global', managedSet))
@@ -854,13 +915,14 @@ export function detectDrift(detectedEnvs, managedEntries, cwd = process.cwd()) {
         const actual = readDeployedMCPEntry(entry.name, envId, cwd)
         if (actual === null) continue // not deployed yet — not drift
 
-        // Build expected server object
+        // Build expected server object — must match what buildMCPServerObject produces.
+        // For stdio, type is omitted (environments infer it from command).
         const expected = {
           ...(params.command !== undefined ? {command: params.command} : {}),
           ...(params.args !== undefined ? {args: params.args} : {}),
           ...(params.env !== undefined ? {env: params.env} : {}),
           ...(params.url !== undefined ? {url: params.url} : {}),
-          ...(params.transport !== undefined ? {type: params.transport} : {}),
+          ...(params.transport && params.transport !== 'stdio' ? {type: params.transport} : {}),
         }
 
         if (JSON.stringify(expected) !== JSON.stringify(actual)) {

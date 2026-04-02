@@ -28,6 +28,7 @@ export const AI_CONFIG_PATH = join(CONFIG_DIR, 'ai-config.json')
 const COMPATIBILITY = {
   'vscode-copilot': ['mcp', 'command', 'rule', 'skill', 'agent'],
   'claude-code': ['mcp', 'command', 'rule', 'skill', 'agent'],
+  'claude-desktop': ['mcp'],
   opencode: ['mcp', 'command', 'rule', 'skill', 'agent'],
   'gemini-cli': ['mcp', 'command', 'rule'],
   'copilot-cli': ['mcp', 'command', 'rule', 'skill', 'agent'],

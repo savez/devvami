@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-04-02
+
+### Added
+
+- **sync-config-ai:** Dynamic MCP form — fields now adapt to transport type; stdio shows Command/Args, sse/streamable-http shows URL, irrelevant fields are hidden
+- **sync-config-ai:** Env vars support — new editor field for environment variables (KEY=VALUE format) in MCP creation/editing
+- **sync-config-ai:** Transport-specific validation — stdio requires Command, sse/streamable-http requires URL, env var format is validated
+- **sync-config-ai:** Args changed from single text field to multi-line editor (one arg per line) to support args with spaces
+- **sync-config-ai:** `hidden` field property in form system for dynamic field visibility
+- **sync-config-ai:** `customValidator` support on FormState for category-specific validation
+- **sync-config-ai:** `nextVisibleIndex` helper for Tab/Shift+Tab navigation over hidden fields
+
+### Fixed
+
+- **sync-config-ai:** Fixed params pollution — form values (name, environments, description) no longer leak into MCPParams on save
+- **sync-config-ai:** Fixed type field in deployed config — stdio transport no longer writes `type: "stdio"`; most environments infer it from the presence of `command`
+- **sync-config-ai:** Fixed env vars serialization — env vars are now correctly written as `Record<string, string>` objects instead of raw strings
+- **sync-config-ai:** Fixed args serialization — args are now correctly written as `string[]` arrays instead of newline-joined strings
+- **sync-config-ai:** Normalized legacy data — deployer now auto-converts string-format args/env from older store entries into proper arrays/objects
+- **sync-config-ai:** Aligned drift detection with deployer output for stdio type omission
+
 ## [1.5.1] - 2026-04-02
 
 ### Added
