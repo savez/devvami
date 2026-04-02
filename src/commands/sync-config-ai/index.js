@@ -1,7 +1,7 @@
 import {Command, Flags} from '@oclif/core'
 import ora from 'ora'
 
-import {scanEnvironments, computeCategoryCounts} from '../../services/ai-env-scanner.js'
+import {scanEnvironments, computeCategoryCounts, parseNativeEntries, detectDrift, ENVIRONMENTS} from '../../services/ai-env-scanner.js'
 import {
   loadAIConfig,
   addEntry,
@@ -9,10 +9,11 @@ import {
   deactivateEntry,
   activateEntry,
   deleteEntry,
+  syncAIConfigToChezmoi,
 } from '../../services/ai-config-store.js'
 import {deployEntry, undeployEntry, reconcileOnScan} from '../../services/ai-env-deployer.js'
 import {loadConfig} from '../../services/config.js'
-import {formatEnvironmentsTable, formatCategoriesTable} from '../../formatters/ai-config.js'
+import {formatEnvironmentsTable, formatCategoriesTable, formatNativeEntriesTable} from '../../formatters/ai-config.js'
 import {startTabTUI} from '../../utils/tui/tab-tui.js'
 import {DvmiError} from '../../utils/errors.js'
 
@@ -75,17 +76,57 @@ export default class SyncConfigAi extends Command {
       env.counts = computeCategoryCounts(env.id, store.entries)
     }
 
+    // ── Parse native entries and populate nativeCounts ───────────────────────
+    const envDefMap = new Map(ENVIRONMENTS.map((e) => [e.id, e]))
+    for (const env of detectedEnvs) {
+      const envDef = envDefMap.get(env.id)
+      if (!envDef) continue
+      const natives = parseNativeEntries(envDef, process.cwd(), store.entries)
+      env.nativeEntries = natives
+      // Aggregate native counts per category
+      env.nativeCounts = {mcp: 0, command: 0, rule: 0, skill: 0, agent: 0}
+      for (const ne of natives) {
+        env.nativeCounts[ne.type] = (env.nativeCounts[ne.type] ?? 0) + 1
+      }
+    }
+
+    // ── Detect drift for managed entries ────────────────────────────────────
+    const driftInfos = detectDrift(detectedEnvs, store.entries, process.cwd())
+    for (const env of detectedEnvs) {
+      env.driftedEntries = driftInfos.filter((d) => d.environmentId === env.id)
+    }
+
     spinner?.stop()
 
     // ── JSON mode ────────────────────────────────────────────────────────────
     if (isJson) {
-      const categories = {
-        mcp: store.entries.filter((e) => e.type === 'mcp'),
-        command: store.entries.filter((e) => e.type === 'command'),
-        skill: store.entries.filter((e) => e.type === 'skill'),
-        agent: store.entries.filter((e) => e.type === 'agent'),
+      if (detectedEnvs.length === 0) {
+        this.exit(2)
       }
-      return {environments: detectedEnvs, categories}
+
+      // Collect all native entries grouped by type
+      const allNatives = detectedEnvs.flatMap((e) => e.nativeEntries ?? [])
+
+      // Build drifted set for quick lookup
+      const driftedIds = new Set(driftInfos.map((d) => d.entryId))
+
+      const categories = {
+        mcp: store.entries.filter((e) => e.type === 'mcp').map((e) => ({...e, drifted: driftedIds.has(e.id)})),
+        command: store.entries.filter((e) => e.type === 'command').map((e) => ({...e, drifted: driftedIds.has(e.id)})),
+        rule: store.entries.filter((e) => e.type === 'rule').map((e) => ({...e, drifted: driftedIds.has(e.id)})),
+        skill: store.entries.filter((e) => e.type === 'skill').map((e) => ({...e, drifted: driftedIds.has(e.id)})),
+        agent: store.entries.filter((e) => e.type === 'agent').map((e) => ({...e, drifted: driftedIds.has(e.id)})),
+      }
+
+      const nativeEntries = {
+        mcp: allNatives.filter((e) => e.type === 'mcp'),
+        command: allNatives.filter((e) => e.type === 'command'),
+        rule: allNatives.filter((e) => e.type === 'rule'),
+        skill: allNatives.filter((e) => e.type === 'skill'),
+        agent: allNatives.filter((e) => e.type === 'agent'),
+      }
+
+      return {environments: detectedEnvs, categories, nativeEntries}
     }
 
     // ── Check chezmoi config ─────────────────────────────────────────────────
@@ -104,6 +145,7 @@ export default class SyncConfigAi extends Command {
       chezmoiEnabled,
       formatEnvs: formatEnvironmentsTable,
       formatCats: formatCategoriesTable,
+      formatNative: formatNativeEntriesTable,
       refreshEntries: async () => {
         const s = await loadAIConfig()
         return s.entries
@@ -120,9 +162,11 @@ export default class SyncConfigAi extends Command {
             params: action.values,
           })
           await deployEntry(created, detectedEnvs, process.cwd())
+          await syncAIConfigToChezmoi()
         } else if (action.type === 'edit') {
           const updated = await updateEntry(action.id, {params: action.values})
           await deployEntry(updated, detectedEnvs, process.cwd())
+          await syncAIConfigToChezmoi()
         } else if (action.type === 'delete') {
           await deleteEntry(action.id)
           await undeployEntry(
@@ -130,12 +174,37 @@ export default class SyncConfigAi extends Command {
             detectedEnvs,
             process.cwd(),
           )
+          await syncAIConfigToChezmoi()
         } else if (action.type === 'deactivate') {
           const entry = await deactivateEntry(action.id)
           await undeployEntry(entry, detectedEnvs, process.cwd())
+          await syncAIConfigToChezmoi()
         } else if (action.type === 'activate') {
           const entry = await activateEntry(action.id)
           await deployEntry(entry, detectedEnvs, process.cwd())
+          await syncAIConfigToChezmoi()
+        } else if (action.type === 'import-native') {
+          // T017: Import native entry into dvmi-managed sync
+          const ne = action.nativeEntry
+          const created = await addEntry({
+            name: ne.name,
+            type: ne.type,
+            environments: [ne.environmentId],
+            params: ne.params,
+          })
+          await deployEntry(created, detectedEnvs, process.cwd())
+          await syncAIConfigToChezmoi()
+        } else if (action.type === 'redeploy') {
+          // T018: Re-deploy managed entry to overwrite drifted file
+          const entry = currentStore.entries.find((e) => e.id === action.id)
+          if (entry) await deployEntry(entry, detectedEnvs, process.cwd())
+        } else if (action.type === 'accept-drift') {
+          // T018: Accept drift — update store params from the actual file state
+          const drift = driftInfos.find((d) => d.entryId === action.id)
+          if (drift) {
+            await updateEntry(action.id, {params: drift.actual})
+            await syncAIConfigToChezmoi()
+          }
         }
       },
     })

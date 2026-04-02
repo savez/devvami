@@ -12,6 +12,7 @@ import {
   handleFormKeypress,
   getMCPFormFields,
   getCommandFormFields,
+  getRuleFormFields,
   getSkillFormFields,
   getAgentFormFields,
 } from './form.js'
@@ -76,12 +77,16 @@ let _keypressListener = null
 
 /**
  * @typedef {Object} CatTabState
- * @property {import('../../types.js').CategoryEntry[]} entries - All category entries
- * @property {number} selectedIndex - Highlighted row
- * @property {'list'|'form'|'confirm-delete'} mode - Current sub-mode
+ * @property {import('../../types.js').CategoryEntry[]} entries - Managed entries for this category type
+ * @property {import('../../types.js').NativeEntry[]} nativeEntries - Native (unmanaged) entries for this category type
+ * @property {number} selectedIndex - Highlighted row in the active section
+ * @property {'native'|'managed'} section - Which section is focused
+ * @property {'list'|'form'|'confirm-delete'|'drift'} mode - Current sub-mode
  * @property {import('./form.js').FormState|null} formState - Active form state (null when mode is 'list')
  * @property {string|null} confirmDeleteId - Entry id pending deletion confirmation
  * @property {string} chezmoidTip - Footer tip (empty if chezmoi configured)
+ * @property {string|null} revealedEntryId - Entry id whose env vars are currently revealed
+ * @property {import('../../types.js').DriftInfo[]} driftInfos - All drift infos for this category
  */
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -233,27 +238,84 @@ export function handleEnvironmentsKeypress(state, key) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Categories tab content builder (T036) — defined here for single-module TUI
+// Categories tab content builder — dual Native/Managed sections
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Build the content lines for the Categories tab.
+ * Build the content lines for a category tab with Native and Managed sections.
+ * @param {CatTabState} tabState
+ * @param {number} viewportHeight
+ * @param {import('../../formatters/ai-config.js').formatCategoriesTable} formatManaged
+ * @param {import('../../formatters/ai-config.js').formatNativeEntriesTable} formatNative
+ * @param {number} termCols
+ * @returns {string[]}
+ */
+export function buildCategoriesTab(tabState, viewportHeight, formatManaged, formatNative, termCols = 120) {
+  const {entries, nativeEntries = [], selectedIndex, section = 'managed', mode} = tabState
+  const confirmDeleteName = tabState._confirmDeleteName ?? null
+  const driftedIds = new Set((tabState.driftInfos ?? []).map((d) => d.entryId))
+
+  const lines = []
+
+  // ── Native section ──
+  if (nativeEntries.length > 0) {
+    lines.push(chalk.bold.cyan('  ── Native (read-only) ──────────────────────────────'))
+
+    const nativeLines = formatNative(nativeEntries, termCols)
+    const HEADER = 2
+    for (let i = 0; i < nativeLines.length; i++) {
+      const dataIndex = i - HEADER
+      if (section === 'native' && dataIndex >= 0 && dataIndex === selectedIndex) {
+        lines.push(`${ANSI_INVERSE_ON}${nativeLines[i]}${ANSI_INVERSE_OFF}`)
+      } else {
+        lines.push(chalk.dim(nativeLines[i]))
+      }
+    }
+    lines.push('')
+  }
+
+  // ── Managed section ──
+  lines.push(chalk.bold.white('  ── Managed ────────────────────────────────────────'))
+
+  if (entries.length === 0) {
+    lines.push(chalk.dim('  No managed entries yet.'))
+    lines.push(chalk.dim('  Press ' + chalk.bold('n') + ' to create your first entry.'))
+  } else {
+    // Annotate entries with drift flag for formatter
+    const annotated = entries.map((e) => ({...e, drifted: driftedIds.has(e.id)}))
+    const tableLines = formatManaged(annotated, termCols)
+    const HEADER_LINES = 2
+    for (let i = 0; i < tableLines.length; i++) {
+      const dataIndex = i - HEADER_LINES
+      if (section === 'managed' && dataIndex >= 0 && dataIndex === selectedIndex) {
+        lines.push(`${ANSI_INVERSE_ON}${tableLines[i]}${ANSI_INVERSE_OFF}`)
+      } else {
+        lines.push(tableLines[i])
+      }
+    }
+  }
+
+  // Confirmation prompt
+  if (mode === 'confirm-delete' && confirmDeleteName) {
+    lines.push('')
+    lines.push(chalk.red(`  Delete "${confirmDeleteName}"? This cannot be undone. `) + chalk.bold('[y/N]'))
+  }
+
+  return lines.slice(0, viewportHeight)
+}
+
+/**
+ * Build content lines for the legacy single-section categories tab.
+ * Kept for backward compatibility in tests.
  * @param {import('../../types.js').CategoryEntry[]} entries
  * @param {number} selectedIndex
  * @param {number} viewportHeight
  * @param {import('../../formatters/ai-config.js').formatCategoriesTable} formatFn
  * @param {number} termCols
- * @param {string|null} [confirmDeleteName] - Name of entry pending delete confirmation
+ * @param {string|null} [confirmDeleteName]
  * @returns {string[]}
  */
-export function buildCategoriesTab(
-  entries,
-  selectedIndex,
-  viewportHeight,
-  formatFn,
-  termCols = 120,
-  confirmDeleteName = null,
-) {
+export function buildCategoriesTabLegacy(entries, selectedIndex, viewportHeight, formatFn, termCols = 120, confirmDeleteName = null) {
   if (entries.length === 0) {
     const lines = [
       '',
@@ -277,13 +339,67 @@ export function buildCategoriesTab(
     }
   }
 
-  // Confirmation prompt overlay
   if (confirmDeleteName !== null) {
     resultLines.push('')
     resultLines.push(chalk.red(`  Delete "${confirmDeleteName}"? This cannot be undone. `) + chalk.bold('[y/N]'))
   }
 
   return resultLines.slice(0, viewportHeight)
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Drift resolution screen
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Build the drift resolution screen for a drifted managed entry.
+ * @param {CatTabState} tabState
+ * @param {number} viewportHeight
+ * @param {number} termCols
+ * @returns {string[]}
+ */
+export function buildDriftScreen(tabState, viewportHeight, termCols) {
+  const entryId = tabState._driftEntryId
+  const drift = (tabState.driftInfos ?? []).find((d) => d.entryId === entryId)
+  const entry = (tabState.entries ?? []).find((e) => e.id === entryId)
+
+  if (!drift || !entry) {
+    return [chalk.dim('  No drift info available.')]
+  }
+
+  const lines = []
+  lines.push(chalk.bold.yellow(`  ⚠ Drift detected: ${entry.name}`))
+  lines.push(chalk.dim('─'.repeat(Math.min(termCols, 70))))
+  lines.push('')
+  lines.push(chalk.bold('  Expected (managed):'))
+  const expected = JSON.stringify(drift.expected, null, 2)
+  for (const l of expected.split('\n').slice(0, 8)) {
+    lines.push(chalk.green(`    ${l}`))
+  }
+  lines.push('')
+  lines.push(chalk.bold('  Actual (on disk):'))
+  const actual = JSON.stringify(drift.actual, null, 2)
+  for (const l of actual.split('\n').slice(0, 8)) {
+    lines.push(chalk.red(`    ${l}`))
+  }
+  lines.push('')
+  lines.push(chalk.dim('  Press r to re-deploy (overwrite file)   a to accept changes (update store)   Esc to go back'))
+
+  return lines.slice(0, viewportHeight)
+}
+
+/**
+ * Minimal fallback formatter for native entries (no chalk dependency at module load).
+ * Used only when formatNative is not provided to startTabTUI.
+ * @param {import('../../types.js').NativeEntry[]} entries
+ * @returns {string[]}
+ */
+function formatNativeEntriesTableFallback(entries) {
+  const lines = ['  Name                     Environment  Level   Config', '  ' + '─'.repeat(60)]
+  for (const e of entries) {
+    lines.push(`  ${e.name.padEnd(25)} ${e.environmentId.padEnd(13)} ${e.level.padEnd(8)} ${e.sourcePath}`)
+  }
+  return lines
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -297,41 +413,63 @@ export function buildCategoriesTab(
  * @returns {CatTabState | { exit: true }}
  */
 export function handleCategoriesKeypress(state, key) {
-  const {selectedIndex, entries, mode, confirmDeleteId} = state
-  const maxIndex = Math.max(0, entries.length - 1)
+  const {selectedIndex, entries, nativeEntries = [], section = 'managed', mode} = state
+  const activeList = section === 'native' ? nativeEntries : entries
+  const maxIndex = Math.max(0, activeList.length - 1)
 
   // Confirm-delete mode
   if (mode === 'confirm-delete') {
     if (key.name === 'y') {
-      return {
-        ...state,
-        mode: 'list',
-        confirmDeleteId: key.name === 'y' ? confirmDeleteId : null,
-        _deleteConfirmed: true,
-      }
+      return {...state, mode: 'list', _deleteConfirmed: true}
     }
     // Any other key cancels
     return {...state, mode: 'list', confirmDeleteId: null}
   }
 
-  // List mode
+  // Drift resolution mode
+  if (mode === 'drift') {
+    if (key.name === 'escape') return {...state, mode: 'list'}
+    if (key.name === 'r') return {...state, mode: 'list', _redeploy: state._driftEntryId, _driftEntryId: null}
+    if (key.name === 'a') return {...state, mode: 'list', _acceptDrift: state._driftEntryId, _driftEntryId: null}
+    return state
+  }
+
+  // Navigation — clears env var reveal on any movement
   if (key.name === 'up' || key.name === 'k') {
-    return {...state, selectedIndex: Math.max(0, selectedIndex - 1)}
+    return {...state, selectedIndex: Math.max(0, selectedIndex - 1), revealedEntryId: null}
   }
   if (key.name === 'down' || key.name === 'j') {
-    return {...state, selectedIndex: Math.min(maxIndex, selectedIndex + 1)}
+    return {...state, selectedIndex: Math.min(maxIndex, selectedIndex + 1), revealedEntryId: null}
   }
   if (key.name === 'pageup') {
-    return {...state, selectedIndex: Math.max(0, selectedIndex - 10)}
+    return {...state, selectedIndex: Math.max(0, selectedIndex - 10), revealedEntryId: null}
   }
   if (key.name === 'pagedown') {
-    return {...state, selectedIndex: Math.min(maxIndex, selectedIndex + 10)}
+    return {...state, selectedIndex: Math.min(maxIndex, selectedIndex + 10), revealedEntryId: null}
   }
+
+  // Native section actions
+  if (section === 'native') {
+    if (key.name === 'i' && nativeEntries.length > 0) {
+      const nativeEntry = nativeEntries[selectedIndex]
+      if (nativeEntry) return {...state, _importNative: nativeEntry}
+    }
+    return state
+  }
+
+  // Managed section actions
   if (key.name === 'n') {
     return {...state, mode: 'form', _action: 'create'}
   }
   if (key.name === 'return' && entries.length > 0) {
-    return {...state, mode: 'form', _action: 'edit', _editId: entries[selectedIndex]?.id}
+    const entry = entries[selectedIndex]
+    if (entry) {
+      const driftedIds = new Set((state.driftInfos ?? []).map((d) => d.entryId))
+      if (driftedIds.has(entry.id)) {
+        return {...state, mode: 'drift', _driftEntryId: entry.id}
+      }
+      return {...state, mode: 'form', _action: 'edit', _editId: entry.id}
+    }
   }
   if (key.name === 'd' && entries.length > 0) {
     return {...state, _toggleId: entries[selectedIndex]?.id}
@@ -340,6 +478,13 @@ export function handleCategoriesKeypress(state, key) {
     const entry = entries[selectedIndex]
     if (entry) {
       return {...state, mode: 'confirm-delete', confirmDeleteId: entry.id, _confirmDeleteName: entry.name}
+    }
+  }
+  // r — reveal/hide env vars for the selected MCP entry
+  if (key.name === 'r' && entries.length > 0) {
+    const entry = entries[selectedIndex]
+    if (entry?.type === 'mcp') {
+      return {...state, revealedEntryId: state.revealedEntryId === entry.id ? null : entry.id}
     }
   }
 
@@ -411,6 +556,7 @@ export function cleanupTerminal() {
  * @property {(action: object) => Promise<void>} onAction - Callback for CRUD actions from category tabs
  * @property {import('../../formatters/ai-config.js').formatEnvironmentsTable} formatEnvs - Environments table formatter
  * @property {import('../../formatters/ai-config.js').formatCategoriesTable} formatCats - Categories table formatter
+ * @property {import('../../formatters/ai-config.js').formatNativeEntriesTable} [formatNative] - Native entries table formatter
  * @property {(() => Promise<import('../../types.js').CategoryEntry[]>) | undefined} [refreshEntries] - Reload entries from store after mutations
  */
 
@@ -423,7 +569,7 @@ export function cleanupTerminal() {
  * @returns {Promise<void>}
  */
 export async function startTabTUI(opts) {
-  const {envs, onAction, formatEnvs, formatCats} = opts
+  const {envs, onAction, formatEnvs, formatCats, formatNative} = opts
   const {entries: initialEntries, chezmoiEnabled} = opts
 
   _cleanupCalled = false
@@ -443,11 +589,12 @@ export async function startTabTUI(opts) {
     {label: 'Environments', key: 'environments'},
     {label: 'MCPs', key: 'mcp'},
     {label: 'Commands', key: 'command'},
+    {label: 'Rules', key: 'rule'},
     {label: 'Skills', key: 'skill'},
     {label: 'Agents', key: 'agent'},
   ]
 
-  const CATEGORY_TYPES = ['mcp', 'command', 'skill', 'agent']
+  const CATEGORY_TYPES = ['mcp', 'command', 'rule', 'skill', 'agent']
   const chezmoidTip = chezmoiEnabled ? '' : 'Tip: Run `dvmi dotfiles setup` to enable automatic backup of your AI configs'
 
   /** @type {TabTUIState} */
@@ -466,27 +613,53 @@ export async function startTabTUI(opts) {
   /** @type {import('../../types.js').CategoryEntry[]} */
   let allEntries = [...initialEntries]
 
+  /** Aggregate all drift infos from detected envs (flat list). */
+  const allDriftInfos = envs.flatMap((e) => e.driftedEntries ?? [])
+
+  /**
+   * @param {string} type
+   * @returns {import('../../types.js').NativeEntry[]}
+   */
+  function getNativesByType(type) {
+    return envs.flatMap((e) => (e.nativeEntries ?? []).filter((ne) => ne.type === type))
+  }
+
+  /**
+   * @param {string} type
+   * @returns {import('../../types.js').DriftInfo[]}
+   */
+  function getDriftsByType(type) {
+    const ids = new Set(allEntries.filter((e) => e.type === type).map((e) => e.id))
+    return allDriftInfos.filter((d) => ids.has(d.entryId))
+  }
+
   /** @type {Record<string, CatTabState>} */
   let catTabStates = Object.fromEntries(
     CATEGORY_TYPES.map((type) => [
       type,
       /** @type {CatTabState} */ ({
         entries: allEntries.filter((e) => e.type === type),
+        nativeEntries: getNativesByType(type),
         selectedIndex: 0,
+        section: 'managed',
         mode: 'list',
         formState: null,
         confirmDeleteId: null,
         chezmoidTip,
+        revealedEntryId: null,
+        driftInfos: getDriftsByType(type),
       }),
     ]),
   )
 
-  /** Push filtered entries into each tab state — call after allEntries changes. */
+  /** Push filtered entries and drift infos into each tab state — call after allEntries changes. */
   function syncTabEntries() {
     for (const type of CATEGORY_TYPES) {
+      const entriesForType = allEntries.filter((e) => e.type === type)
+      const driftsForType = getDriftsByType(type)
       catTabStates = {
         ...catTabStates,
-        [type]: {...catTabStates[type], entries: allEntries.filter((e) => e.type === type)},
+        [type]: {...catTabStates[type], entries: entriesForType, driftInfos: driftsForType},
       }
     }
   }
@@ -525,20 +698,15 @@ export async function startTabTUI(opts) {
       if (tabState.mode === 'form' && tabState.formState) {
         contentLines = buildFormScreen(tabState.formState, contentViewportHeight, termCols)
         hintStr = chalk.dim('  Tab next field   Shift+Tab prev   Ctrl+S save   Esc cancel')
+      } else if (tabState.mode === 'drift') {
+        contentLines = buildDriftScreen(tabState, contentViewportHeight, termCols)
+        hintStr = chalk.dim('  r re-deploy   a accept changes   Esc back')
       } else {
-        const confirmName =
-          tabState.mode === 'confirm-delete' && tabState._confirmDeleteName
-            ? /** @type {string} */ (tabState._confirmDeleteName)
-            : null
-        contentLines = buildCategoriesTab(
-          tabState.entries,
-          tabState.selectedIndex,
-          contentViewportHeight,
-          formatCats,
-          termCols,
-          confirmName,
-        )
-        hintStr = chalk.dim('  ↑↓ navigate   n new   Enter edit   d toggle   Del delete   Tab switch   q exit')
+        const nativeFmt = formatNative ?? formatNativeEntriesTableFallback
+        contentLines = buildCategoriesTab(tabState, contentViewportHeight, formatCats, nativeFmt, termCols)
+        const sectionHint = tabState.nativeEntries.length > 0 ? '   Tab switch section' : '   Tab switch tabs'
+        const nativeHint = tabState.section === 'native' ? '   i import' : '   n new   Enter edit   d toggle   Del delete   r reveal'
+        hintStr = chalk.dim(`  ↑↓ navigate${nativeHint}${sectionHint}   q exit`)
       }
     }
 
@@ -592,10 +760,25 @@ export async function startTabTUI(opts) {
         return
       }
 
-      // Tab switching — only when not in form mode (Tab navigates form fields when a form is open)
+      // Tab switching — only when not in form/drift mode
       const activeTabKey = tuiState.activeTabIndex > 0 ? tabs[tuiState.activeTabIndex].key : null
       const isInFormMode = activeTabKey !== null && catTabStates[activeTabKey]?.mode === 'form'
       if (key.name === 'tab' && !key.shift && !isInFormMode) {
+        // If active category tab has native entries, Tab switches section within the tab
+        const catState = activeTabKey ? catTabStates[activeTabKey] : null
+        if (catState && catState.nativeEntries && catState.nativeEntries.length > 0 && catState.mode !== 'drift') {
+          catTabStates = {
+            ...catTabStates,
+            [activeTabKey]: {
+              ...catState,
+              section: catState.section === 'managed' ? 'native' : 'managed',
+              selectedIndex: 0,
+              revealedEntryId: null,
+            },
+          }
+          render()
+          return
+        }
         tuiState = {
           ...tuiState,
           activeTabIndex: (tuiState.activeTabIndex + 1) % tabs.length,
@@ -714,6 +897,72 @@ export async function startTabTUI(opts) {
           return
         }
 
+        // T017: Import native entry into managed sync
+        if (result._importNative) {
+          const nativeEntry = result._importNative
+          catTabStates = {...catTabStates, [tabKey]: {...result, _importNative: null}}
+          render()
+          try {
+            await onAction({type: 'import-native', nativeEntry})
+            if (opts.refreshEntries) {
+              allEntries = await opts.refreshEntries()
+              syncTabEntries()
+              // Update native entries: remove imported entry from native list
+              catTabStates = {
+                ...catTabStates,
+                [tabKey]: {
+                  ...catTabStates[tabKey],
+                  nativeEntries: catTabStates[tabKey].nativeEntries.filter(
+                    (ne) => !(ne.name === nativeEntry.name && ne.environmentId === nativeEntry.environmentId),
+                  ),
+                  section: 'managed',
+                  selectedIndex: 0,
+                },
+              }
+              render()
+            }
+          } catch {
+            /* ignore */
+          }
+          return
+        }
+
+        // T018: Re-deploy after drift resolution
+        if (result._redeploy) {
+          const idToRedeploy = result._redeploy
+          catTabStates = {...catTabStates, [tabKey]: {...result, _redeploy: null}}
+          render()
+          try {
+            await onAction({type: 'redeploy', id: idToRedeploy})
+            if (opts.refreshEntries) {
+              allEntries = await opts.refreshEntries()
+              syncTabEntries()
+              render()
+            }
+          } catch {
+            /* ignore */
+          }
+          return
+        }
+
+        // T018: Accept drift (update store from file)
+        if (result._acceptDrift) {
+          const idToAccept = result._acceptDrift
+          catTabStates = {...catTabStates, [tabKey]: {...result, _acceptDrift: null}}
+          render()
+          try {
+            await onAction({type: 'accept-drift', id: idToAccept})
+            if (opts.refreshEntries) {
+              allEntries = await opts.refreshEntries()
+              syncTabEntries()
+              render()
+            }
+          } catch {
+            /* ignore */
+          }
+          return
+        }
+
         if (result._action === 'create') {
           const compatibleEnvs = envs.filter((e) => e.supportedCategories.includes(tabKey))
           const fields =
@@ -721,9 +970,11 @@ export async function startTabTUI(opts) {
               ? getMCPFormFields(null, compatibleEnvs)
               : tabKey === 'command'
                 ? getCommandFormFields(null, compatibleEnvs)
-                : tabKey === 'skill'
-                  ? getSkillFormFields(null, compatibleEnvs)
-                  : getAgentFormFields(null, compatibleEnvs)
+                : tabKey === 'rule'
+                  ? getRuleFormFields(null, compatibleEnvs)
+                  : tabKey === 'skill'
+                    ? getSkillFormFields(null, compatibleEnvs)
+                    : getAgentFormFields(null, compatibleEnvs)
           const tabLabel = tabKey === 'mcp' ? 'MCP' : tabKey.charAt(0).toUpperCase() + tabKey.slice(1)
           catTabStates = {
             ...catTabStates,
@@ -754,9 +1005,11 @@ export async function startTabTUI(opts) {
                 ? getMCPFormFields(entry, compatibleEnvs)
                 : entry.type === 'command'
                   ? getCommandFormFields(entry, compatibleEnvs)
-                  : entry.type === 'skill'
-                    ? getSkillFormFields(entry, compatibleEnvs)
-                    : getAgentFormFields(entry, compatibleEnvs)
+                  : entry.type === 'rule'
+                    ? getRuleFormFields(entry, compatibleEnvs)
+                    : entry.type === 'skill'
+                      ? getSkillFormFields(entry, compatibleEnvs)
+                      : getAgentFormFields(entry, compatibleEnvs)
             catTabStates = {
               ...catTabStates,
               [tabKey]: {
