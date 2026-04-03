@@ -436,7 +436,7 @@ export function handleCategoriesKeypress(state, key) {
   }
 
   // Navigation — clears env var reveal on any movement
-  // Cross-section: ↑ from top of managed → last native; ↓ from bottom of native → first managed
+  // Cross-section: up from top of managed goes to last native; down from bottom of native goes to first managed
   if (key.name === 'up' || key.name === 'k') {
     if (selectedIndex === 0 && section === 'managed' && nativeEntries.length > 0) {
       return {...state, section: 'native', selectedIndex: nativeEntries.length - 1, revealedEntryId: null}
