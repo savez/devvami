@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **sync-config-ai:** Normalized legacy data — deployer now auto-converts string-format args/env from older store entries into proper arrays/objects
 - **sync-config-ai:** Aligned drift detection with deployer output for stdio type omission
 
+
 ## [1.5.1] - 2026-04-02
 
 ### Added
