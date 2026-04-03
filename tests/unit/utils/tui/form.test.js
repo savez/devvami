@@ -10,6 +10,8 @@ import {
   getCommandFormFields,
   getSkillFormFields,
   getAgentFormFields,
+  updateMCPFieldVisibility,
+  validateMCPForm,
 } from '../../../../src/utils/tui/form.js'
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -709,6 +711,7 @@ describe('getMCPFormFields', () => {
     expect(labels).toContain('Command')
     expect(labels).toContain('Args')
     expect(labels).toContain('URL')
+    expect(labels).toContain('Env Vars')
     expect(labels).toContain('Description')
   })
 
@@ -727,7 +730,7 @@ describe('getMCPFormFields', () => {
 
   it('returns correct number of fields', () => {
     const fields = getMCPFormFields()
-    expect(fields.length).toBe(7) // name, environments, transport, command, args, url, description
+    expect(fields.length).toBe(8) // name, environments, transport, command, args, url, env, description
   })
 })
 
@@ -762,7 +765,8 @@ describe('getMCPFormFields with existing entry', () => {
     expect(/** @type {any} */ (urlField).value).toBe('https://mcp.example.com')
 
     const argsField = fields.find((f) => f.label === 'Args')
-    expect(/** @type {any} */ (argsField).value).toBe('--port 3000')
+    expect(/** @type {any} */ (argsField).type).toBe('editor')
+    expect(/** @type {any} */ (argsField).lines).toEqual(['--port', '3000'])
   })
 })
 
@@ -868,5 +872,286 @@ describe('getAgentFormFields', () => {
     const fields = getAgentFormFields(entry)
     const instructionsField = fields.find((f) => f.label === 'Instructions')
     expect(/** @type {any} */ (instructionsField).lines).toEqual(['do this', 'do that'])
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Hidden fields
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('hidden fields', () => {
+  it('hidden fields are skipped in extractValues', () => {
+    /** @type {import('../../../../src/utils/tui/form.js').FormState} */
+    const state = {
+      title: 'Test',
+      focusedFieldIndex: 0,
+      status: 'editing',
+      errorMessage: null,
+      fields: [
+        {type: 'text', label: 'Visible', key: 'visible', value: 'yes', cursor: 3, required: false, placeholder: ''},
+        {type: 'text', label: 'Hidden', key: 'hidden_field', value: 'no', cursor: 2, required: false, placeholder: '', hidden: true},
+      ],
+    }
+    const values = extractValues(state)
+    expect(values.visible).toBe('yes')
+    expect(values.hidden_field).toBeUndefined()
+  })
+
+  it('hidden fields are skipped in buildFormScreen', () => {
+    /** @type {import('../../../../src/utils/tui/form.js').FormState} */
+    const state = {
+      title: 'Test',
+      focusedFieldIndex: 0,
+      status: 'editing',
+      errorMessage: null,
+      fields: [
+        {type: 'text', label: 'Shown', key: 'shown', value: '', cursor: 0, required: false, placeholder: ''},
+        {type: 'text', label: 'Invisible', key: 'invisible', value: '', cursor: 0, required: false, placeholder: '', hidden: true},
+      ],
+    }
+    const lines = buildFormScreen(state, 24, 80).map(stripAnsi).join('\n')
+    expect(lines).toContain('Shown')
+    expect(lines).not.toContain('Invisible')
+  })
+
+  it('Tab skips hidden fields', () => {
+    /** @type {import('../../../../src/utils/tui/form.js').FormState} */
+    const state = {
+      title: 'Test',
+      focusedFieldIndex: 0,
+      status: 'editing',
+      errorMessage: null,
+      fields: [
+        {type: 'text', label: 'First', key: 'first', value: 'a', cursor: 1, required: false, placeholder: ''},
+        {type: 'text', label: 'Middle', key: 'middle', value: 'b', cursor: 1, required: false, placeholder: '', hidden: true},
+        {type: 'text', label: 'Last', key: 'last', value: 'c', cursor: 1, required: false, placeholder: ''},
+      ],
+    }
+    const result = handleFormKeypress(state, namedKey('tab'))
+    expect(/** @type {any} */ (result).focusedFieldIndex).toBe(2) // skips index 1
+  })
+
+  it('Shift+Tab skips hidden fields', () => {
+    /** @type {import('../../../../src/utils/tui/form.js').FormState} */
+    const state = {
+      title: 'Test',
+      focusedFieldIndex: 2,
+      status: 'editing',
+      errorMessage: null,
+      fields: [
+        {type: 'text', label: 'First', key: 'first', value: 'a', cursor: 1, required: false, placeholder: ''},
+        {type: 'text', label: 'Middle', key: 'middle', value: 'b', cursor: 1, required: false, placeholder: '', hidden: true},
+        {type: 'text', label: 'Last', key: 'last', value: 'c', cursor: 1, required: false, placeholder: ''},
+      ],
+    }
+    const result = handleFormKeypress(state, namedKey('tab', {shift: true}))
+    expect(/** @type {any} */ (result).focusedFieldIndex).toBe(0) // skips index 1
+  })
+
+  it('hidden required fields are not validated', () => {
+    /** @type {import('../../../../src/utils/tui/form.js').FormState} */
+    const state = {
+      title: 'Test',
+      focusedFieldIndex: 0,
+      status: 'editing',
+      errorMessage: null,
+      fields: [
+        {type: 'text', label: 'Name', key: 'name', value: 'ok', cursor: 2, required: true, placeholder: ''},
+        {type: 'text', label: 'URL', key: 'url', value: '', cursor: 0, required: true, placeholder: '', hidden: true},
+      ],
+    }
+    // Should submit successfully because URL is hidden even though empty and required
+    const result = handleFormKeypress(state, namedKey('s', {ctrl: true}))
+    expect(result).toHaveProperty('submitted', true)
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// updateMCPFieldVisibility
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('updateMCPFieldVisibility', () => {
+  it('hides URL and shows Command/Args for stdio', () => {
+    const fields = getMCPFormFields()
+    const updated = updateMCPFieldVisibility(fields, 'stdio')
+    const commandField = updated.find((f) => f.key === 'command')
+    const argsField = updated.find((f) => f.key === 'args')
+    const urlField = updated.find((f) => f.key === 'url')
+    expect(commandField?.hidden).toBeFalsy()
+    expect(argsField?.hidden).toBeFalsy()
+    expect(urlField?.hidden).toBe(true)
+  })
+
+  it('hides Command/Args and shows URL for sse', () => {
+    const fields = getMCPFormFields()
+    const updated = updateMCPFieldVisibility(fields, 'sse')
+    const commandField = updated.find((f) => f.key === 'command')
+    const argsField = updated.find((f) => f.key === 'args')
+    const urlField = updated.find((f) => f.key === 'url')
+    expect(commandField?.hidden).toBe(true)
+    expect(argsField?.hidden).toBe(true)
+    expect(urlField?.hidden).toBeFalsy()
+  })
+
+  it('hides Command/Args and shows URL for streamable-http', () => {
+    const fields = getMCPFormFields()
+    const updated = updateMCPFieldVisibility(fields, 'streamable-http')
+    const commandField = updated.find((f) => f.key === 'command')
+    const argsField = updated.find((f) => f.key === 'args')
+    const urlField = updated.find((f) => f.key === 'url')
+    expect(commandField?.hidden).toBe(true)
+    expect(argsField?.hidden).toBe(true)
+    expect(urlField?.hidden).toBeFalsy()
+  })
+
+  it('keeps Env Vars and Description always visible', () => {
+    const fields = getMCPFormFields()
+    for (const transport of ['stdio', 'sse', 'streamable-http']) {
+      const updated = updateMCPFieldVisibility(fields, transport)
+      const envField = updated.find((f) => f.key === 'env')
+      const descField = updated.find((f) => f.key === 'description')
+      expect(envField?.hidden).toBeFalsy()
+      expect(descField?.hidden).toBeFalsy()
+    }
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// validateMCPForm
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('validateMCPForm', () => {
+  /**
+   * @param {string} transport
+   * @param {object} [overrides]
+   * @returns {import('../../../../src/utils/tui/form.js').FormState}
+   */
+  function makeMCPFormState(transport, overrides = {}) {
+    const fields = getMCPFormFields()
+    const updated = updateMCPFieldVisibility(fields, transport)
+    // Set the transport selector to the right index
+    const transportField = updated.find((f) => f.key === 'transport')
+    if (transportField?.type === 'selector') {
+      transportField.selectedIndex = transportField.options.indexOf(transport)
+    }
+    return {
+      title: 'Test',
+      focusedFieldIndex: 0,
+      status: /** @type {'editing'} */ ('editing'),
+      errorMessage: null,
+      fields: updated,
+      ...overrides,
+    }
+  }
+
+  it('returns error when stdio has no command', () => {
+    const state = makeMCPFormState('stdio')
+    const err = validateMCPForm(state)
+    expect(err).toContain('Command is required')
+  })
+
+  it('returns null when stdio has a command', () => {
+    const state = makeMCPFormState('stdio')
+    const commandField = state.fields.find((f) => f.key === 'command')
+    if (commandField?.type === 'text') commandField.value = 'npx my-server'
+    const err = validateMCPForm(state)
+    expect(err).toBeNull()
+  })
+
+  it('returns error when sse has no URL', () => {
+    const state = makeMCPFormState('sse')
+    const err = validateMCPForm(state)
+    expect(err).toContain('URL is required')
+  })
+
+  it('returns null when sse has a URL', () => {
+    const state = makeMCPFormState('sse')
+    const urlField = state.fields.find((f) => f.key === 'url')
+    if (urlField?.type === 'text') urlField.value = 'https://mcp.example.com'
+    const err = validateMCPForm(state)
+    expect(err).toBeNull()
+  })
+
+  it('returns error for invalid env var format', () => {
+    const state = makeMCPFormState('stdio')
+    const commandField = state.fields.find((f) => f.key === 'command')
+    if (commandField?.type === 'text') commandField.value = 'npx server'
+    const envField = state.fields.find((f) => f.key === 'env')
+    if (envField?.type === 'editor') envField.lines = ['VALID=ok', 'INVALID_LINE']
+    const err = validateMCPForm(state)
+    expect(err).toContain('Invalid env var format')
+  })
+
+  it('accepts valid env vars', () => {
+    const state = makeMCPFormState('stdio')
+    const commandField = state.fields.find((f) => f.key === 'command')
+    if (commandField?.type === 'text') commandField.value = 'npx server'
+    const envField = state.fields.find((f) => f.key === 'env')
+    if (envField?.type === 'editor') envField.lines = ['API_KEY=abc123', 'SECRET=xyz']
+    const err = validateMCPForm(state)
+    expect(err).toBeNull()
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// getMCPFormFields — dynamic visibility on create
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('getMCPFormFields — default stdio hides URL', () => {
+  it('URL is hidden and Command is visible for default stdio transport', () => {
+    const fields = getMCPFormFields()
+    const urlField = fields.find((f) => f.key === 'url')
+    const commandField = fields.find((f) => f.key === 'command')
+    expect(urlField?.hidden).toBe(true)
+    expect(commandField?.hidden).toBeFalsy()
+  })
+
+  it('Command is hidden and URL is visible when entry has sse transport', () => {
+    /** @type {import('../../../../src/types.js').CategoryEntry} */
+    const entry = {
+      id: 'test',
+      name: 'remote-mcp',
+      type: 'mcp',
+      active: true,
+      environments: ['claude-code'],
+      params: {transport: 'sse', url: 'https://example.com'},
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    }
+    const fields = getMCPFormFields(entry)
+    const urlField = fields.find((f) => f.key === 'url')
+    const commandField = fields.find((f) => f.key === 'command')
+    expect(urlField?.hidden).toBeFalsy()
+    expect(commandField?.hidden).toBe(true)
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// getMCPFormFields — env vars pre-fill
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('getMCPFormFields — env vars', () => {
+  it('pre-fills env vars from entry params', () => {
+    /** @type {import('../../../../src/types.js').CategoryEntry} */
+    const entry = {
+      id: 'test',
+      name: 'my-mcp',
+      type: 'mcp',
+      active: true,
+      environments: ['claude-code'],
+      params: {transport: 'stdio', command: 'npx server', env: {API_KEY: 'abc', SECRET: 'xyz'}},
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    }
+    const fields = getMCPFormFields(entry)
+    const envField = fields.find((f) => f.key === 'env')
+    expect(envField?.type).toBe('editor')
+    expect(/** @type {any} */ (envField).lines).toEqual(['API_KEY=abc', 'SECRET=xyz'])
+  })
+
+  it('starts with empty line when no env vars', () => {
+    const fields = getMCPFormFields()
+    const envField = fields.find((f) => f.key === 'env')
+    expect(/** @type {any} */ (envField).lines).toEqual([''])
   })
 })

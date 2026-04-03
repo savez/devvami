@@ -1,0 +1,18 @@
+{
+  "mcp": {
+    "homeassistant": {
+      "enabled": true,
+      "type": "local",
+      "command": [
+        "uvx",
+        "mcp-proxy",
+        "--transport=streamablehttp",
+        "--stateless",
+        "http://192.168.1.221:8123/api/mcp"
+      ],
+      "environment": {
+        "API_ACCESS_TOKEN": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiMDEwMmU0NmUxMWY0MzA2YWE3Y2I5ZjI5NWJmZGViOSIsImlhdCI6MTc3NTE1OTY2NiwiZXhwIjoyMDkwNTE5NjY2fQ._90tJ9Yl6dZu18t3jwxiz9ir7PtBP9DLd_CPsAMKZrw"
+      }
+    }
+  }
+}

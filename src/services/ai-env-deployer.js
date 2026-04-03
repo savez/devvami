@@ -32,9 +32,13 @@ const MCP_TARGETS = {
     resolvePath: (cwd) => join(cwd, '.mcp.json'),
     mcpKey: 'mcpServers',
   },
+  'claude-desktop': {
+    resolvePath: (_cwd) => join(homedir(), 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'),
+    mcpKey: 'mcpServers',
+  },
   opencode: {
     resolvePath: (cwd) => join(cwd, 'opencode.json'),
-    mcpKey: 'mcpServers',
+    mcpKey: 'mcp',
   },
   'gemini-cli': {
     resolvePath: (_cwd) => join(homedir(), '.gemini', 'settings.json'),
@@ -319,10 +323,83 @@ function buildMCPServerObject(params) {
   const server = {}
 
   if (params.command !== undefined) server.command = params.command
-  if (params.args !== undefined) server.args = params.args
-  if (params.env !== undefined) server.env = params.env
+  // Normalize args: must be string[] in the deployed JSON.
+  // Guard against legacy data where args was stored as a newline-joined string.
+  if (params.args !== undefined) {
+    server.args = typeof params.args === 'string'
+      ? params.args.split('\n').map((a) => a.trim()).filter(Boolean)
+      : params.args
+  }
+  // Normalize env: must be Record<string,string> in the deployed JSON.
+  // Guard against legacy data where env was stored as a KEY=VALUE string.
+  if (params.env !== undefined) {
+    if (typeof params.env === 'string') {
+      /** @type {Record<string, string>} */
+      const envObj = {}
+      for (const line of params.env.split('\n')) {
+        const t = line.trim()
+        if (!t) continue
+        const eq = t.indexOf('=')
+        if (eq > 0) envObj[t.slice(0, eq)] = t.slice(eq + 1)
+      }
+      if (Object.keys(envObj).length > 0) server.env = envObj
+    } else {
+      server.env = params.env
+    }
+  }
   if (params.url !== undefined) server.url = params.url
-  if (params.transport !== undefined) server.type = params.transport
+  // Omit type for stdio — most environments infer it from the presence of command.
+  // Only write type for sse/streamable-http where it's required.
+  if (params.transport && params.transport !== 'stdio') server.type = params.transport
+
+  return server
+}
+
+/**
+ * Build an OpenCode-format MCP server object from dvmi's normalized params.
+ * OpenCode uses: command as array, `environment` instead of `env`,
+ * `type: "local"/"remote"` instead of transport strings, and `enabled` flag.
+ *
+ * @param {import('../types.js').MCPParams} params
+ * @returns {Record<string, unknown>}
+ */
+function buildOpenCodeMCPObject(params) {
+  /** @type {Record<string, unknown>} */
+  const server = {enabled: true}
+
+  const isRemote = params.transport === 'sse' || params.transport === 'streamable-http'
+  server.type = isRemote ? 'remote' : 'local'
+
+  if (isRemote) {
+    if (params.url !== undefined) server.url = params.url
+  } else {
+    const cmd = []
+    if (params.command !== undefined) cmd.push(params.command)
+    if (params.args !== undefined) {
+      const argsArr = typeof params.args === 'string'
+        ? params.args.split('\n').map((a) => a.trim()).filter(Boolean)
+        : params.args
+      cmd.push(...argsArr)
+    }
+    if (cmd.length > 0) server.command = cmd
+  }
+
+  // Normalize env for OpenCode (uses "environment" key)
+  if (params.env !== undefined) {
+    if (typeof params.env === 'string') {
+      /** @type {Record<string, string>} */
+      const envObj = {}
+      for (const line of params.env.split('\n')) {
+        const t = line.trim()
+        if (!t) continue
+        const eq = t.indexOf('=')
+        if (eq > 0) envObj[t.slice(0, eq)] = t.slice(eq + 1)
+      }
+      if (Object.keys(envObj).length > 0) server.environment = envObj
+    } else {
+      server.environment = params.env
+    }
+  }
 
   return server
 }
@@ -361,7 +438,8 @@ export async function deployMCPEntry(entry, envId, cwd) {
 
   /** @type {Record<string, unknown>} */
   const mcpKey = /** @type {any} */ (json[target.mcpKey])
-  mcpKey[entry.name] = buildMCPServerObject(/** @type {import('../types.js').MCPParams} */ (entry.params))
+  const params = /** @type {import('../types.js').MCPParams} */ (entry.params)
+  mcpKey[entry.name] = envId === 'opencode' ? buildOpenCodeMCPObject(params) : buildMCPServerObject(params)
 
   if (target.isYaml) {
     await writeYaml(filePath, json)
