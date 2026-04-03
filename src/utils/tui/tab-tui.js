@@ -15,6 +15,7 @@ import {
   getRuleFormFields,
   getSkillFormFields,
   getAgentFormFields,
+  validateMCPForm,
 } from './form.js'
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -435,10 +436,17 @@ export function handleCategoriesKeypress(state, key) {
   }
 
   // Navigation — clears env var reveal on any movement
+  // Cross-section: up from top of managed goes to last native; down from bottom of native goes to first managed
   if (key.name === 'up' || key.name === 'k') {
+    if (selectedIndex === 0 && section === 'managed' && nativeEntries.length > 0) {
+      return {...state, section: 'native', selectedIndex: nativeEntries.length - 1, revealedEntryId: null}
+    }
     return {...state, selectedIndex: Math.max(0, selectedIndex - 1), revealedEntryId: null}
   }
   if (key.name === 'down' || key.name === 'j') {
+    if (selectedIndex >= maxIndex && section === 'native' && entries.length > 0) {
+      return {...state, section: 'managed', selectedIndex: 0, revealedEntryId: null}
+    }
     return {...state, selectedIndex: Math.min(maxIndex, selectedIndex + 1), revealedEntryId: null}
   }
   if (key.name === 'pageup') {
@@ -690,7 +698,7 @@ export async function startTabTUI(opts) {
         formatEnvs,
         termCols,
       )
-      hintStr = chalk.dim('  ↑↓ navigate   Tab switch tabs   q exit')
+      hintStr = chalk.dim('  ↑↓ navigate   ←→ switch tabs   q exit')
     } else {
       const tabKey = tabs[activeTabIndex].key
       const tabState = catTabStates[tabKey]
@@ -704,9 +712,9 @@ export async function startTabTUI(opts) {
       } else {
         const nativeFmt = formatNative ?? formatNativeEntriesTableFallback
         contentLines = buildCategoriesTab(tabState, contentViewportHeight, formatCats, nativeFmt, termCols)
-        const sectionHint = tabState.nativeEntries.length > 0 ? '   Tab switch section' : '   Tab switch tabs'
+        const sectionHint = tabState.nativeEntries.length > 0 ? '   Tab section' : ''
         const nativeHint = tabState.section === 'native' ? '   i import' : '   n new   Enter edit   d toggle   Del delete   r reveal'
-        hintStr = chalk.dim(`  ↑↓ navigate${nativeHint}${sectionHint}   q exit`)
+        hintStr = chalk.dim(`  ↑↓ navigate   ←→ tabs${nativeHint}${sectionHint}   q exit`)
       }
     }
 
@@ -740,16 +748,15 @@ export async function startTabTUI(opts) {
     const listener = async (_str, key) => {
       if (!key) return
 
-      // Global keys
-      if (key.name === 'escape' || key.name === 'q') {
-        process.stdout.removeListener('resize', onResize)
-        process.removeListener('SIGINT', sigHandler)
-        process.removeListener('SIGTERM', sigHandler)
-        process.removeListener('exit', exitHandler)
-        cleanupTerminal()
-        resolve()
-        return
-      }
+      // ── Compute mode guards ──
+      const activeTabKey = tuiState.activeTabIndex > 0 ? tabs[tuiState.activeTabIndex].key : null
+      const activeCatState = activeTabKey ? catTabStates[activeTabKey] : null
+      const isInFormMode = activeCatState?.mode === 'form'
+      const isInDriftMode = activeCatState?.mode === 'drift'
+      const isInConfirmDelete = activeCatState?.mode === 'confirm-delete'
+      const isModalMode = isInFormMode || isInDriftMode || isInConfirmDelete
+
+      // ── Ctrl+C: always exit ──
       if (key.ctrl && key.name === 'c') {
         process.stdout.removeListener('resize', onResize)
         process.removeListener('SIGINT', sigHandler)
@@ -760,18 +767,49 @@ export async function startTabTUI(opts) {
         return
       }
 
-      // Tab switching — only when not in form/drift mode
-      const activeTabKey = tuiState.activeTabIndex > 0 ? tabs[tuiState.activeTabIndex].key : null
-      const isInFormMode = activeTabKey !== null && catTabStates[activeTabKey]?.mode === 'form'
+      // ── Esc: close sub-mode first; exit TUI only from list mode ──
+      if (key.name === 'escape' && !isModalMode) {
+        process.stdout.removeListener('resize', onResize)
+        process.removeListener('SIGINT', sigHandler)
+        process.removeListener('SIGTERM', sigHandler)
+        process.removeListener('exit', exitHandler)
+        cleanupTerminal()
+        resolve()
+        return
+      }
+      // In modal modes Esc falls through to per-tab handlers (form cancel, drift back, etc.)
+
+      // ── q: exit TUI only from list mode (in forms q is a regular character) ──
+      if (key.name === 'q' && !isModalMode) {
+        process.stdout.removeListener('resize', onResize)
+        process.removeListener('SIGINT', sigHandler)
+        process.removeListener('SIGTERM', sigHandler)
+        process.removeListener('exit', exitHandler)
+        cleanupTerminal()
+        resolve()
+        return
+      }
+
+      // ── Left/Right arrows: tab switching (blocked in modal sub-modes) ──
+      if ((key.name === 'right' || key.name === 'l') && !isModalMode) {
+        tuiState = {...tuiState, activeTabIndex: (tuiState.activeTabIndex + 1) % tabs.length}
+        render()
+        return
+      }
+      if ((key.name === 'left' || key.name === 'h') && !isModalMode) {
+        tuiState = {...tuiState, activeTabIndex: (tuiState.activeTabIndex - 1 + tabs.length) % tabs.length}
+        render()
+        return
+      }
+
+      // ── Tab: toggle Native/Managed section within category tabs ──
       if (key.name === 'tab' && !key.shift && !isInFormMode) {
-        // If active category tab has native entries, Tab switches section within the tab
-        const catState = activeTabKey ? catTabStates[activeTabKey] : null
-        if (catState && catState.nativeEntries && catState.nativeEntries.length > 0 && catState.mode !== 'drift') {
+        if (activeCatState && activeCatState.nativeEntries?.length > 0 && !isInDriftMode) {
           catTabStates = {
             ...catTabStates,
             [activeTabKey]: {
-              ...catState,
-              section: catState.section === 'managed' ? 'native' : 'managed',
+              ...activeCatState,
+              section: activeCatState.section === 'managed' ? 'native' : 'managed',
               selectedIndex: 0,
               revealedEntryId: null,
             },
@@ -779,12 +817,7 @@ export async function startTabTUI(opts) {
           render()
           return
         }
-        tuiState = {
-          ...tuiState,
-          activeTabIndex: (tuiState.activeTabIndex + 1) % tabs.length,
-        }
-        render()
-        return
+        // No native entries or Environments tab — Tab is a no-op (use ←/→)
       }
 
       // Delegate to active tab
@@ -922,7 +955,8 @@ export async function startTabTUI(opts) {
               render()
             }
           } catch {
-            /* ignore */
+            // Import failed — re-render so user sees the entry stayed in native
+            render()
           }
           return
         }
@@ -989,6 +1023,7 @@ export async function startTabTUI(opts) {
                 title: `Create ${tabLabel}`,
                 status: 'editing',
                 errorMessage: null,
+                customValidator: tabKey === 'mcp' ? validateMCPForm : null,
               },
             },
           }
@@ -1023,6 +1058,7 @@ export async function startTabTUI(opts) {
                   title: `Edit ${entry.name}`,
                   status: 'editing',
                   errorMessage: null,
+                  customValidator: entry.type === 'mcp' ? validateMCPForm : null,
                 },
               },
             }
