@@ -56,3 +56,7 @@ Desktop.ini
 .claude/
 specs/
 TODO.md
+
+# ─── MCP / AI tool configs (contain tokens) ─────────────────────────────────
+.mcp.json
+opencode.json
