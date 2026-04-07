@@ -14,7 +14,8 @@
   },
   "license": "MIT",
   "files": [
-    "./bin",
+    "./bin/run.js",
+    "./bin/run.cmd",
     "./src",
     "./oclif.manifest.json"
   ],
