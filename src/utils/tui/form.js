@@ -839,6 +839,14 @@ export function getMCPFormFields(entry = null, compatibleEnvs = []) {
     }),
     /** @type {SelectorField} */ ({
       type: 'selector',
+      label: 'Scope',
+      key: 'scope',
+      options: ['project', 'global'],
+      selectedIndex: entry?.scope === 'global' ? 1 : 0,
+      required: true,
+    }),
+    /** @type {SelectorField} */ ({
+      type: 'selector',
       label: 'Transport',
       key: 'transport',
       options: transportOptions,
@@ -988,6 +996,14 @@ export function getCommandFormFields(entry = null, compatibleEnvs = []) {
       focusedOptionIndex: 0,
       required: true,
     }),
+    /** @type {SelectorField} */ ({
+      type: 'selector',
+      label: 'Scope',
+      key: 'scope',
+      options: ['project', 'global'],
+      selectedIndex: entry?.scope === 'global' ? 1 : 0,
+      required: true,
+    }),
     /** @type {TextField} */ ({
       type: 'text',
       label: 'Description',
@@ -1041,6 +1057,14 @@ export function getSkillFormFields(entry = null, compatibleEnvs = []) {
       options: compatibleEnvs.map((env) => ({id: env.id, label: env.name})),
       selected: new Set(entry ? entry.environments : []),
       focusedOptionIndex: 0,
+      required: true,
+    }),
+    /** @type {SelectorField} */ ({
+      type: 'selector',
+      label: 'Scope',
+      key: 'scope',
+      options: ['project', 'global'],
+      selectedIndex: entry?.scope === 'global' ? 1 : 0,
       required: true,
     }),
     /** @type {TextField} */ ({
@@ -1107,6 +1131,14 @@ export function getRuleFormFields(entry = null, compatibleEnvs = []) {
       focusedOptionIndex: 0,
       required: true,
     }),
+    /** @type {SelectorField} */ ({
+      type: 'selector',
+      label: 'Scope',
+      key: 'scope',
+      options: ['project', 'global'],
+      selectedIndex: entry?.scope === 'global' ? 1 : 0,
+      required: true,
+    }),
     /** @type {TextField} */ ({
       type: 'text',
       label: 'Description',
@@ -1160,6 +1192,14 @@ export function getAgentFormFields(entry = null, compatibleEnvs = []) {
       options: compatibleEnvs.map((env) => ({id: env.id, label: env.name})),
       selected: new Set(entry ? entry.environments : []),
       focusedOptionIndex: 0,
+      required: true,
+    }),
+    /** @type {SelectorField} */ ({
+      type: 'selector',
+      label: 'Scope',
+      key: 'scope',
+      options: ['project', 'global'],
+      selectedIndex: entry?.scope === 'global' ? 1 : 0,
       required: true,
     }),
     /** @type {TextField} */ ({

@@ -260,7 +260,7 @@ export function buildCategoriesTab(tabState, viewportHeight, formatManaged, form
 
   // ── Native section ──
   if (nativeEntries.length > 0) {
-    lines.push(chalk.bold.cyan('  ── Native (read-only) ──────────────────────────────'))
+    lines.push(chalk.bold.cyan(`  ── Native (read-only) [${nativeEntries.length} unmanaged] ──────────────`))
 
     const nativeLines = formatNative(nativeEntries, termCols)
     const HEADER = 2
@@ -458,6 +458,11 @@ export function handleCategoriesKeypress(state, key) {
 
   // Native section actions
   if (section === 'native') {
+    // I (shift+i / uppercase I): batch import all native entries
+    if (key.sequence === 'I' && nativeEntries.length > 0) {
+      return {...state, _importAllNative: [...nativeEntries]}
+    }
+    // i: import single native entry
     if (key.name === 'i' && nativeEntries.length > 0) {
       const nativeEntry = nativeEntries[selectedIndex]
       if (nativeEntry) return {...state, _importNative: nativeEntry}
@@ -713,7 +718,7 @@ export async function startTabTUI(opts) {
         const nativeFmt = formatNative ?? formatNativeEntriesTableFallback
         contentLines = buildCategoriesTab(tabState, contentViewportHeight, formatCats, nativeFmt, termCols)
         const sectionHint = tabState.nativeEntries.length > 0 ? '   Tab section' : ''
-        const nativeHint = tabState.section === 'native' ? '   i import' : '   n new   Enter edit   d toggle   Del delete   r reveal'
+        const nativeHint = tabState.section === 'native' ? '   i import   I import all' : '   n new   Enter edit   d toggle   Del delete   r reveal'
         hintStr = chalk.dim(`  ↑↓ navigate   ←→ tabs${nativeHint}${sectionHint}   q exit`)
       }
     }
@@ -956,6 +961,35 @@ export async function startTabTUI(opts) {
             }
           } catch {
             // Import failed — re-render so user sees the entry stayed in native
+            render()
+          }
+          return
+        }
+
+        // Batch import all native entries
+        if (result._importAllNative) {
+          const nativeToImport = result._importAllNative
+          catTabStates = {...catTabStates, [tabKey]: {...result, _importAllNative: null}}
+          render()
+          try {
+            for (const ne of nativeToImport) {
+              await onAction({type: 'import-native', nativeEntry: ne})
+            }
+            if (opts.refreshEntries) {
+              allEntries = await opts.refreshEntries()
+              syncTabEntries()
+              catTabStates = {
+                ...catTabStates,
+                [tabKey]: {
+                  ...catTabStates[tabKey],
+                  nativeEntries: [],
+                  section: 'managed',
+                  selectedIndex: 0,
+                },
+              }
+              render()
+            }
+          } catch {
             render()
           }
           return
