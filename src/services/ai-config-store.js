@@ -51,20 +51,26 @@ const UNSAFE_CHARS = /[/\\:*?"<>|]/
 
 /** @returns {AIConfigStore} */
 function defaultStore() {
-  return {version: 2, entries: []}
+  return {version: 3, entries: []}
 }
 
 /**
  * Migrate an AI config store to the current schema version.
  * v1 → v2 is a no-op data migration; it only bumps the version field.
+ * v2 → v3 adds `scope: 'project'` to every entry.
  * @param {AIConfigStore} store
  * @returns {AIConfigStore}
  */
 function migrateStore(store) {
-  if (store.version === 1) {
-    return {...store, version: 2}
+  let migrated = store
+  if (migrated.version <= 2) {
+    migrated = {
+      ...migrated,
+      version: 3,
+      entries: migrated.entries.map((e) => ({...e, scope: e.scope || 'project'})),
+    }
   }
-  return store
+  return migrated
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -174,7 +180,7 @@ export async function saveAIConfig(store, configPath = process.env.DVMI_AI_CONFI
  * @returns {Promise<CategoryEntry>}
  */
 export async function addEntry(entryData, configPath = process.env.DVMI_AI_CONFIG_PATH ?? AI_CONFIG_PATH) {
-  const {name, type, environments, params} = entryData
+  const {name, type, scope = 'project', environments, params} = entryData
 
   validateName(name)
   validateEnvironments(environments, type)
@@ -197,6 +203,7 @@ export async function addEntry(entryData, configPath = process.env.DVMI_AI_CONFI
     name,
     type,
     active: true,
+    scope,
     environments,
     params,
     createdAt: now,
@@ -212,7 +219,7 @@ export async function addEntry(entryData, configPath = process.env.DVMI_AI_CONFI
 /**
  * Update an existing entry by id.
  * @param {string} id - UUID of the entry to update
- * @param {{ name?: string, environments?: EnvironmentId[], params?: MCPParams|CommandParams|SkillParams|AgentParams, active?: boolean }} changes
+ * @param {{ name?: string, scope?: 'project'|'global', environments?: EnvironmentId[], params?: MCPParams|CommandParams|SkillParams|AgentParams, active?: boolean }} changes
  * @param {string} [configPath]
  * @returns {Promise<CategoryEntry>}
  */
@@ -252,6 +259,7 @@ export async function updateEntry(id, changes, configPath = process.env.DVMI_AI_
   const updated = {
     ...existing,
     ...(changes.name !== undefined ? {name: changes.name} : {}),
+    ...(changes.scope !== undefined ? {scope: changes.scope} : {}),
     ...(changes.environments !== undefined ? {environments: changes.environments} : {}),
     ...(changes.params !== undefined ? {params: changes.params} : {}),
     ...(changes.active !== undefined ? {active: changes.active} : {}),

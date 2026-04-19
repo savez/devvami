@@ -351,6 +351,7 @@
  * @property {string[]} [args] - Command arguments
  * @property {Record<string, string>} [env] - Environment variables
  * @property {string} [url] - Server URL (required for sse/streamable-http transport)
+ * @property {string} [description] - Human-readable description (stored in config, not deployed to env files)
  */
 
 /**
@@ -383,6 +384,7 @@
  * @property {string} name - Unique within its type; used as filename/key when deploying
  * @property {CategoryType} type - Category type
  * @property {boolean} active - true = deployed to environments, false = removed but kept in store
+ * @property {'project'|'global'} scope - Where to deploy: project-level or global-level config files
  * @property {EnvironmentId[]} environments - Target environments for deployment
  * @property {MCPParams|CommandParams|RuleParams|SkillParams|AgentParams} params - Type-specific parameters
  * @property {string} createdAt - ISO 8601 timestamp
