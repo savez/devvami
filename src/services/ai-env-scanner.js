@@ -776,9 +776,10 @@ export function parseNativeEntries(envDef, cwd, managedEntries) {
  * @param {string} entryName
  * @param {EnvironmentId} envId
  * @param {string} cwd
+ * @param {'project'|'global'} [scope='project']
  * @returns {object|null}
  */
-function readDeployedMCPEntry(entryName, envId, cwd) {
+function readDeployedMCPEntry(entryName, envId, cwd, scope = 'project') {
   const home = homedir()
 
   /** @type {string|null} */
@@ -789,15 +790,15 @@ function readDeployedMCPEntry(entryName, envId, cwd) {
 
   switch (envId) {
     case 'vscode-copilot': filePath = join(cwd, '.vscode', 'mcp.json'); mcpKey = 'servers'; break
-    case 'claude-code': filePath = join(cwd, '.mcp.json'); break
-    case 'opencode': filePath = join(cwd, 'opencode.json'); break
+    case 'claude-code': filePath = scope === 'global' ? join(home, '.claude.json') : join(cwd, '.mcp.json'); break
+    case 'opencode': filePath = scope === 'global' ? join(home, '.config', 'opencode', 'opencode.json') : join(cwd, 'opencode.json'); break
     case 'gemini-cli': filePath = join(home, '.gemini', 'settings.json'); break
     case 'copilot-cli': filePath = join(home, '.copilot', 'mcp-config.json'); break
-    case 'cursor': filePath = join(cwd, '.cursor', 'mcp.json'); break
+    case 'cursor': filePath = scope === 'global' ? join(home, '.cursor', 'mcp.json') : join(cwd, '.cursor', 'mcp.json'); break
     case 'windsurf': filePath = join(home, '.codeium', 'windsurf', 'mcp_config.json'); break
-    case 'continue-dev': filePath = join(cwd, '.continue', 'config.yaml'); isYaml = true; break
+    case 'continue-dev': filePath = scope === 'global' ? join(home, '.continue', 'config.yaml') : join(cwd, '.continue', 'config.yaml'); isYaml = true; break
     case 'zed': filePath = join(home, '.config', 'zed', 'settings.json'); mcpKey = 'context_servers'; break
-    case 'amazon-q': filePath = join(cwd, '.amazonq', 'mcp.json'); break
+    case 'amazon-q': filePath = scope === 'global' ? join(home, '.aws', 'amazonq', 'mcp.json') : join(cwd, '.amazonq', 'mcp.json'); break
     default: return null
   }
 
@@ -912,7 +913,7 @@ export function detectDrift(detectedEnvs, managedEntries, cwd = process.cwd()) {
       const params = /** @type {any} */ (entry.params)
 
       if (entry.type === 'mcp') {
-        const actual = readDeployedMCPEntry(entry.name, envId, cwd)
+        const actual = readDeployedMCPEntry(entry.name, envId, cwd, entry.scope || 'project')
         if (actual === null) continue // not deployed yet — not drift
 
         // Build expected server object — must match what buildMCPServerObject produces.

@@ -9,7 +9,6 @@ import {
   deactivateEntry,
   activateEntry,
   deleteEntry,
-  syncAIConfigToChezmoi,
 } from '../../services/ai-config-store.js'
 import {deployEntry, undeployEntry, reconcileOnScan} from '../../services/ai-env-deployer.js'
 import {loadConfig} from '../../services/config.js'
@@ -58,7 +57,36 @@ function buildMCPParams(values) {
     params.env = /** @type {Record<string, string>} */ (values.env)
   }
 
+  // Persist description in the store (not deployed to env files)
+  if (values.description && typeof values.description === 'string' && values.description.trim()) {
+    params.description = values.description.trim()
+  }
+
   return params
+}
+
+/**
+ * Build clean params for any entry type from raw form values.
+ * Strips form-only fields (name, environments, scope) to avoid polluting stored params.
+ * @param {string} type - Category type
+ * @param {Record<string, unknown>} values - Raw form output from extractValues
+ * @returns {object}
+ */
+function buildEntryParams(type, values) {
+  if (type === 'mcp') return buildMCPParams(values)
+  if (type === 'command') {
+    return {content: values.content, ...(values.description ? {description: values.description} : {})}
+  }
+  if (type === 'rule') {
+    return {content: values.content, ...(values.description ? {description: values.description} : {})}
+  }
+  if (type === 'skill') {
+    return {content: values.content, ...(values.description ? {description: values.description} : {})}
+  }
+  if (type === 'agent') {
+    return {instructions: values.instructions, ...(values.description ? {description: values.description} : {})}
+  }
+  return values
 }
 
 export default class SyncConfigAi extends Command {
@@ -197,21 +225,24 @@ export default class SyncConfigAi extends Command {
         const currentStore = await loadAIConfig()
 
         if (action.type === 'create') {
-          const isMCP = action.tabKey === 'mcp'
           const created = await addEntry({
             name: action.values.name,
             type: action.tabKey || 'mcp',
+            scope: action.values.scope || 'project',
             environments: action.values.environments || [],
-            params: isMCP ? buildMCPParams(action.values) : action.values,
+            params: buildEntryParams(action.tabKey, action.values),
           })
           await deployEntry(created, detectedEnvs, process.cwd())
-          await syncAIConfigToChezmoi()
         } else if (action.type === 'edit') {
           const entry = currentStore.entries.find((e) => e.id === action.id)
-          const isMCP = entry?.type === 'mcp'
-          const updated = await updateEntry(action.id, {params: isMCP ? buildMCPParams(action.values) : action.values})
+          if (!entry) return
+          const updated = await updateEntry(action.id, {
+            name: action.values.name,
+            environments: action.values.environments || [],
+            scope: action.values.scope || entry.scope || 'project',
+            params: buildEntryParams(entry.type, action.values),
+          })
           await deployEntry(updated, detectedEnvs, process.cwd())
-          await syncAIConfigToChezmoi()
         } else if (action.type === 'delete') {
           await deleteEntry(action.id)
           await undeployEntry(
@@ -219,26 +250,23 @@ export default class SyncConfigAi extends Command {
             detectedEnvs,
             process.cwd(),
           )
-          await syncAIConfigToChezmoi()
         } else if (action.type === 'deactivate') {
           const entry = await deactivateEntry(action.id)
           await undeployEntry(entry, detectedEnvs, process.cwd())
-          await syncAIConfigToChezmoi()
         } else if (action.type === 'activate') {
           const entry = await activateEntry(action.id)
           await deployEntry(entry, detectedEnvs, process.cwd())
-          await syncAIConfigToChezmoi()
         } else if (action.type === 'import-native') {
           // T017: Import native entry into dvmi-managed sync
           const ne = action.nativeEntry
           const created = await addEntry({
             name: ne.name,
             type: ne.type,
+            scope: ne.level,
             environments: [ne.environmentId],
             params: ne.params,
           })
           await deployEntry(created, detectedEnvs, process.cwd())
-          await syncAIConfigToChezmoi()
         } else if (action.type === 'redeploy') {
           // T018: Re-deploy managed entry to overwrite drifted file
           const entry = currentStore.entries.find((e) => e.id === action.id)
@@ -248,7 +276,6 @@ export default class SyncConfigAi extends Command {
           const drift = driftInfos.find((d) => d.entryId === action.id)
           if (drift) {
             await updateEntry(action.id, {params: drift.actual})
-            await syncAIConfigToChezmoi()
           }
         }
       },
