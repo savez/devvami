@@ -1,7 +1,7 @@
 {
   "name": "devvami",
   "description": "DevEx CLI for developers and teams — manage repos, PRs, pipelines, tasks, and costs from the terminal",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "author": "",
   "type": "module",
   "bin": {
