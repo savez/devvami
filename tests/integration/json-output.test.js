@@ -1,8 +1,16 @@
 import {describe, it, expect} from 'vitest'
-import {runCli, runCliJson} from './helpers.js'
+import {runCli, runCliJson, createMockServer, jsonResponse} from './helpers.js'
 import {mkdtemp, rm} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
+import {readFileSync} from 'node:fs'
+import {resolve, dirname} from 'node:path'
+import {fileURLToPath} from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const searchFixture = JSON.parse(
+  readFileSync(resolve(__dirname, '../fixtures/nvd-responses/search-results.json'), 'utf8'),
+)
 
 // Tests that call the real ClickUp API require a token in the keychain.
 // In CI there are no real credentials, so we skip those tests.
@@ -58,26 +66,45 @@ describe('--json flag', () => {
   })
 
   it('vuln search --json returns valid JSON shape or non-zero exit in offline env', async () => {
-    const {stdout, stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--json'])
-    if (exitCode === 0) {
-      const data = JSON.parse(stdout)
-      expect(data).toHaveProperty('keyword', 'openssl')
-      expect(data).toHaveProperty('results')
-      expect(Array.isArray(data.results)).toBe(true)
-    } else {
-      expect(stderr).toBeTruthy()
+    const server = await createMockServer((req, res) => {
+      jsonResponse(res, searchFixture)
+    })
+
+    try {
+      const {stdout, stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--json'], {NVD_BASE_URL: server.url})
+      if (exitCode === 0) {
+        const data = JSON.parse(stdout)
+        expect(data).toHaveProperty('keyword', 'openssl')
+        expect(data).toHaveProperty('results')
+        expect(Array.isArray(data.results)).toBe(true)
+      } else {
+        expect(stderr).toBeTruthy()
+      }
+    } finally {
+      await server.stop()
     }
   })
 
   it('vuln detail --json returns valid JSON shape or non-zero exit in offline env', async () => {
-    const {stdout, stderr, exitCode} = await runCli(['vuln', 'detail', 'CVE-2021-44228', '--json'])
-    if (exitCode === 0) {
-      const data = JSON.parse(stdout)
-      expect(data).toHaveProperty('id', 'CVE-2021-44228')
-      expect(data).toHaveProperty('severity')
-      expect(data).toHaveProperty('references')
-    } else {
-      expect(stderr).toBeTruthy()
+    const detailFixture = JSON.parse(
+      readFileSync(resolve(__dirname, '../fixtures/nvd-responses/cve-detail.json'), 'utf8'),
+    )
+    const server = await createMockServer((req, res) => {
+      jsonResponse(res, detailFixture)
+    })
+
+    try {
+      const {stdout, stderr, exitCode} = await runCli(['vuln', 'detail', 'CVE-2021-44228', '--json'], {NVD_BASE_URL: server.url})
+      if (exitCode === 0) {
+        const data = JSON.parse(stdout)
+        expect(data).toHaveProperty('id', 'CVE-2021-44228')
+        expect(data).toHaveProperty('severity')
+        expect(data).toHaveProperty('references')
+      } else {
+        expect(stderr).toBeTruthy()
+      }
+    } finally {
+      await server.stop()
     }
   })
 
