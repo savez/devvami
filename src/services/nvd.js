@@ -3,7 +3,7 @@ import {DvmiError} from '../utils/errors.js'
 
 /** @import { CveSearchResult, CveDetail } from '../types.js' */
 
-const NVD_BASE_URL = 'https://services.nvd.nist.gov/rest/json/cves/2.0'
+const NVD_BASE_URL = process.env.NVD_BASE_URL || 'https://services.nvd.nist.gov/rest/json/cves/2.0'
 
 /** NVD attribution required in all interactive output. */
 export const NVD_ATTRIBUTION = 'This product uses data from the NVD API but is not endorsed or certified by the NVD.'

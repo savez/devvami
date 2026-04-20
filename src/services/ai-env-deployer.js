@@ -18,57 +18,61 @@ import yaml from 'js-yaml'
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * For each environment, the target JSON file path (relative to cwd or absolute)
- * and the root key that holds the MCP server map.
- *
- * @type {Record<EnvironmentId, { resolvePath: (cwd: string) => string, mcpKey: string, isYaml?: boolean }>}
+ * @typedef {{ resolvePath: (cwd: string) => string, mcpKey: string, isYaml?: boolean }} MCPTargetConfig
+ * @type {Record<EnvironmentId, { project?: MCPTargetConfig, global?: MCPTargetConfig }>}
  */
 const MCP_TARGETS = {
   'vscode-copilot': {
-    resolvePath: (cwd) => join(cwd, '.vscode', 'mcp.json'),
-    mcpKey: 'servers',
+    project: {resolvePath: (cwd) => join(cwd, '.vscode', 'mcp.json'), mcpKey: 'servers'},
   },
   'claude-code': {
-    resolvePath: (cwd) => join(cwd, '.mcp.json'),
-    mcpKey: 'mcpServers',
+    project: {resolvePath: (cwd) => join(cwd, '.mcp.json'), mcpKey: 'mcpServers'},
+    global: {resolvePath: (_cwd) => join(homedir(), '.claude.json'), mcpKey: 'mcpServers'},
   },
   'claude-desktop': {
-    resolvePath: (_cwd) => join(homedir(), 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'),
-    mcpKey: 'mcpServers',
+    global: {resolvePath: (_cwd) => join(homedir(), 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'), mcpKey: 'mcpServers'},
   },
   opencode: {
-    resolvePath: (cwd) => join(cwd, 'opencode.json'),
-    mcpKey: 'mcp',
+    project: {resolvePath: (cwd) => join(cwd, 'opencode.json'), mcpKey: 'mcp'},
+    global: {resolvePath: (_cwd) => join(homedir(), '.config', 'opencode', 'opencode.json'), mcpKey: 'mcp'},
   },
   'gemini-cli': {
-    resolvePath: (_cwd) => join(homedir(), '.gemini', 'settings.json'),
-    mcpKey: 'mcpServers',
+    global: {resolvePath: (_cwd) => join(homedir(), '.gemini', 'settings.json'), mcpKey: 'mcpServers'},
   },
   'copilot-cli': {
-    resolvePath: (_cwd) => join(homedir(), '.copilot', 'mcp-config.json'),
-    mcpKey: 'mcpServers',
+    global: {resolvePath: (_cwd) => join(homedir(), '.copilot', 'mcp-config.json'), mcpKey: 'mcpServers'},
   },
   cursor: {
-    resolvePath: (cwd) => join(cwd, '.cursor', 'mcp.json'),
-    mcpKey: 'mcpServers',
+    project: {resolvePath: (cwd) => join(cwd, '.cursor', 'mcp.json'), mcpKey: 'mcpServers'},
+    global: {resolvePath: (_cwd) => join(homedir(), '.cursor', 'mcp.json'), mcpKey: 'mcpServers'},
   },
   windsurf: {
-    resolvePath: (_cwd) => join(homedir(), '.codeium', 'windsurf', 'mcp_config.json'),
-    mcpKey: 'mcpServers',
+    global: {resolvePath: (_cwd) => join(homedir(), '.codeium', 'windsurf', 'mcp_config.json'), mcpKey: 'mcpServers'},
   },
   'continue-dev': {
-    resolvePath: (_cwd) => join(homedir(), '.continue', 'config.yaml'),
-    mcpKey: 'mcpServers',
-    isYaml: true,
+    project: {resolvePath: (cwd) => join(cwd, '.continue', 'config.yaml'), mcpKey: 'mcpServers', isYaml: true},
+    global: {resolvePath: (_cwd) => join(homedir(), '.continue', 'config.yaml'), mcpKey: 'mcpServers', isYaml: true},
   },
   zed: {
-    resolvePath: (_cwd) => join(homedir(), '.config', 'zed', 'settings.json'),
-    mcpKey: 'context_servers',
+    global: {resolvePath: (_cwd) => join(homedir(), '.config', 'zed', 'settings.json'), mcpKey: 'context_servers'},
   },
   'amazon-q': {
-    resolvePath: (cwd) => join(cwd, '.amazonq', 'mcp.json'),
-    mcpKey: 'mcpServers',
+    project: {resolvePath: (cwd) => join(cwd, '.amazonq', 'mcp.json'), mcpKey: 'mcpServers'},
+    global: {resolvePath: (_cwd) => join(homedir(), '.aws', 'amazonq', 'mcp.json'), mcpKey: 'mcpServers'},
   },
+}
+
+/**
+ * Resolve the target config for an MCP entry based on scope.
+ * Falls back to the available scope if the chosen one is not available.
+ * @param {EnvironmentId} envId
+ * @param {'project'|'global'} scope
+ * @returns {MCPTargetConfig|null}
+ */
+function resolveTarget(envId, scope) {
+  const target = MCP_TARGETS[envId]
+  if (!target) return null
+  return target[scope] || target.project || target.global || null
 }
 
 /**
@@ -426,7 +430,8 @@ function buildOpenCodeMCPObject(params) {
 export async function deployMCPEntry(entry, envId, cwd) {
   if (!entry || entry.type !== 'mcp' || !entry.params) return
 
-  const target = MCP_TARGETS[envId]
+  const scope = entry.scope || 'project'
+  const target = resolveTarget(envId, scope)
   if (!target) return
 
   const filePath = target.resolvePath(cwd)
@@ -457,10 +462,11 @@ export async function deployMCPEntry(entry, envId, cwd) {
  * @param {string} entryName - Name of the MCP server to remove
  * @param {EnvironmentId} envId - Target environment identifier
  * @param {string} cwd - Project working directory
+ * @param {'project'|'global'} [scope='project'] - Scope to resolve the target config file
  * @returns {Promise<void>}
  */
-export async function undeployMCPEntry(entryName, envId, cwd) {
-  const target = MCP_TARGETS[envId]
+export async function undeployMCPEntry(entryName, envId, cwd, scope = 'project') {
+  const target = resolveTarget(envId, scope)
   if (!target) return
 
   const filePath = target.resolvePath(cwd)
@@ -585,7 +591,8 @@ export async function deployEntry(entry, detectedEnvs, cwd) {
     // Skip if the environment has unreadable JSON config files that correspond
     // to the MCP target path (we don't want to overwrite corrupt files)
     if (detectedEnv && entry.type === 'mcp') {
-      const target = MCP_TARGETS[envId]
+      const scope = entry.scope || 'project'
+      const target = resolveTarget(envId, scope)
       if (target) {
         const targetPath = target.resolvePath(cwd)
         if (detectedEnv.unreadable.includes(targetPath)) continue
@@ -619,7 +626,7 @@ export async function undeployEntry(entry, detectedEnvs, cwd) {
     if (!detectedIds.has(envId)) continue
 
     if (entry.type === 'mcp') {
-      await undeployMCPEntry(entry.name, envId, cwd)
+      await undeployMCPEntry(entry.name, envId, cwd, entry.scope || 'project')
     } else {
       await undeployFileEntry(entry.name, entry.type, envId, cwd)
     }

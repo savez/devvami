@@ -49,6 +49,7 @@ function makeMCPEntry(overrides = {}) {
     name: 'test-server',
     type: 'mcp',
     active: true,
+    scope: 'project',
     environments: ['claude-code'],
     params: {transport: 'stdio', command: 'npx', args: ['-y', 'test-pkg'], env: {}},
     createdAt: '2026-01-01T00:00:00Z',
@@ -68,6 +69,7 @@ function makeCommandEntry(overrides = {}) {
     name: 'my-command',
     type: 'command',
     active: true,
+    scope: 'project',
     environments: ['claude-code'],
     params: {content: '# My Command\nDo something useful.', description: 'A test command'},
     createdAt: '2026-01-01T00:00:00Z',
@@ -87,6 +89,7 @@ function makeSkillEntry(overrides = {}) {
     name: 'my-skill',
     type: /** @type {import('../../../src/types.js').CategoryType} */ ('skill'),
     active: true,
+    scope: 'project',
     environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
     params: {content: '# My Skill\nSkill content here.', description: 'A test skill'},
     createdAt: '2026-01-01T00:00:00Z',
@@ -106,6 +109,7 @@ function makeAgentEntry(overrides = {}) {
     name: 'my-agent',
     type: /** @type {import('../../../src/types.js').CategoryType} */ ('agent'),
     active: true,
+    scope: 'project',
     environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
     params: {instructions: 'Agent instructions here.', description: 'A test agent'},
     createdAt: '2026-01-01T00:00:00Z',
@@ -125,6 +129,7 @@ function makeRuleEntry(overrides = {}) {
     name: 'my-rule',
     type: /** @type {import('../../../src/types.js').CategoryType} */ ('rule'),
     active: true,
+    scope: 'project',
     environments: /** @type {import('../../../src/types.js').EnvironmentId[]} */ (['claude-code']),
     params: {content: 'Rule content here.', description: 'A test rule'},
     createdAt: '2026-01-01T00:00:00Z',
@@ -326,41 +331,37 @@ describe('deployMCPEntry', () => {
     })
   })
 
-  it('handles continue-dev: writes YAML to ~/.continue/config.yaml with "mcpServers" key', async () => {
-    const continuePath = join(homedir(), '.continue', 'config.yaml')
+  it('handles continue-dev: writes YAML to .continue/config.yaml with "mcpServers" key (project scope)', async () => {
+    const continuePath = join(cwd, '.continue', 'config.yaml')
 
-    await withRestoredFile(continuePath, async () => {
-      const entry = makeMCPEntry({name: 'continue-mcp', environments: ['continue-dev']})
-      await deployMCPEntry(entry, 'continue-dev', cwd)
+    const entry = makeMCPEntry({name: 'continue-mcp', environments: ['continue-dev']})
+    await deployMCPEntry(entry, 'continue-dev', cwd)
 
-      expect(existsSync(continuePath)).toBe(true)
-      const raw = await readFile(continuePath, 'utf8')
-      // Must be YAML, not JSON
-      expect(raw).not.toMatch(/^\s*\{/)
-      const parsed = /** @type {any} */ (yaml.load(raw))
-      expect(parsed).toHaveProperty('mcpServers')
-      expect(parsed.mcpServers).toHaveProperty('continue-mcp')
-      expect(parsed.mcpServers['continue-mcp']).toMatchObject({command: 'npx'})
-    })
+    expect(existsSync(continuePath)).toBe(true)
+    const raw = await readFile(continuePath, 'utf8')
+    // Must be YAML, not JSON
+    expect(raw).not.toMatch(/^\s*\{/)
+    const parsed = /** @type {any} */ (yaml.load(raw))
+    expect(parsed).toHaveProperty('mcpServers')
+    expect(parsed.mcpServers).toHaveProperty('continue-mcp')
+    expect(parsed.mcpServers['continue-mcp']).toMatchObject({command: 'npx'})
   })
 
   it('handles continue-dev: merges into existing YAML without clobbering other entries', async () => {
-    const continuePath = join(homedir(), '.continue', 'config.yaml')
+    const continuePath = join(cwd, '.continue', 'config.yaml')
 
-    await withRestoredFile(continuePath, async () => {
-      // Pre-populate with an existing entry
-      const existing = {mcpServers: {'existing-server': {command: 'node', args: []}}}
-      await mkdir(join(homedir(), '.continue'), {recursive: true})
-      await writeFile(continuePath, yaml.dump(existing), 'utf8')
+    // Pre-populate with an existing entry
+    const existing = {mcpServers: {'existing-server': {command: 'node', args: []}}}
+    await mkdir(join(cwd, '.continue'), {recursive: true})
+    await writeFile(continuePath, yaml.dump(existing), 'utf8')
 
-      const entry = makeMCPEntry({name: 'new-continue-mcp', environments: ['continue-dev']})
-      await deployMCPEntry(entry, 'continue-dev', cwd)
+    const entry = makeMCPEntry({name: 'new-continue-mcp', environments: ['continue-dev']})
+    await deployMCPEntry(entry, 'continue-dev', cwd)
 
-      const raw = await readFile(continuePath, 'utf8')
-      const parsed = /** @type {any} */ (yaml.load(raw))
-      expect(parsed.mcpServers).toHaveProperty('existing-server')
-      expect(parsed.mcpServers).toHaveProperty('new-continue-mcp')
-    })
+    const raw = await readFile(continuePath, 'utf8')
+    const parsed = /** @type {any} */ (yaml.load(raw))
+    expect(parsed.mcpServers).toHaveProperty('existing-server')
+    expect(parsed.mcpServers).toHaveProperty('new-continue-mcp')
   })
 
   it('handles zed: writes to ~/.config/zed/settings.json with "context_servers" key', async () => {
@@ -495,6 +496,49 @@ describe('deployMCPEntry', () => {
 })
 
 // ──────────────────────────────────────────────────────────────────────────────
+// deployMCPEntry with scope
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('deployMCPEntry with scope', () => {
+  it('deploys to project path when scope is project', async () => {
+    const entry = makeMCPEntry({name: 'proj-mcp', environments: ['claude-code'], scope: 'project'})
+    await deployMCPEntry(entry, 'claude-code', cwd)
+
+    expect(existsSync(join(cwd, '.mcp.json'))).toBe(true)
+    const json = await readJson(join(cwd, '.mcp.json'))
+    expect(json.mcpServers).toHaveProperty('proj-mcp')
+  })
+
+  it('deploys to global path when scope is global for dual-path environments', async () => {
+    const globalPath = join(homedir(), '.cursor', 'mcp.json')
+
+    await withRestoredFile(globalPath, async () => {
+      const entry = makeMCPEntry({name: 'global-cursor', environments: ['cursor'], scope: 'global'})
+      await deployMCPEntry(entry, 'cursor', cwd)
+
+      expect(existsSync(globalPath)).toBe(true)
+      const json = await readJson(globalPath)
+      expect(json.mcpServers).toHaveProperty('global-cursor')
+      // Should NOT write to project path
+      expect(existsSync(join(cwd, '.cursor', 'mcp.json'))).toBe(false)
+    })
+  })
+
+  it('falls back to available scope when chosen scope is not available', async () => {
+    const geminiPath = join(homedir(), '.gemini', 'settings.json')
+
+    await withRestoredFile(geminiPath, async () => {
+      const entry = makeMCPEntry({name: 'fallback-mcp', environments: ['gemini-cli'], scope: 'project'})
+      await deployMCPEntry(entry, 'gemini-cli', cwd)
+
+      expect(existsSync(geminiPath)).toBe(true)
+      const json = await readJson(geminiPath)
+      expect(json.mcpServers).toHaveProperty('fallback-mcp')
+    })
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
 // undeployMCPEntry
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -556,28 +600,26 @@ describe('undeployMCPEntry', () => {
     expect(json.mcpServers).toHaveProperty('server-keep')
   })
 
-  it('removes an entry from continue-dev YAML while preserving others', async () => {
-    const continuePath = join(homedir(), '.continue', 'config.yaml')
+  it('removes an entry from continue-dev YAML while preserving others (project scope)', async () => {
+    const continuePath = join(cwd, '.continue', 'config.yaml')
 
-    await withRestoredFile(continuePath, async () => {
-      const initial = {
-        mcpServers: {
-          'server-keep': {command: 'node', args: []},
-          'server-remove': {command: 'npx', args: []},
-        },
-      }
-      await mkdir(join(homedir(), '.continue'), {recursive: true})
-      await writeFile(continuePath, yaml.dump(initial), 'utf8')
+    const initial = {
+      mcpServers: {
+        'server-keep': {command: 'node', args: []},
+        'server-remove': {command: 'npx', args: []},
+      },
+    }
+    await mkdir(join(cwd, '.continue'), {recursive: true})
+    await writeFile(continuePath, yaml.dump(initial), 'utf8')
 
-      await undeployMCPEntry('server-remove', 'continue-dev', cwd)
+    await undeployMCPEntry('server-remove', 'continue-dev', cwd)
 
-      const raw = await readFile(continuePath, 'utf8')
-      const parsed = /** @type {any} */ (yaml.load(raw))
-      expect(parsed.mcpServers).not.toHaveProperty('server-remove')
-      expect(parsed.mcpServers).toHaveProperty('server-keep')
-      // Should still be valid YAML, not JSON
-      expect(raw).not.toMatch(/^\s*\{/)
-    })
+    const raw = await readFile(continuePath, 'utf8')
+    const parsed = /** @type {any} */ (yaml.load(raw))
+    expect(parsed.mcpServers).not.toHaveProperty('server-remove')
+    expect(parsed.mcpServers).toHaveProperty('server-keep')
+    // Should still be valid YAML, not JSON
+    expect(raw).not.toMatch(/^\s*\{/)
   })
 
   it('removes an entry from amazon-q .amazonq/mcp.json', async () => {

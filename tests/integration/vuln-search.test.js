@@ -81,19 +81,23 @@ describe('dvmi vuln search', () => {
     }
   })
 
-  it('outputs valid JSON with --json flag via MSW mock', async () => {
-    // The vitest MSW intercepts fetch — but this is an integration test (runs via execaNode)
-    // so we cannot rely on MSW. Instead just check the flag is accepted and JSON is returned
-    // even if the NVD call fails (no network in CI). We use DVMI_NO_NVD env to short-circuit.
-    const {stdout, stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--json'], {})
-    // May fail with network error in offline env; just check the flag is parsed
-    if (exitCode === 0) {
-      const data = JSON.parse(stdout)
-      expect(data).toHaveProperty('keyword', 'openssl')
-      expect(data).toHaveProperty('results')
-      expect(Array.isArray(data.results)).toBe(true)
-    } else {
-      expect(stderr).toBeTruthy()
+  it('outputs valid JSON with --json flag via mock server', async () => {
+    const server = await createMockServer((req, res) => {
+      jsonResponse(res, searchFixture)
+    })
+
+    try {
+      const {stdout, stderr, exitCode} = await runCli(['vuln', 'search', 'openssl', '--json'], {NVD_BASE_URL: server.url})
+      if (exitCode === 0) {
+        const data = JSON.parse(stdout)
+        expect(data).toHaveProperty('keyword', 'openssl')
+        expect(data).toHaveProperty('results')
+        expect(Array.isArray(data.results)).toBe(true)
+      } else {
+        expect(stderr).toBeTruthy()
+      }
+    } finally {
+      await server.stop()
     }
   })
 })

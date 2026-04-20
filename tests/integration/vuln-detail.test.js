@@ -42,14 +42,22 @@ describe('dvmi vuln detail', () => {
   })
 
   it('outputs valid JSON structure with --json flag', async () => {
-    const {stdout, stderr, exitCode} = await runCli(['vuln', 'detail', 'CVE-2021-44228', '--json'], {})
-    if (exitCode === 0) {
-      const data = JSON.parse(stdout)
-      expect(data).toHaveProperty('id', 'CVE-2021-44228')
-      expect(data).toHaveProperty('severity')
-      expect(data).toHaveProperty('references')
-    } else {
-      expect(stderr).toBeTruthy()
+    const server = await createMockServer((req, res) => {
+      jsonResponse(res, detailFixture)
+    })
+
+    try {
+      const {stdout, stderr, exitCode} = await runCli(['vuln', 'detail', 'CVE-2021-44228', '--json'], {NVD_BASE_URL: server.url})
+      if (exitCode === 0) {
+        const data = JSON.parse(stdout)
+        expect(data).toHaveProperty('id', 'CVE-2021-44228')
+        expect(data).toHaveProperty('severity')
+        expect(data).toHaveProperty('references')
+      } else {
+        expect(stderr).toBeTruthy()
+      }
+    } finally {
+      await server.stop()
     }
   })
 })

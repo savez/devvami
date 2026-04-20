@@ -730,7 +730,7 @@ describe('getMCPFormFields', () => {
 
   it('returns correct number of fields', () => {
     const fields = getMCPFormFields()
-    expect(fields.length).toBe(8) // name, environments, transport, command, args, url, env, description
+    expect(fields.length).toBe(9) // name, environments, scope, transport, command, args, url, env, description
   })
 })
 

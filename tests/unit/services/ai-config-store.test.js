@@ -63,7 +63,7 @@ afterEach(async () => {
 describe('loadAIConfig', () => {
   it('returns defaults when file does not exist', async () => {
     const store = await loadAIConfig(tmpPath)
-    expect(store).toEqual({version: 2, entries: []})
+    expect(store).toEqual({version: 3, entries: []})
   })
 
   it('returns parsed content from an existing valid file', async () => {
@@ -87,9 +87,40 @@ describe('loadAIConfig', () => {
     await writeFile(tmpPath, JSON.stringify(data), 'utf8')
 
     const store = await loadAIConfig(tmpPath)
-    expect(store.version).toBe(2)
+    expect(store.version).toBe(3)
     expect(store.entries).toHaveLength(1)
     expect(store.entries[0].name).toBe('existing-mcp')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// v2 to v3 migration
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('v2 to v3 migration', () => {
+  it('adds scope: project to all entries and bumps version to 3', async () => {
+    const dir = join(tmpPath, '..')
+    await mkdir(dir, {recursive: true})
+    const data = {
+      version: 2,
+      entries: [
+        {
+          id: '00000000-0000-0000-0000-000000000001',
+          name: 'legacy-mcp',
+          type: 'mcp',
+          active: true,
+          environments: ['claude-code'],
+          params: {transport: 'stdio', command: 'npx'},
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    }
+    await writeFile(tmpPath, JSON.stringify(data), 'utf8')
+
+    const store = await loadAIConfig(tmpPath)
+    expect(store.version).toBe(3)
+    expect(store.entries[0].scope).toBe('project')
   })
 })
 
@@ -149,6 +180,16 @@ describe('addEntry', () => {
     const entry = await addEntry(compatible, tmpPath)
     expect(entry.id).toBeTruthy()
     expect(entry.environments).toContain('gemini-cli')
+  })
+
+  it('creates an entry with the specified scope', async () => {
+    const entry = await addEntry({...MCP_ENTRY, scope: 'global'}, tmpPath)
+    expect(entry.scope).toBe('global')
+  })
+
+  it('defaults scope to project when not specified', async () => {
+    const entry = await addEntry(MCP_ENTRY, tmpPath)
+    expect(entry.scope).toBe('project')
   })
 })
 
@@ -232,6 +273,14 @@ describe('updateEntry', () => {
   it('throws DvmiError when the entry id is not found', async () => {
     await expect(updateEntry('non-existent-id', {name: 'x'}, tmpPath)).rejects.toThrow(DvmiError)
     await expect(updateEntry('non-existent-id', {name: 'x'}, tmpPath)).rejects.toThrow(/not found/)
+  })
+
+  it('updates scope when provided', async () => {
+    const original = await addEntry(MCP_ENTRY, tmpPath)
+    expect(original.scope).toBe('project')
+
+    const updated = await updateEntry(original.id, {scope: 'global'}, tmpPath)
+    expect(updated.scope).toBe('global')
   })
 })
 
